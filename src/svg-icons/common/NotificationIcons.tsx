@@ -33,12 +33,8 @@ export const NotificationMentionIcon = () => {
 export const NotificationNewMessageIcon = () => {
   return (
     <Svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-      <Rect width="20" height="20" rx="10" fill="#2781F6" />
-      <Path
-        d="M15 15H9.9996C7.24319 15 5 12.7567 5 9.99955C5 7.24335 7.24319 5 9.99965 5C12.7568 5 15 7.24335 15 9.99955V15Z"
-        stroke="white"
-        strokeWidth="1.4"
-      />
+      <Rect width="20" height="20" rx="10" fill="#4CB6AC" />
+      <Rect x="5.5" y="5.5" width="9" height="9" rx="4.5" stroke="#F8F5F3" strokeWidth="1.2" />
     </Svg>
   );
 };
