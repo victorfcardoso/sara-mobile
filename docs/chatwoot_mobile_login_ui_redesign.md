@@ -46,3 +46,8 @@
 - Re-themed list rows (`components-next/list-components/SettingsList.tsx`) with beige dividers, navy primary copy, slate secondary copy, and a neutral press state so no cyan accents leak through the card surfaces.
 - Footer string now reads `Sara <version>` to keep branding consistent across environments.
 - Updated bottom tab icons (`src/svg-icons/tabs/*.tsx`) to render in Sara navy `#16273D` so the navigation buttons match the rest of the palette.
+
+## 2 Nov 2025 – Appointments tab placeholder
+- Added an `Appointments` entry to the bottom navigation so operators have a dedicated space for scheduling features as they arrive.
+- Stubbed `AppointmentsScreen` with Sara palette, guidance copy, and a "coming soon" badge so QA knows the view is intentionally empty for now.
+- Wired a matching calendar-with-check icon (`AppointmentsIconFilled/Outline`) and exposed an `AppointmentsStack` to keep the implementation modular when we plug in the real data sources.
