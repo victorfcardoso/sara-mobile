@@ -55,7 +55,7 @@ export const CannedResponses = (props: CannedResponsesProps) => {
     <Animated.View
       style={[
         tailwind.style(
-          'left-0 right-0 bg-white border-t border-gray-200 max-h-[180px] relative bottom-0 h-[180px]',
+          'left-0 right-0 bg-white border-t border-[#CCE6DE] max-h-[180px] relative bottom-0 h-[180px]',
         ),
       ]}>
       <FlashList

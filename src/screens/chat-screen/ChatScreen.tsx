@@ -35,6 +35,11 @@ import { MacrosList } from './components/macros/MacrosList';
 import { macroActions } from '@/store/macro/macroActions';
 import { LightBoxProvider } from '@alantoa/lightbox';
 
+const SARA_COLORS = {
+  background: '#F8F5F3',
+  accent: '#4CB6AC',
+};
+
 export const ChatWindow = (props: ChatScreenProps) => {
   return (
     <Animated.View style={tailwind.style('flex-1')}>
@@ -138,7 +143,9 @@ const ChatScreen = (props: ChatScreenProps) => {
 
   if (conversation) {
     return (
-      <SafeAreaView edges={['top']} style={tailwind.style('flex-1 bg-white')}>
+      <SafeAreaView
+        edges={['top']}
+        style={[tailwind.style('flex-1'), { backgroundColor: SARA_COLORS.background }]}>
         <LightBoxProvider>
           <ChatWindowProvider conversationId={conversationId}>
             <ChatScreenWrapper {...props} />
@@ -152,15 +159,20 @@ const ChatScreen = (props: ChatScreenProps) => {
   if (conversationFetching) {
     return (
       <Animated.View
-        style={tailwind.style('flex-1 items-center justify-center', `pb-[${TAB_BAR_HEIGHT}px]`)}>
-        <ActivityIndicator />
+        style={[
+          tailwind.style('flex-1 items-center justify-center', `pb-[${TAB_BAR_HEIGHT}px]`),
+          { backgroundColor: SARA_COLORS.background },
+        ]}>
+        <ActivityIndicator color={SARA_COLORS.accent} />
       </Animated.View>
     );
   }
 
   if (conversationError || !conversation) {
     return (
-      <SafeAreaView edges={['top']} style={tailwind.style('flex-1 bg-white')}>
+      <SafeAreaView
+        edges={['top']}
+        style={[tailwind.style('flex-1'), { backgroundColor: SARA_COLORS.background }]}>
         <Animated.View
           style={tailwind.style(
             'flex-1 items-center justify-center gap-8 px-4',

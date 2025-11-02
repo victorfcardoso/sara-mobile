@@ -9,6 +9,11 @@ import { MarkdownDisplay } from './MarkdownDisplay';
 import { TEXT_MAX_WIDTH } from '@/constants';
 import { DeliveryStatus } from './DeliveryStatus';
 
+const SARA_COLORS = {
+  bubble: '#E5F3F0',
+  timestamp: '#566273',
+};
+
 type BotTextCellProps = {
   text: string;
   timeStamp: number;
@@ -68,11 +73,11 @@ export const BotTextCell = (props: BotTextCellProps) => {
     <Animated.View
       style={[
         tailwind.style(
-          'relative max-w-[300px] pl-3 pr-2.5 py-2 rounded-2xl overflow-hidden bg-blue-100',
+          'relative max-w-[300px] pl-3 pr-2.5 py-2 rounded-2xl overflow-hidden',
           `max-w-[${TEXT_MAX_WIDTH}px]`,
-          // singleLineShortText ? "flex flex-row" : "",
           isAvatarRendered ? 'rounded-br-none' : '',
         ),
+        { backgroundColor: SARA_COLORS.bubble },
       ]}>
       {/* <Text
         // onTextLayout={handleTextLayout}
@@ -92,7 +97,10 @@ export const BotTextCell = (props: BotTextCellProps) => {
           // multiLineShortText ? " absolute bottom-0.5 right-2.5" : "",
         )}>
         <Text
-          style={tailwind.style('text-xs font-inter-420-20 tracking-[0.32px] pr-1 text-gray-700')}>
+          style={[
+            tailwind.style('text-xs font-inter-420-20 tracking-[0.32px] pr-1'),
+            { color: SARA_COLORS.timestamp },
+          ]}>
           {unixTimestampToReadableTime(timeStamp)}
         </Text>
         <DeliveryStatus

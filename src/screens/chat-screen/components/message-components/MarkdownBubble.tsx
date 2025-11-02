@@ -11,13 +11,9 @@ type MarkdownBubbleProps = {
   variant: string;
 };
 
-const variantTextMap = {
-  [MESSAGE_VARIANTS.AGENT]: 'text-gray-950',
-  [MESSAGE_VARIANTS.USER]: 'text-white',
-  [MESSAGE_VARIANTS.BOT]: 'text-gray-950',
-  [MESSAGE_VARIANTS.TEMPLATE]: 'text-gray-950',
-  [MESSAGE_VARIANTS.ERROR]: 'text-white',
-  [MESSAGE_VARIANTS.PRIVATE]: 'text-amber-950 font-inter-medium-24',
+const SARA_COLORS = {
+  incomingText: '#16273D',
+  outgoingText: '#FFFFFF',
 };
 
 export const MarkdownBubble = (props: MarkdownBubbleProps) => {
@@ -27,14 +23,25 @@ export const MarkdownBubble = (props: MarkdownBubbleProps) => {
     return true;
   };
 
-  const textStyle = tailwind.style(variantTextMap[variant]);
+  const computedColor = (() => {
+    if (variant === MESSAGE_VARIANTS.PRIVATE) {
+      return tailwind.color('text-amber-950');
+    }
+    if (variant === MESSAGE_VARIANTS.AGENT || variant === MESSAGE_VARIANTS.ERROR) {
+      return SARA_COLORS.outgoingText;
+    }
+    return SARA_COLORS.incomingText;
+  })();
+
+  const fontFamily = variant === MESSAGE_VARIANTS.PRIVATE ? 'Inter-500-20' : 'Inter-400-20';
 
   const styles = StyleSheet.create({
     text: {
       fontSize: 16,
       letterSpacing: 0.32,
       lineHeight: 22,
-      ...textStyle,
+      color: computedColor,
+      fontFamily,
     },
     strong: {
       fontFamily: 'Inter-600-20',
@@ -46,7 +53,8 @@ export const MarkdownBubble = (props: MarkdownBubbleProps) => {
     paragraph: {
       marginTop: 0,
       marginBottom: 0,
-      fontFamily: 'Inter-400-20',
+      fontFamily,
+      color: computedColor,
     },
     bullet_list: {
       minWidth: 200,
@@ -58,19 +66,22 @@ export const MarkdownBubble = (props: MarkdownBubbleProps) => {
       flexDirection: 'row',
       justifyContent: 'flex-start',
       alignItems: 'center',
-      ...textStyle,
+      color: computedColor,
+      fontFamily,
     },
     bullet_list_icon: {
       marginLeft: 0,
       marginRight: 8,
       fontWeight: '900',
-      ...textStyle,
+      color: computedColor,
+      fontFamily,
     },
     ordered_list_icon: {
       marginLeft: 0,
       marginRight: 8,
       fontWeight: '900',
-      ...textStyle,
+      color: computedColor,
+      fontFamily,
     },
   });
   return (

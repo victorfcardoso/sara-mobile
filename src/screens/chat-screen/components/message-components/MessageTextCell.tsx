@@ -10,6 +10,16 @@ import { MESSAGE_STATUS, INBOX_TYPES, TEXT_MAX_WIDTH } from '@/constants';
 import { DeliveryStatus } from './DeliveryStatus';
 import { EmailMeta } from './EmailMeta';
 
+const SARA_COLORS = {
+  incomingBubble: '#FFFFFF',
+  incomingBorder: '#CCE6DE',
+  incomingText: '#16273D',
+  incomingTimestamp: '#566273',
+  outgoingBubble: '#4CB6AC',
+  outgoingText: '#FFFFFF',
+  outgoingTimestamp: '#F2FFFB',
+};
+
 type MessageTextCellProps = {
   text: string;
   timeStamp: number;
@@ -89,8 +99,6 @@ export const MessageTextCell = (props: MessageTextCellProps) => {
         tailwind.style(
           'relative pl-3 pr-2.5 py-2 rounded-2xl overflow-hidden',
           isEmailMessage ? `max-w-[${EMAIL_MESSAGE_WIDTH}px]` : `max-w-[${TEXT_MAX_WIDTH}px]`,
-          isIncoming ? 'bg-blue-700' : '',
-          isOutgoing ? 'bg-gray-100' : '',
           isMessageFailed ? 'bg-ruby-700' : '',
           isAvatarRendered
             ? isOutgoing
@@ -100,9 +108,26 @@ export const MessageTextCell = (props: MessageTextCellProps) => {
                 : ''
             : '',
         ),
+        !isMessageFailed &&
+          (isIncoming
+            ? {
+                backgroundColor: SARA_COLORS.incomingBubble,
+                borderWidth: 1,
+                borderColor: SARA_COLORS.incomingBorder,
+              }
+            : null),
+        !isMessageFailed &&
+          (isOutgoing
+            ? {
+                backgroundColor: SARA_COLORS.outgoingBubble,
+              }
+            : null),
       ]}>
       {contentAttributes && <EmailMeta {...{ contentAttributes, sender }} />}
-      <MarkdownDisplay {...{ isIncoming, isOutgoing, isMessageFailed }} messageContent={text} />
+      <MarkdownDisplay
+        {...{ isIncoming, isOutgoing, isMessageFailed }}
+        messageContent={text}
+      />
       {/* <Text
         // onTextLayout={handleTextLayout}
         style={tailwind.style(
@@ -123,12 +148,16 @@ export const MessageTextCell = (props: MessageTextCellProps) => {
           // multiLineShortText ? " absolute bottom-0.5 right-2.5" : "",
         )}>
         <Text
-          style={tailwind.style(
-            'text-xs font-inter-420-20 tracking-[0.32px] pr-1',
-            isIncoming ? 'text-whiteA-A11' : '',
-            isOutgoing ? 'text-gray-700' : '',
-            isMessageFailed ? 'text-whiteA-A11' : '',
-          )}>
+          style={[
+            tailwind.style('text-xs font-inter-420-20 tracking-[0.32px] pr-1'),
+            isIncoming && !isMessageFailed
+              ? { color: SARA_COLORS.incomingTimestamp }
+              : undefined,
+            isOutgoing && !isMessageFailed
+              ? { color: SARA_COLORS.outgoingTimestamp }
+              : undefined,
+            isMessageFailed ? { color: tailwind.color('text-whiteA-A11') } : undefined,
+          ]}>
           {unixTimestampToReadableTime(timeStamp)}
         </Text>
         <DeliveryStatus
@@ -138,8 +167,8 @@ export const MessageTextCell = (props: MessageTextCellProps) => {
           channel={channel}
           sourceId={sourceId}
           errorMessage={errorMessage}
-          deliveredColor="text-gray-700"
-          sentColor="text-gray-700"
+          deliveredColor={isOutgoing ? 'text-white' : 'text-gray-500'}
+          sentColor={isOutgoing ? 'text-white' : 'text-gray-500'}
         />
       </Animated.View>
     </Animated.View>

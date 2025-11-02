@@ -78,11 +78,7 @@ export const FileBubblePreview = (props: FilePreviewProps) => {
         <Animated.View style={tailwind.style('pr-1.5')}>
           <Spinner
             size={20}
-            stroke={
-              variant === MESSAGE_VARIANTS.USER
-                ? tailwind.color('text-white')
-                : tailwind.color('bg-blue-800')
-            }
+            stroke={variant === MESSAGE_VARIANTS.USER ? '#4CB6AC' : '#FFFFFF'}
           />
         </Animated.View>
       ) : (
@@ -91,11 +87,7 @@ export const FileBubblePreview = (props: FilePreviewProps) => {
             size={24}
             icon={
               <FileIcon
-                fill={
-                  variant === MESSAGE_VARIANTS.USER
-                    ? tailwind.color('bg-white')
-                    : tailwind.color('text-blue-800')
-                }
+                fill={variant === MESSAGE_VARIANTS.USER ? '#16273D' : '#FFFFFF'}
               />
             }
           />
@@ -113,9 +105,9 @@ export const FileBubblePreview = (props: FilePreviewProps) => {
                   ? 'text-base tracking-[0.32px] leading-[22px] font-inter-normal-20'
                   : '',
                 variant === MESSAGE_VARIANTS.USER
-                  ? 'text-white'
+                  ? 'text-[#16273D]'
                   : variant === MESSAGE_VARIANTS.AGENT
-                    ? 'text-gray-700'
+                    ? 'text-white'
                     : '',
               ),
               style.androidTextOnlyStyle,
@@ -124,11 +116,11 @@ export const FileBubblePreview = (props: FilePreviewProps) => {
           </Animated.Text>
           <Animated.View
             style={[
-              tailwind.style(
-                'border-b-[1px] absolute left-0 right-0 ios:bottom-[1px] android:bottom-0',
-                variant === MESSAGE_VARIANTS.USER ? 'border-white' : '',
-                variant === MESSAGE_VARIANTS.AGENT ? 'border-blue-800' : '',
-              ),
+              tailwind.style('border-b-[1px] absolute left-0 right-0 ios:bottom-[1px] android:bottom-0'),
+              {
+                borderBottomColor:
+                  variant === MESSAGE_VARIANTS.USER ? '#CCE6DE' : 'rgba(255,255,255,0.65)',
+              },
             ]}
           />
         </Animated.View>

@@ -27,6 +27,10 @@ import { getCurrentRouteName } from '@/utils/navigationUtils';
 type DateSeparator = { date: string; type: 'date' };
 type MessageOrDate = Message | DateSeparator;
 
+const SARA_COLORS = {
+  background: '#F8F5F3',
+};
+
 /**
  * Determines if a message should be grouped with the next message and previous message
  * @param {Number} index - Index of the current message
@@ -170,7 +174,7 @@ export const MessagesListContainer = () => {
 
   return (
     <PlatformSpecificKeyboardWrapperComponent
-      style={tailwind.style('flex-1 bg-white')}
+      style={[tailwind.style('flex-1'), { backgroundColor: SARA_COLORS.background }]}
       interpolator="linear">
       <MessagesList
         messages={messagesWithGrouping}

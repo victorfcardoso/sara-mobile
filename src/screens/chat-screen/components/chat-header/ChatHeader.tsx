@@ -3,7 +3,7 @@ import { ImageSourcePropType, Keyboard, Platform, Pressable } from 'react-native
 import { BottomSheetModal, useBottomSheetSpringConfigs } from '@gorhom/bottom-sheet';
 import Animated from 'react-native-reanimated';
 
-import { Avatar, Icon } from '@/components-next';
+import { Icon } from '@/components-next';
 import { ChevronLeft, OpenIcon, Overflow, ResolvedIcon, SLAIcon } from '@/svg-icons';
 import { BottomSheetBackdrop, BottomSheetWrapper } from '@/components-next';
 import { tailwind } from '@/theme';
@@ -26,9 +26,14 @@ type ChatHeaderProps = {
   onToggleChatStatus: () => void;
 };
 
+const SARA_COLORS = {
+  background: '#F8F5F3',
+  textPrimary: '#16273D',
+};
+
 export const ChatHeader = ({
   name,
-  imageSrc,
+  imageSrc: _imageSrc,
   isResolved,
   slaEvents,
   isSlaMissed,
@@ -55,7 +60,7 @@ export const ChatHeader = ({
   };
 
   return (
-    <Animated.View style={[tailwind.style('border-b-[1px] border-b-blackA-A3')]}>
+    <Animated.View style={{ backgroundColor: SARA_COLORS.background }}>
       <Animated.View style={tailwind.style('flex flex-row justify-between items-center px-4 py-2')}>
         <Animated.View style={tailwind.style('flex-1 flex-row gap-2 items-center justify-center')}>
           <Pressable
@@ -66,17 +71,15 @@ export const ChatHeader = ({
           </Pressable>
           <Pressable
             onPress={onContactDetailsPress}
-            style={tailwind.style('flex flex-row items-center flex-1')}>
-            <Avatar size="xl" src={imageSrc} name={name} />
-            <Animated.View style={tailwind.style('pl-2')}>
-              <Animated.Text
-                numberOfLines={1}
-                style={tailwind.style(
-                  'text-[17px] font-inter-medium-24 tracking-[0.32px] text-gray-950',
-                )}>
-                {name}
-              </Animated.Text>
-            </Animated.View>
+            style={tailwind.style('flex flex-row items-center flex-1 pl-2')}>
+            <Animated.Text
+              numberOfLines={1}
+              style={[
+                tailwind.style('text-[17px] font-inter-medium-24 tracking-[0.32px]'),
+                { color: SARA_COLORS.textPrimary },
+              ]}>
+              {name}
+            </Animated.Text>
           </Pressable>
         </Animated.View>
 

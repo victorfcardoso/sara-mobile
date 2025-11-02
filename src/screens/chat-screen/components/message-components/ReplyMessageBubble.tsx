@@ -17,8 +17,8 @@ type ReplyMessageBubbleProps = {
 };
 
 const variantBaseMap = {
-  [MESSAGE_VARIANTS.AGENT]: 'bg-white',
-  [MESSAGE_VARIANTS.USER]: 'bg-blackA-A7',
+  [MESSAGE_VARIANTS.AGENT]: 'bg-[#E5F3F0]',
+  [MESSAGE_VARIANTS.USER]: 'bg-[#F1F6F5]',
 };
 
 export const ReplyMessageBubble = (props: ReplyMessageBubbleProps) => {
@@ -66,7 +66,7 @@ export const ReplyMessageBubble = (props: ReplyMessageBubbleProps) => {
         ),
       ]}>
       <Animated.View style={tailwind.style('flex flex-row')}>
-        <Animated.View style={tailwind.style('w-[3px] bg-gray-300 h-auto rounded-[4px]')} />
+        <Animated.View style={tailwind.style('w-[3px] h-auto rounded-[4px] bg-[#4CB6AC]')} />
         <Animated.View style={tailwind.style('pl-2.5')}>
           <Animated.Text
             style={tailwind.style(

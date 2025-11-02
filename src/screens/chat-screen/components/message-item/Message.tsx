@@ -62,32 +62,38 @@ type MessageWrapperProps = {
 };
 
 const variantTextMap = {
-  [MESSAGE_VARIANTS.AGENT]: 'text-gray-700',
-  [MESSAGE_VARIANTS.USER]: 'text-white',
-  [MESSAGE_VARIANTS.BOT]: 'text-gray-700',
-  [MESSAGE_VARIANTS.TEMPLATE]: 'text-gray-700',
+  [MESSAGE_VARIANTS.AGENT]: 'text-white',
+  [MESSAGE_VARIANTS.USER]: 'text-[#16273D]',
+  [MESSAGE_VARIANTS.BOT]: 'text-[#16273D]',
+  [MESSAGE_VARIANTS.TEMPLATE]: 'text-[#16273D]',
   [MESSAGE_VARIANTS.ERROR]: 'text-white',
+  [MESSAGE_VARIANTS.PRIVATE]: 'text-amber-950 font-inter-medium-24',
+  [MESSAGE_VARIANTS.ACTIVITY]: 'text-[#566273]',
+  [MESSAGE_VARIANTS.EMAIL]: 'text-[#16273D]',
+  [MESSAGE_VARIANTS.UNSUPPORTED]: 'text-[#566273]',
 };
 
 const variantBaseMap = {
-  [MESSAGE_VARIANTS.AGENT]: 'bg-gray-100',
+  [MESSAGE_VARIANTS.AGENT]: 'bg-[#4CB6AC]',
   [MESSAGE_VARIANTS.PRIVATE]: 'bg-amber-100',
-  [MESSAGE_VARIANTS.USER]: 'bg-blue-700',
-  [MESSAGE_VARIANTS.BOT]: 'bg-blue-100',
-  [MESSAGE_VARIANTS.TEMPLATE]: 'bg-blue-100',
+  [MESSAGE_VARIANTS.USER]: 'bg-white',
+  [MESSAGE_VARIANTS.BOT]: 'bg-[#E5F3F0]',
+  [MESSAGE_VARIANTS.TEMPLATE]: 'bg-[#E5F3F0]',
   [MESSAGE_VARIANTS.ERROR]: 'bg-ruby-700',
-  [MESSAGE_VARIANTS.EMAIL]: 'bg-gray-100',
-  [MESSAGE_VARIANTS.UNSUPPORTED]: 'bg-amber-100 border border-dashed border-amber-700',
+  [MESSAGE_VARIANTS.EMAIL]: 'bg-white',
+  [MESSAGE_VARIANTS.UNSUPPORTED]: 'bg-white border border-dashed border-amber-700',
+  [MESSAGE_VARIANTS.ACTIVITY]: 'bg-transparent',
 };
 
 const variantBorderMap = {
-  [MESSAGE_VARIANTS.AGENT]: 'border-gray-100',
-  [MESSAGE_VARIANTS.USER]: 'border-gray-100',
-  [MESSAGE_VARIANTS.BOT]: 'border-gray-100',
-  [MESSAGE_VARIANTS.TEMPLATE]: 'border-gray-100',
-  [MESSAGE_VARIANTS.ERROR]: 'border-gray-100',
-  [MESSAGE_VARIANTS.EMAIL]: 'border-gray-100',
-  [MESSAGE_VARIANTS.UNSUPPORTED]: 'border-gray-100',
+  [MESSAGE_VARIANTS.AGENT]: 'border-transparent',
+  [MESSAGE_VARIANTS.USER]: 'border border-[#CCE6DE]',
+  [MESSAGE_VARIANTS.BOT]: 'border-transparent',
+  [MESSAGE_VARIANTS.TEMPLATE]: 'border-transparent',
+  [MESSAGE_VARIANTS.ERROR]: 'border-transparent',
+  [MESSAGE_VARIANTS.EMAIL]: 'border border-[#E5F3F0]',
+  [MESSAGE_VARIANTS.UNSUPPORTED]: 'border border-dashed border-amber-700',
+  [MESSAGE_VARIANTS.ACTIVITY]: 'border-transparent',
 };
 
 const MessageWrapper = ({
@@ -114,6 +120,10 @@ const MessageWrapper = ({
   const windowWidth = Dimensions.get('window').width;
   // 52 is the sum of the left and right padding (12 + 12) and avatar width (24) and gap between avatar and message (4)
   const EMAIL_WIDTH = windowWidth - 52;
+  const statusColorClass =
+    variant === MESSAGE_VARIANTS.AGENT || variant === MESSAGE_VARIANTS.TEMPLATE
+      ? 'text-white'
+      : 'text-gray-600';
 
   return (
     <Animated.View
@@ -178,8 +188,8 @@ const MessageWrapper = ({
                   channel={channel}
                   sourceId={item.sourceId}
                   errorMessage={item.contentAttributes?.externalError || ''}
-                  deliveredColor="text-gray-700"
-                  sentColor="text-gray-700"
+                  deliveredColor={statusColorClass}
+                  sentColor={statusColorClass}
                 />
               </Animated.View>
             )}
