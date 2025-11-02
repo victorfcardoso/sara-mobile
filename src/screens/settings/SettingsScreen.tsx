@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { StatusBar, Text, Platform, Pressable } from 'react-native';
+import { StatusBar, Text, Platform, Pressable, StyleSheet } from 'react-native';
 import Animated from 'react-native-reanimated';
 // import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -36,7 +36,6 @@ import {
   SwitchAccount,
   SettingsList,
 } from '@/components-next';
-import { UserAvatar } from './components/UserAvatar';
 
 import { LANGUAGES, TAB_BAR_HEIGHT } from '@/constants';
 import { useRefsContext } from '@/context';
@@ -53,11 +52,7 @@ import {
 } from '@/store/auth/authSelectors';
 import { logout, setAccount } from '@/store/auth/authSlice';
 import { authActions } from '@/store/auth/authActions';
-import {
-  selectLocale,
-  selectIsChatwootCloud,
-  selectPushToken,
-} from '@/store/settings/settingsSelectors';
+import { selectLocale, selectPushToken } from '@/store/settings/settingsSelectors';
 import { settingsActions } from '@/store/settings/settingsActions';
 import { setLocale } from '@/store/settings/settingsSlice';
 
@@ -72,6 +67,15 @@ const appVersion = Application.nativeApplicationVersion;
 
 const buildNumber = Application.nativeBuildVersion;
 const appVersionDetails = buildNumber ? `${appVersion} (${buildNumber})` : appVersion;
+
+const SARA_COLORS = {
+  background: '#F8F5F3',
+  textPrimary: '#16273D',
+  textSecondary: '#4B5D6E',
+  badgeBackground: '#CCE6DE',
+  badgeText: '#16273D',
+  footerText: '#566273',
+};
 
 const SettingsScreen = () => {
   const navigation = useNavigation();
@@ -120,9 +124,7 @@ const SettingsScreen = () => {
     operatingSystem: Platform.OS, // android/ios
   };
 
-  const isChatwootCloud = useAppSelector(selectIsChatwootCloud);
-
-  const chatwootInstance = isChatwootCloud ? `${appName} cloud` : `${appName} self-hosted`;
+  const footerLabel = `Sara ${appVersionDetails}`;
 
   const accounts = useSelector(selectAccounts) || [];
 
@@ -177,6 +179,11 @@ const SettingsScreen = () => {
     dispatch(authActions.setActiveAccount({ profile: { account_id: accountId } }));
     navigation.dispatch(StackActions.replace('Tab'));
   };
+
+  const formattedAvailability =
+    availabilityStatus && availabilityStatus.length
+      ? availabilityStatus.charAt(0).toUpperCase() + availabilityStatus.slice(1)
+      : '';
 
   useEffect(() => {
     userAvailabilityStatusSheetRef.current?.dismiss({
@@ -271,33 +278,38 @@ const SettingsScreen = () => {
   ];
 
   return (
-    <SafeAreaView style={tailwind.style('flex-1 bg-white font-inter-normal-20')}>
-      <StatusBar
-        translucent
-        backgroundColor={tailwind.color('bg-white')}
-        barStyle={'dark-content'}
-      />
+    <SafeAreaView
+      style={[tailwind.style('flex-1 font-inter-normal-20'), styles.container]}
+      edges={['top', 'bottom']}>
+      <StatusBar translucent backgroundColor={SARA_COLORS.background} barStyle={'dark-content'} />
       <SettingsHeader />
       <Animated.ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={tailwind.style(`pb-[${TAB_BAR_HEIGHT - 1}px]`)}>
-        <Animated.View style={tailwind.style('flex justify-center items-center pt-4 gap-4')}>
-          <Animated.View>
-            <UserAvatar src={avatarUrl} name={name} status={availabilityStatus} />
-            <Animated.View
-              style={tailwind.style(
-                'absolute border-[2px] border-white rounded-full -bottom-[2px] right-[10px]',
-              )}></Animated.View>
-          </Animated.View>
-          <Animated.View style={tailwind.style('flex flex-col items-center gap-1')}>
-            <Animated.Text style={tailwind.style('text-[22px] font-inter-580-24 text-gray-950')}>
+        <Animated.View style={tailwind.style('flex justify-center items-center pt-4 gap-3')}>
+          <Animated.View style={tailwind.style('flex flex-col items-center gap-2')}>
+            <Animated.Text
+              style={[
+                tailwind.style('text-[22px] font-inter-580-24'),
+                { color: SARA_COLORS.textPrimary },
+              ]}>
               {name}
             </Animated.Text>
             <Animated.Text
-              style={tailwind.style(
-                'text-[15px] font-inter-420-20 leading-[17.25px] text-gray-900',
-              )}>
+              style={[
+                tailwind.style('text-[15px] font-inter-420-20 leading-[17.25px]'),
+                { color: SARA_COLORS.textSecondary },
+              ]}>
               {email}
+            </Animated.Text>
+          </Animated.View>
+          <Animated.View style={[styles.statusPill]}>
+            <Animated.Text
+              style={[
+                tailwind.style('text-xs font-inter-medium-24 tracking-[0.3px] uppercase'),
+                { color: SARA_COLORS.badgeText },
+              ]}>
+              {formattedAvailability}
             </Animated.Text>
           </Animated.View>
         </Animated.View>
@@ -318,8 +330,8 @@ const SettingsScreen = () => {
         <Pressable
           style={tailwind.style('p-4 items-center')}
           onLongPress={() => debugActionsSheetRef.current?.present()}>
-          <Text style={tailwind.style('text-sm text-gray-700 ')}>
-            {`${chatwootInstance} ${appVersionDetails}`}
+          <Text style={[tailwind.style('text-sm'), { color: SARA_COLORS.footerText }]}>
+            {footerLabel}
           </Text>
         </Pressable>
       </Animated.ScrollView>
@@ -424,5 +436,17 @@ const SettingsScreen = () => {
     </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: SARA_COLORS.background,
+  },
+  statusPill: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 9999,
+    backgroundColor: SARA_COLORS.badgeBackground,
+  },
+});
 
 export default SettingsScreen;

@@ -18,6 +18,15 @@ type ListItemProps = {
   isLastItem: boolean;
 };
 
+const SARA_COLORS = {
+  card: '#FFFFFF',
+  pressed: '#EDEAE5',
+  border: '#E6E0D7',
+  heading: '#566273',
+  textPrimary: '#16273D',
+  textSecondary: '#4B5D6E',
+};
+
 const ListItem = (props: ListItemProps) => {
   const { listItem, index, isLastItem } = props;
 
@@ -26,11 +35,8 @@ const ListItem = (props: ListItemProps) => {
       onPress={() => listItem.onPressListItem && listItem.onPressListItem()}
       key={index}
       style={({ pressed }) => [
-        tailwind.style(
-          pressed ? 'bg-gray-100' : '',
-          index === 0 ? 'rounded-t-[13px]' : '',
-          isLastItem ? 'rounded-b-[13px]' : '',
-        ),
+        tailwind.style(index === 0 ? 'rounded-t-[13px]' : '', isLastItem ? 'rounded-b-[13px]' : ''),
+        pressed ? { backgroundColor: SARA_COLORS.pressed } : null,
       ]}>
       <Animated.View style={tailwind.style('flex flex-row items-center pl-3')}>
         {listItem.icon ? (
@@ -39,25 +45,34 @@ const ListItem = (props: ListItemProps) => {
           </Animated.View>
         ) : null}
         <Animated.View
-          style={tailwind.style(
-            'flex-1 flex-row items-center justify-between py-[11px]',
-            listItem.icon ? 'ml-3' : '',
-            !isLastItem ? 'border-b-[1px] border-b-blackA-A3' : '',
-          )}>
+          style={[
+            tailwind.style(
+              'flex-1 flex-row items-center justify-between py-[11px]',
+              listItem.icon ? 'ml-3' : '',
+              !isLastItem ? 'border-b-[1px]' : '',
+            ),
+            !isLastItem ? { borderBottomColor: SARA_COLORS.border } : null,
+          ]}>
           <Animated.View>
             <Animated.Text
-              style={tailwind.style(
-                'text-base font-inter-420-20 leading-[22px] tracking-[0.16px] text-gray-950',
-              )}>
+              style={[
+                tailwind.style('text-base font-inter-420-20 leading-[22px] tracking-[0.16px]'),
+                { color: SARA_COLORS.textPrimary },
+              ]}>
               {listItem.title}
             </Animated.Text>
           </Animated.View>
           <Animated.View style={tailwind.style('flex flex-row items-center pr-3')}>
             <Animated.Text
-              style={tailwind.style(
-                'text-base font-inter-normal-20 leading-[22px] tracking-[0.16px]',
-                listItem.subtitleType === 'light' ? 'text-gray-900' : 'text-gray-950',
-              )}>
+              style={[
+                tailwind.style('text-base font-inter-normal-20 leading-[22px] tracking-[0.16px]'),
+                {
+                  color:
+                    listItem.subtitleType === 'light'
+                      ? SARA_COLORS.textSecondary
+                      : SARA_COLORS.textPrimary,
+                },
+              ]}>
               {listItem.subtitle}
             </Animated.Text>
             {listItem.hasChevron ? <Icon icon={<CaretRight />} size={20} /> : null}
@@ -76,14 +91,16 @@ export const SettingsList = (props: GenericListProps) => {
       {sectionTitle ? (
         <Animated.View style={tailwind.style('pl-4 pb-3')}>
           <Animated.Text
-            style={tailwind.style(
-              'text-sm font-inter-medium-24 leading-[16px] tracking-[0.32px] text-gray-700',
-            )}>
+            style={[
+              tailwind.style('text-sm font-inter-medium-24 leading-[16px] tracking-[0.32px]'),
+              { color: SARA_COLORS.heading },
+            ]}>
             {sectionTitle}
           </Animated.Text>
         </Animated.View>
       ) : null}
-      <Animated.View style={[tailwind.style('rounded-[13px] mx-4 bg-white'), styles.listShadow]}>
+      <Animated.View
+        style={[tailwind.style('rounded-[13px] mx-4'), styles.listShadow, styles.listContainer]}>
         {list.map(
           (listItem, index) =>
             !listItem.disabled && (
@@ -110,7 +127,10 @@ const styles = StyleSheet.create({
       },
       android: {
         elevation: 4,
-        backgroundColor: 'white',
+        backgroundColor: SARA_COLORS.card,
       },
     }) || {}, // Add fallback empty object
+  listContainer: {
+    backgroundColor: SARA_COLORS.card,
+  },
 });

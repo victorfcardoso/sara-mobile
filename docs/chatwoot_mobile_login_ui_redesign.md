@@ -39,3 +39,10 @@
 - Capture fresh screenshots for internal docs / release notes once QA approves.
 - If other screens need the teal CTA, reuse `tone="brand"` instead of duplicating styles.
 - Consider migrating helper styles into a shared theme file if more Sara-specific layouts ship.
+
+## 2 Nov 2025 – Settings screen palette refresh
+- Brought the Settings shell (`SettingsScreen.tsx`) onto the Sara beige canvas `#F8F5F3`, aligned the status bar, and swapped the avatar block for a typography-first header with an availability pill.
+- Restyled the header chrome (`SettingsHeader.tsx`) with navy text `#16273D` and a neutral divider `#E6E0D7` so the top bar stays beige without teal accents.
+- Re-themed list rows (`components-next/list-components/SettingsList.tsx`) with beige dividers, navy primary copy, slate secondary copy, and a neutral press state so no cyan accents leak through the card surfaces.
+- Footer string now reads `Sara <version>` to keep branding consistent across environments.
+- Updated bottom tab icons (`src/svg-icons/tabs/*.tsx`) to render in Sara navy `#16273D` so the navigation buttons match the rest of the palette.
