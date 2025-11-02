@@ -11,17 +11,26 @@ type ButtonProps = {
   handlePress?: () => void;
   variant?: 'primary' | 'secondary';
   disabled?: boolean;
+  tone?: 'default' | 'brand';
 };
-
-const getButtonStyles = (isPrimary: boolean, pressed: boolean) => {
+const getButtonStyles = (isPrimary: boolean, pressed: boolean, tone: ButtonProps['tone']) => {
   const baseStyles = 'py-[11px] flex items-center justify-center rounded-[13px]';
-  const variantStyles = isPrimary ? 'bg-blue-800' : 'bg-gray-50';
-  const pressedStyles = isPrimary ? 'opacity-95' : pressed ? 'bg-gray-100' : '';
 
-  return tailwind.style(baseStyles, variantStyles, pressedStyles);
+  if (isPrimary) {
+    if (tone === 'brand') {
+      return [
+        tailwind.style(baseStyles, pressed ? 'opacity-95' : ''),
+        { backgroundColor: '#4CB6AC' },
+      ];
+    }
+
+    return tailwind.style(baseStyles, 'bg-blue-800', pressed ? 'opacity-95' : '');
+  }
+
+  return tailwind.style(baseStyles, 'bg-gray-50', pressed ? 'bg-gray-100' : '');
 };
 
-const getTextStyles = (isPrimary: boolean, isDestructive: boolean) => {
+const getTextStyles = (isPrimary: boolean, isDestructive: boolean, tone: ButtonProps['tone']) => {
   const baseStyles = 'text-base font-medium tracking-[0.16px] leading-[22px]';
   const colorStyles = isPrimary
     ? isDestructive
@@ -30,6 +39,10 @@ const getTextStyles = (isPrimary: boolean, isDestructive: boolean) => {
     : isDestructive
       ? 'text-ruby-800'
       : 'text-gray-950';
+
+  if (isPrimary && !isDestructive && tone === 'brand') {
+    return [tailwind.style(baseStyles), { color: '#16273D' }];
+  }
 
   return tailwind.style(baseStyles, colorStyles);
 };
@@ -40,6 +53,7 @@ export const Button = ({
   handlePress,
   variant = 'primary',
   disabled = false,
+  tone = 'default',
 }: ButtonProps) => {
   const { handlers, animatedStyle } = useScaleAnimation();
   const haptic = useHaptic(isDestructive ? 'medium' : 'selection');
@@ -61,9 +75,9 @@ export const Button = ({
         accessible
         accessibilityRole="button"
         accessibilityState={{ disabled }}
-        style={({ pressed }) => getButtonStyles(isPrimary, pressed)}
+        style={({ pressed }) => getButtonStyles(isPrimary, pressed, tone)}
         {...handlers}>
-        <Animated.Text style={getTextStyles(isPrimary, isDestructive)}>{text}</Animated.Text>
+        <Animated.Text style={getTextStyles(isPrimary, isDestructive, tone)}>{text}</Animated.Text>
       </Pressable>
     </Animated.View>
   );

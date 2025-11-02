@@ -42,7 +42,7 @@ export default (_ctx: ConfigContext): ExpoConfig => {
     splash: {
       image: './assets/splash.png',
       resizeMode: 'contain',
-      backgroundColor: '#ffffff',
+      backgroundColor: '#F8F5F3',
       enableFullScreenImage_legacy: true,
     },
     ios: {
@@ -65,7 +65,7 @@ export default (_ctx: ConfigContext): ExpoConfig => {
       associatedDomains,
     },
     android: {
-      adaptiveIcon: { foregroundImage: './assets/adaptive-icon.png', backgroundColor: '#ffffff' },
+      adaptiveIcon: { foregroundImage: './assets/adaptive-icon.png', backgroundColor: '#F8F5F3' },
       package: androidPackageName,
       permissions: ['android.permission.CAMERA', 'android.permission.RECORD_AUDIO'],
       // Please use the relative path to the google-services.json file
