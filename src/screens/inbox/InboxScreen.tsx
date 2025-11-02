@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, RefreshControl, StatusBar } from 'react-native';
+import { ActivityIndicator, RefreshControl, StatusBar, StyleSheet } from 'react-native';
 import Animated, {
   LinearTransition,
   runOnJS,
@@ -28,6 +28,12 @@ import i18n from '@/i18n';
 import { selectSortOrder } from '@/store/notification/notificationFilterSlice';
 import { EmptyStateIcon } from '@/svg-icons';
 import { InboxSortTypes } from '@/store/notification/notificationTypes';
+
+const SARA_COLORS = {
+  background: '#F8F5F3',
+  accent: '#4CB6AC',
+  textSecondary: '#4B5D6E',
+};
 
 const AnimatedFlashlist = Animated.createAnimatedComponent(FlashList<Notification>);
 
@@ -64,7 +70,9 @@ const InboxList = () => {
           'flex-1 items-center justify-center pt-8',
           `pb-[${TAB_BAR_HEIGHT}px]`,
         )}>
-        {isAllNotificationsFetched ? null : <ActivityIndicator size="small" />}
+        {isAllNotificationsFetched ? null : (
+          <ActivityIndicator size="small" color={SARA_COLORS.accent} />
+        )}
       </Animated.View>
     );
   });
@@ -137,7 +145,7 @@ const InboxList = () => {
   return shouldShowEmptyLoader ? (
     <Animated.View
       style={tailwind.style('flex-1 items-center justify-center', `pb-[${TAB_BAR_HEIGHT}px]`)}>
-      <ActivityIndicator />
+      <ActivityIndicator color={SARA_COLORS.accent} />
     </Animated.View>
   ) : notifications.length === 0 ? (
     <Animated.ScrollView
@@ -146,8 +154,9 @@ const InboxList = () => {
         'flex-1 items-center justify-center',
         `pb-[${TAB_BAR_HEIGHT}px]`,
       )}>
-      <EmptyStateIcon />
-      <Animated.Text style={tailwind.style('pt-6 text-md tracking-[0.32px] text-gray-800')}>
+      <EmptyStateIcon stroke={SARA_COLORS.accent} />
+      <Animated.Text
+        style={[tailwind.style('pt-6 text-md tracking-[0.32px]'), styles.emptyStateText]}>
         {i18n.t('NOTIFICATION.EMPTY')}
       </Animated.Text>
     </Animated.ScrollView>
@@ -180,12 +189,8 @@ const InboxScreen = () => {
   }, [dispatch]);
 
   return (
-    <SafeAreaView edges={['top']} style={tailwind.style('flex-1 bg-white')}>
-      <StatusBar
-        translucent
-        backgroundColor={tailwind.color('bg-white')}
-        barStyle={'dark-content'}
-      />
+    <SafeAreaView edges={['top']} style={[tailwind.style('flex-1'), styles.container]}>
+      <StatusBar translucent backgroundColor={SARA_COLORS.background} barStyle={'dark-content'} />
       <InboxListStateProvider>
         <InboxHeader markAllAsRead={markAllAsRead} />
         <InboxList />
@@ -195,3 +200,12 @@ const InboxScreen = () => {
 };
 
 export default InboxScreen;
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: SARA_COLORS.background,
+  },
+  emptyStateText: {
+    color: SARA_COLORS.textSecondary,
+  },
+});

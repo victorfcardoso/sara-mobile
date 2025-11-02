@@ -10,7 +10,15 @@ import { PriorityIndicator, ChannelIndicator } from '@/components-next/list-comp
 import { Inbox } from '@/types/Inbox';
 import { ConversationAdditionalAttributes } from '@/types/Conversation';
 import { NotificationTypeIndicator } from './NotificationTypeIndicator';
-import { Dimensions } from 'react-native';
+import { Dimensions, StyleSheet } from 'react-native';
+
+const SARA_COLORS = {
+  primaryText: '#16273D',
+  secondaryText: '#4B5D6E',
+  metaText: '#6C778A',
+  divider: '#E6E2DD',
+  readOverlay: 'rgba(248, 245, 243, 0.65)',
+};
 
 type InboxItemProps = {
   isRead: boolean;
@@ -50,25 +58,28 @@ export const InboxItemComponent = (props: InboxItemProps) => {
   const hasAssignee = assignee?.name || assignee?.thumbnail;
 
   return (
-    <Animated.View style={tailwind.style('ml-3 py-3 pr-4 border-b-[1px] border-b-blackA-A3')}>
-      <Animated.View style={tailwind.style('')}>
+    <Animated.View style={[tailwind.style('ml-3 py-3 pr-4 border-b-[1px]'), styles.divider]}>
+      <Animated.View>
         <AnimatedNativeView
           style={tailwind.style('flex flex-row justify-between items-center h-[24px]')}>
           <AnimatedNativeView
             style={tailwind.style('flex flex-row items-center h-[24px] gap-[5px]')}>
             <Animated.Text
               numberOfLines={1}
-              style={tailwind.style(
-                'text-base font-inter-medium-24 tracking-[0.24px] text-gray-950 capitalize',
-                `max-w-[${width - 250}px]`,
-              )}>
+              style={[
+                tailwind.style(
+                  'text-base font-inter-medium-24 tracking-[0.24px] capitalize',
+                  `max-w-[${width - 250}px]`,
+                ),
+                styles.primaryText,
+              ]}>
               {sender.name || ''}
             </Animated.Text>
             <NativeView style={tailwind.style('flex flex-row items-center gap-0.5')}>
-              <Animated.Text style={tailwind.style('text-sm font-inter-420-20 text-gray-700')}>
+              <Animated.Text style={[tailwind.style('text-sm font-inter-420-20'), styles.metaText]}>
                 #
               </Animated.Text>
-              <Animated.Text style={tailwind.style('text-sm font-inter-420-20 text-gray-700')}>
+              <Animated.Text style={[tailwind.style('text-sm font-inter-420-20'), styles.metaText]}>
                 {conversationId}
               </Animated.Text>
             </NativeView>
@@ -80,9 +91,10 @@ export const InboxItemComponent = (props: InboxItemProps) => {
             )}
             <NativeView>
               <Animated.Text
-                style={tailwind.style(
-                  'text-sm font-inter-420-20 leading-[16px] tracking-[0.32px] text-gray-700',
-                )}>
+                style={[
+                  tailwind.style('text-sm font-inter-420-20 leading-[16px] tracking-[0.32px]'),
+                  styles.metaText,
+                ]}>
                 {lastActivityAt()}
               </Animated.Text>
             </NativeView>
@@ -100,9 +112,12 @@ export const InboxItemComponent = (props: InboxItemProps) => {
             )}
 
             <Animated.Text
-              style={tailwind.style(
-                'font-inter-420-20 text-md text-gray-900 leading-[17px] tracking-[0.32px] flex-shrink',
-              )}
+              style={[
+                tailwind.style(
+                  'font-inter-420-20 text-md leading-[17px] tracking-[0.32px] flex-shrink',
+                ),
+                styles.secondaryText,
+              ]}
               numberOfLines={1}
               ellipsizeMode="tail">
               {pushMessageTitle}
@@ -112,7 +127,7 @@ export const InboxItemComponent = (props: InboxItemProps) => {
         </Animated.View>
       </Animated.View>
       {isRead && (
-        <Animated.View style={tailwind.style('absolute bg-white opacity-50 inset-0 z-20')} />
+        <Animated.View style={[tailwind.style('absolute inset-0 z-20'), styles.readOverlay]} />
       )}
     </Animated.View>
   );
@@ -120,3 +135,21 @@ export const InboxItemComponent = (props: InboxItemProps) => {
 
 InboxItemComponent.displayName = 'InboxItem';
 export const InboxItem = React.memo(InboxItemComponent);
+
+const styles = StyleSheet.create({
+  divider: {
+    borderBottomColor: SARA_COLORS.divider,
+  },
+  primaryText: {
+    color: SARA_COLORS.primaryText,
+  },
+  secondaryText: {
+    color: SARA_COLORS.secondaryText,
+  },
+  metaText: {
+    color: SARA_COLORS.metaText,
+  },
+  readOverlay: {
+    backgroundColor: SARA_COLORS.readOverlay,
+  },
+});

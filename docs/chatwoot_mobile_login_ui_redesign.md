@@ -1,0 +1,41 @@
+# Chatwoot Mobile Login – Sara Branding Refresh
+
+## Overview
+- Date: November 2, 2025
+- Scope: `sara-mobile` fork, login flow (`src/screens/auth/LoginScreen.tsx`) and shared CTA button (`src/components-next/button/Button.tsx`).
+- Goal: align the mobile login with Sara AI’s brand system (beige canvas, navy typography, teal actions) while keeping the Sara-first authentication flow intact.
+
+## Key Updates
+- **Hero copy & layout**: replaced the upstream Chatwoot title with Sara messaging – headline now reads “WhatsApp assistant for scheduling” (Portuguese: “Assistente WhatsApp para agendamentos”) using the brand navy `#16273D`. The secondary paragraph keeps the existing bilingual scheduling blurb.
+- **Removed info callout**: dropped the teal informational card and embedded mark to keep the screen minimal and avoid redundant copy about Chatwoot bridging.
+- **Brand assets**: swapped the generic Chatwoot wordmark for `src/assets/images/sara_wordmark.png`; removed the supplementary mark from the page chrome.
+- **Palette & surfaces**: set the background to the Sara off-white `#F8F5F3`, fields to white with mint border `#CCE6DE`, and helper links to muted slate `#566273`.
+- **Primary CTA**: extended the shared `Button` component with `tone="brand"` to render the teal fill `#4CB6AC` and dark text, then applied it to the login button.
+- **State helpers**: centralized style arrays/handlers (password toggle, helper links, bottom sheet props) to keep JSX tidy after the visual tweaks.
+
+## 2 Nov 2025 – Follow-up polish
+- Headline sub-copy now uses a sentence break instead of an em dash (`payments. All with Sara AI.`) to mirror the marketing tone; Portuguese copy was updated to match.
+- Removed the in-form “Change URL” link so the screen stays focused on Sara-first auth; base URL can still be adjusted via the Configure URL route that auto-opens when unset.
+- Increased the Sara wordmark footprint (216×64) so the hero lockup reads cleanly on modern devices.
+- Refreshed app chrome: `assets/icon.png` now ships the new Sara mark from `workspace/assets/icon.icon`, the splash screen (`assets/splash.png`, beige `#F8F5F3` background) displays the same logo instead of the legacy Chatwoot art, and the iOS native assets (`ios/Chatwoot/Images.xcassets/{AppIcon.appiconset,SplashScreenLogo.imageset}`) mirror the same branding.
+- iOS launch screen storyboard (`ios/Chatwoot/SplashScreen.storyboard`) and named color now share the Sara beige (`#F8F5F3`), so the native splash no longer flashes the Chatwoot palette before React loads.
+- 2nd pass: splash artwork now centers the circular Sara mark (`assets/splash.png`, `ios/Chatwoot/Images.xcassets/SplashScreenLogo.imageset`) for brand consistency with the home screen icon.
+- Latest tweak: increased the splash mark scaling (≈44% of canvas width on iOS, 50% on Expo) so the Sara profile disk reads larger on launch.
+
+## Assets Referenced
+- `src/assets/images/sara_wordmark.png` – rectangular wordmark added for the hero.
+- `src/assets/images/sara_mark.png` – still available but no longer rendered on the login screen.
+
+## Implementation Notes
+- Sara-first auth flow and localization remain untouched; only presentation changed.
+- New helper styles wrap Tailwind presets with Sara colors to simplify future brand updates.
+- `Button` tone extension is backward compatible (defaults to existing variants).
+
+## Testing / Validation
+- Lint: `pnpm eslint src/screens/auth/LoginScreen.tsx` (passes).
+- Visual: run a development build (`pnpm expo run:ios` or `pnpm expo run:android`). Expo Go will fail due to missing native Firebase modules; use a dev client instead.
+
+## Follow-ups
+- Capture fresh screenshots for internal docs / release notes once QA approves.
+- If other screens need the teal CTA, reuse `tone="brand"` instead of duplicating styles.
+- Consider migrating helper styles into a shared theme file if more Sara-specific layouts ship.
