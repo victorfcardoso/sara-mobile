@@ -31,38 +31,39 @@ class APIService {
     return APIService.instance;
   }
 
-  private getHeaders() {
-    const store = getStore();
-    const state = store.getState();
-    const headers = state.auth.headers;
-    if (!headers) return {};
-
-    return {
-      'access-token': headers['access-token'],
-      uid: headers.uid,
-      client: headers.client,
-    };
-  }
-
   private setupInterceptors() {
     this.api.interceptors.request.use(
       async (config: AxiosRequestConfig): Promise<InternalAxiosRequestConfig> => {
-        const headers = this.getHeaders();
         const store = getStore();
         const state = store.getState();
-        config.baseURL = state.settings?.installationUrl;
-        const accountId = state.auth.user?.account_id;
-        if (accountId && config.url && !nonAccountRoutes.includes(config.url)) {
-          config.url = `api/v1/accounts/${accountId}/${config.url}`;
-        } else if (nonAccountRoutes.includes(config.url || '')) {
-          config.url = `api/v1/${config.url}`;
+        const session = state.auth.chatwootSession;
+
+        const baseUrl = session?.installationUrl ?? state.settings?.installationUrl;
+        if (baseUrl) {
+          config.baseURL = baseUrl;
         }
+
+        const accountId = state.auth.user?.account_id ?? session?.accountId;
+        const requestUrl = config.url ?? '';
+        let resolvedUrl = requestUrl;
+
+        if (!/^https?:\/\//i.test(requestUrl)) {
+          if (accountId && !nonAccountRoutes.includes(requestUrl)) {
+            resolvedUrl = `api/v1/accounts/${accountId}/${requestUrl}`;
+          } else if (nonAccountRoutes.includes(requestUrl)) {
+            resolvedUrl = `api/v1/${requestUrl}`;
+          }
+        }
+        config.url = resolvedUrl;
+
+        const mergedHeaders = {
+          ...config.headers,
+          ...(session?.apiAccessToken ? { api_access_token: session.apiAccessToken } : {}),
+        };
+
         return {
           ...config,
-          headers: {
-            ...config.headers,
-            ...headers,
-          },
+          headers: mergedHeaders,
         } as InternalAxiosRequestConfig;
       },
       (error: AxiosError) => Promise.reject(error),

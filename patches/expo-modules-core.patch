@@ -1,0 +1,21 @@
+diff --git a/ios/EXLegacyExpoViewProtocol.h b/ios/EXLegacyExpoViewProtocol.h
+index 00aacdb07728091814ba65fd0c3bdd0472bef293..e22e322a4e7481ff93b9ce9a0fecf8f070ac4e2f 100644
+--- a/ios/EXLegacyExpoViewProtocol.h
++++ b/ios/EXLegacyExpoViewProtocol.h
+@@ -1,7 +1,10 @@
+ // Copyright 2022-present 650 Industries. All rights reserved.
+ 
++#import <Foundation/Foundation.h>
+ #import <ExpoModulesCore/EXModuleRegistry.h>
+ 
++NS_ASSUME_NONNULL_BEGIN
++
+ /**
+  The protocol required for the Objective-C views to be initialized with the legacy module registry.
+  - ToDo: Remove once all views are migrated to the new API and Swift.
+@@ -11,3 +14,5 @@
+ - (instancetype)initWithModuleRegistry:(nullable EXModuleRegistry *)moduleRegistry;
+ 
+ @end
++
++NS_ASSUME_NONNULL_END

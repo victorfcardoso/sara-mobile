@@ -178,7 +178,8 @@
   },
   "pnpm": {
     "patchedDependencies": {
-      "ffmpeg-kit-react-native@6.0.2": "patches/ffmpeg-kit-react-native.patch"
+      "ffmpeg-kit-react-native@6.0.2": "patches/ffmpeg-kit-react-native.patch",
+      "expo-modules-core": "patches/expo-modules-core.patch"
     }
   }
 }

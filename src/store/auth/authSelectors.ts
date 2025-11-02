@@ -4,7 +4,14 @@ import { Account } from '@/types/Account';
 
 export const selectAuth = (state: RootState) => state.auth;
 
-export const selectAuthHeaders = createSelector(selectAuth, auth => auth.headers);
+export const selectChatwootSession = createSelector(selectAuth, auth => auth.chatwootSession);
+
+export const selectSaraTokens = createSelector(selectAuth, auth => auth.saraTokens);
+
+export const selectChatwootApiToken = createSelector(
+  selectChatwootSession,
+  session => session?.apiAccessToken ?? null,
+);
 
 export const selectUser = createSelector(selectAuth, auth => auth.user);
 
@@ -49,9 +56,3 @@ export const selectCurrentUserAccount = createSelector(selectAuth, auth => {
   );
   return currentAccount;
 });
-
-export const selectMfaToken = createSelector(selectAuth, auth => auth.mfaToken);
-
-export const selectIsMfaRequired = createSelector(selectAuth, auth => auth.mfaToken !== null);
-
-export const selectIsVerifyingMfa = createSelector(selectAuth, auth => auth.uiFlags.isVerifyingMfa);

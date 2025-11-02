@@ -1,0 +1,82 @@
+# Sara Mobile Architecture Overview
+
+> Last updated: 2 Nov 2025  
+> Audience: teammates & LLM agents bringing Sara branding to the Chatwoot mobile fork.
+
+## 1. High-Level Layout
+
+- **App shell** — `App.tsx` bootstraps Redux, restores persisted state, and calls `bootstrapInstallationUrl` so a default Chatwoot tenant is available before the UI renders.
+- **Navigation** — `src/navigation` wraps React Navigation. `AppTabs` chooses between the logged-in tab navigator and the `AuthStack` (login/reset MFAs). Deep linking and SSO callbacks are handled in `src/navigation/index.tsx`.
+- **State management** — Redux Toolkit + `redux-persist`. Feature slices live under `src/store/<domain>`; `src/store/reducers.ts` combines them. `settingsSlice` seeds URLs (installation/base/websocket) and Redux thunks in `settingsActions.ts` talk to the Chatwoot API.
+- **Networking** — `src/services/APIService.ts` configures Axios per request, pulling the current `installationUrl` from state. ActionCable websockets are managed by `src/utils/actionCable.ts` when the user is logged in.
+- **UI layer** — Components follow upstream Chatwoot conventions (`src/components-next`, `src/screens`). Tailwind via `twrnc` drives styling.
+
+## 2. Directory Cheat Sheet
+
+| Path | Purpose |
+| ---- | ------- |
+| `src/app.tsx` | Entry point, registers store + persistence, seeds tenant defaults. |
+| `src/config/` | `chatwootConfig.ts` reads Expo `extra` → builds installation/base/websocket URLs; `appConfig.ts` exposes scheme/env accessors. |
+| `src/store/settings/` | Installation URL bootstrap (`bootstrap.ts`), slice reducers, async thunks, selectors. |
+| `src/navigation/` | Navigation containers, tab stack, onboarding vs. main app routing, deep-link logic. |
+| `src/screens/auth/` | Login, configure URL (kept for support), MFA, reset password. |
+| `src/utils/` | Helpers for SSO, push notifications, websocket connectors, etc. |
+| `docs/SARA_MOBILE_NOTES.md` | Running log (env values, Firebase asset locations, setup checklist). |
+| `docs/SARA_MOBILE_ARCHITECTURE.md` (this file) | Architectural context for future maintainers. |
+
+## 3. Runtime Configuration
+
+- Expo dynamic config (`app.config.ts`) now exposes `extra.defaultInstallationUrl` sourced from `.env` (`EXPO_PUBLIC_CHATWOOT_BASE_URL`). `chatwootConfig.ts` prefers this value, giving us Option A (no Configure URL screen on first launch).
+- `.env` controls bundle IDs, package names, intent filters, and SSO hosts. Expo only expands `EXPO_PUBLIC_*`, so secrets stay out of these variables.
+- `EXPO_PUBLIC_SARA_API_BASE_URL` points the app at the Sara backend. `src/config/saraConfig.ts` reads this value (or the Expo extra) so we can call `/auth/login` and `/chatwoot/mobile-auth` before touching Chatwoot.
+- Firebase:
+  - iOS plist expected at `firebase/GoogleService-Info.plist`.
+  - Android `google-services.json` to be placed alongside when ready.
+  - Use Firebase Console to generate files for bundle id `com.vfc.sara` / package `com.sara.conversations`. Placeholder plists crash (`FIRApp configure`).
+- Patching:
+  - `patches/expo-modules-core.patch` applies `NS_ASSUME_NONNULL` fixes so Xcode 16 builds succeed.
+  - `patches/ffmpeg-kit-react-native.patch` aligns upstream Expo settings.
+
+## 4. Login → Conversations Flow
+
+1. **Bootstrap** — `PersistGate` restores state; if `installationUrl` is missing, `bootstrapInstallationUrl()` dispatches `ensureInstallationDefaults` so Redux copies the Expo-configured defaults.
+2. **Auth stack** — With a seeded installation URL, `LoginScreen` jumps straight to email/password auth. If the URL is blank (support/debug), user is redirected to `ConfigURLScreen`.
+3. **Authentication** — `authActions.login` now calls Sara `/auth/login`, then exchanges the Sara JWT for `/chatwoot/mobile-auth` so we receive the agent's `api_access_token`, installation URL, and account metadata. The mobile client immediately fetches `/api/v1/profile` with that token to hydrate the Chatwoot `User` state.
+4. **Post-login** — With the Chatwoot session cached in Redux, `AppTabs` loads inboxes, labels, and configures ActionCable using `settingsSelectors.selectWebSocketUrl`.
+5. **Conversations** — `ChatScreen` consumes state from `conversation/...` slices. Deep links from notifications use the linking config buried in `AppNavigationContainer`.
+
+## 5. Networking & Realtime
+
+- **REST** — All API calls go through `APIService` (Axios). The interceptor pulls the Chatwoot installation URL + `api_access_token` from the Sara-backed session and rewrites routes to `api/v1/accounts/<account_id>/…`.
+- **ActionCable** — `src/utils/actionCable.ts` connects to `webSocketUrl` (derived as `wss://<install>/cable`). Credentials (`pubSubToken`, `accountId`) are sourced from Redux selectors.
+- **Push notifications** — Firebase Cloud Messaging via `@react-native-firebase/messaging`. Device registration happens inside `settingsActions.saveDeviceDetails`.
+- **SSO** — `SsoUtils` now only surfaces error toasts if the legacy `/app/login/sso` flow fires unexpectedly; the primary path is Sara-first login.
+
+## 6. Build & Dev Workflow
+
+- Package manager: **pnpm**. Enable via `corepack enable` before running `pnpm install`.
+- Local dev: `pnpm exec expo start --dev-client --tunnel`.
+- Native builds:
+  ```bash
+  pnpm exec expo prebuild -p ios
+  cd ios && pod install
+  pnpm exec expo run:ios -d   # or run from Xcode
+  ```
+  Repeat prebuild + pod install whenever `.env` or native config changes.
+- Testing: upstream project still ships some failing storybook/spec TS checks (`pnpm exec tsc --noEmit` fails on known issues). No Sara-specific tests added yet.
+
+## 7. Known Quirks / Gotchas
+
+- **Firebase config** — Always replace placeholders before running on device; otherwise the app crashes at launch with `com.firebase.core`.
+- **TypeScript warnings** — `tsc` currently fails on storybook and spinner types; track upstream for fixes before enforcing.
+- **Expo patching** — After pulling new dependencies, rerun `pnpm install` so patch packages apply.
+- **URL reconfiguration** — “Configure URL” screen remains available in Settings for support, but first-run flow is hard-wired to Sara’s tenant.
+
+## 8. Related References
+
+- [Chatwoot Mobile README](https://github.com/chatwoot/chatwoot-mobile-app) — upstream instructions, SDK versions.
+- [SARA_MOBILE_NOTES](./SARA_MOBILE_NOTES.md) — environment specifics & change log.
+- `AGENTS.md` (repo root) — cross-repo coordination guide (backend + mobile).
+
+Keep this document updated whenever we introduce new flows (e.g., push notification customizations, Expo EAS adoption, Android branding) so future assistants can reason about the project quickly.
+

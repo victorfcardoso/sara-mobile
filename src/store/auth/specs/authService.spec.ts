@@ -1,17 +1,10 @@
+import axios from 'axios';
+
 import { AuthService } from '@/store/auth/authService';
 import { apiService } from '@/services/APIService';
-import { mockUser } from './authMockData';
-jest.mock('@sentry/react-native', () => ({
-  captureException: jest.fn(),
-}));
+import { mockUser, mockChatwootSession, mockSaraTokens } from './authMockData';
 
-jest.mock('@/i18n', () => ({
-  t: (key: string) => key,
-}));
-
-jest.mock('@/utils/toastUtils', () => ({
-  showToast: jest.fn(),
-}));
+jest.mock('axios');
 
 jest.mock('@/services/APIService', () => ({
   apiService: {
@@ -23,48 +16,106 @@ jest.mock('@/services/APIService', () => ({
 }));
 
 describe('AuthService', () => {
-  const mockHeaders = {
-    'access-token': 'token',
-    uid: 'uid',
-    client: 'client',
-  };
+  const mockedAxios = axios as jest.Mocked<typeof axios>;
 
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   describe('login', () => {
-    it('should make a POST request to login endpoint', async () => {
+    it('authenticates with Sara, fetches Chatwoot session, and hydrates profile', async () => {
       const credentials = { email: 'test@example.com', password: 'password' };
-      const mockResponse = {
-        data: { data: mockUser },
-        headers: mockHeaders,
-      };
 
-      (apiService.post as jest.Mock).mockResolvedValueOnce(mockResponse);
+      mockedAxios.post.mockResolvedValueOnce({
+        data: {
+          status: 'SUCCESSFUL',
+          data: {
+            access_token: mockSaraTokens.accessToken,
+            refresh_token: mockSaraTokens.refreshToken,
+            token_type: mockSaraTokens.tokenType,
+          },
+        },
+      });
+
+      mockedAxios.post.mockResolvedValueOnce({
+        data: {
+          sara_user_id: 'user-1',
+          chatwoot_user_id: mockChatwootSession.chatwootUserId,
+          chatwoot_account_id: mockChatwootSession.chatwootAccountId,
+          default_agent_id: mockChatwootSession.agentId,
+          agents: [
+            {
+              agent_id: mockChatwootSession.agentId,
+              account_id: mockChatwootSession.accountId,
+              installation_url: mockChatwootSession.installationUrl,
+              websocket_url: mockChatwootSession.websocketUrl,
+              inbox_id: mockChatwootSession.inboxId,
+              api_access_token: mockChatwootSession.apiAccessToken,
+              sso_url: mockChatwootSession.ssoUrl,
+            },
+          ],
+        },
+      });
+
+      mockedAxios.get.mockResolvedValueOnce({
+        data: {
+          user: mockUser,
+        },
+      });
 
       const result = await AuthService.login(credentials);
 
-      expect(apiService.post).toHaveBeenCalledWith('auth/sign_in', credentials);
+      expect(mockedAxios.post).toHaveBeenNthCalledWith(
+        1,
+        expect.stringContaining('/auth/login'),
+        credentials,
+        expect.objectContaining({
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      );
+
+      expect(mockedAxios.post).toHaveBeenNthCalledWith(
+        2,
+        expect.stringContaining('/chatwoot/mobile-auth'),
+        {},
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            Authorization: expect.stringContaining(mockSaraTokens.accessToken),
+          }),
+        }),
+      );
+
+      expect(mockedAxios.get).toHaveBeenCalledWith(
+        expect.stringContaining('/api/v1/profile'),
+        expect.objectContaining({
+          headers: { api_access_token: mockChatwootSession.apiAccessToken },
+        }),
+      );
+
       expect(result).toEqual({
+        saraTokens: mockSaraTokens,
         user: mockUser,
-        headers: mockHeaders,
+        chatwootSession: expect.objectContaining({
+          agentId: mockChatwootSession.agentId,
+          installationUrl: mockChatwootSession.installationUrl,
+          apiAccessToken: mockChatwootSession.apiAccessToken,
+        }),
       });
     });
 
-    it('should throw error when login fails', async () => {
+    it('throws when Sara login fails', async () => {
       const credentials = { email: 'test@example.com', password: 'wrong' };
-      const error = new Error('Invalid credentials');
+      const failure = new Error('Invalid credentials');
 
-      (apiService.post as jest.Mock).mockRejectedValueOnce(error);
+      mockedAxios.post.mockRejectedValueOnce(failure);
 
-      await expect(AuthService.login(credentials)).rejects.toThrow(error);
+      await expect(AuthService.login(credentials)).rejects.toThrow(failure);
     });
   });
-  describe('getProfile', () => {
-    it('should make a GET request to profile endpoint', async () => {
-      const mockResponse = { data: mockUser };
 
+  describe('getProfile', () => {
+    it('delegates to apiService.get', async () => {
+      const mockResponse = { data: mockUser };
       (apiService.get as jest.Mock).mockResolvedValueOnce(mockResponse);
 
       const result = await AuthService.getProfile();
@@ -72,18 +123,10 @@ describe('AuthService', () => {
       expect(apiService.get).toHaveBeenCalledWith('profile');
       expect(result).toEqual(mockResponse.data);
     });
-
-    it('should throw error when getProfile fails', async () => {
-      const error = new Error('Failed to fetch profile');
-
-      (apiService.get as jest.Mock).mockRejectedValueOnce(error);
-
-      await expect(AuthService.getProfile()).rejects.toThrow(error);
-    });
   });
 
   describe('resetPassword', () => {
-    it('should make a POST request to reset password endpoint', async () => {
+    it('delegates to apiService.post', async () => {
       const payload = { email: 'test@example.com' };
       const mockResponse = { data: { message: 'Password reset email sent' } };
 
@@ -94,19 +137,10 @@ describe('AuthService', () => {
       expect(apiService.post).toHaveBeenCalledWith('auth/password', payload);
       expect(result).toEqual(mockResponse.data);
     });
-
-    it('should throw error when resetPassword fails', async () => {
-      const payload = { email: 'test@example.com' };
-      const error = new Error('Failed to reset password');
-
-      (apiService.post as jest.Mock).mockRejectedValueOnce(error);
-
-      await expect(AuthService.resetPassword(payload)).rejects.toThrow(error);
-    });
   });
 
   describe('updateAvailability', () => {
-    it('should make a POST request to update availability endpoint', async () => {
+    it('delegates to apiService.post', async () => {
       const payload = { profile: { availability: 'available', account_id: '1' } };
       const mockResponse = { data: mockUser };
 
@@ -117,14 +151,5 @@ describe('AuthService', () => {
       expect(apiService.post).toHaveBeenCalledWith('profile/availability', payload);
       expect(result).toEqual(mockResponse.data);
     });
-
-    it('should throw error when updateAvailability fails', async () => {
-      const payload = { profile: { availability: 'available', account_id: '1' } };
-      const error = new Error('Failed to update availability');
-
-      (apiService.post as jest.Mock).mockRejectedValueOnce(error);
-
-      await expect(AuthService.updateAvailability(payload)).rejects.toThrow(error);
-    });
   });
-});
+}

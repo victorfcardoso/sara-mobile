@@ -10,21 +10,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EMAIL_REGEX } from '@/constants';
-import { EyeIcon, EyeSlash, LockIcon } from '@/svg-icons';
+import { EyeIcon, EyeSlash } from '@/svg-icons';
 import { tailwind } from '@/theme';
 import i18n from '@/i18n';
 import { resetAuth } from '@/store/auth/authSlice';
 import { authActions } from '@/store/auth/authActions';
 import { useAppDispatch, useAppSelector } from '@/hooks';
 
-import {
-  BottomSheetBackdrop,
-  BottomSheetHeader,
-  LanguageList,
-  Button,
-  Icon,
-  AuthButton,
-} from '@/components-next';
+import { BottomSheetBackdrop, BottomSheetHeader, LanguageList, Button, Icon } from '@/components-next';
 import {
   selectInstallationUrl,
   selectBaseUrl,
@@ -34,7 +27,6 @@ import {
 import { selectIsLoggingIn } from '@/store/auth/authSelectors';
 import { setLocale } from '@/store/settings/settingsSlice';
 import { useRefsContext } from '@/context/RefsContext';
-import { SsoUtils } from '@/utils/ssoUtils';
 
 type FormData = {
   email: string;
@@ -91,23 +83,12 @@ const LoginScreen = () => {
     dispatch(resetAuth());
 
     try {
-      const result = await dispatch(authActions.login({ email, password })).unwrap();
-
-      // Check if MFA is required in the response
-      if ('mfa_required' in result && result.mfa_required) {
-        // Navigate directly to MFA screen with the token
-        navigation.navigate('MFAScreen' as never);
-      }
-      // If MFA not required, the auth state will be updated and
-      // the app will automatically navigate to the dashboard
+      await dispatch(authActions.login({ email, password })).unwrap();
+      // Successful login will switch navigation via Redux state listeners
     } catch {
       // Login error is handled by Redux and displayed in the UI
     }
   };
-
-  // TODO: Change this condition based on EE check
-  // Show SSO login button only if installation URL is part of the configured Chatwoot cloud hosts
-  const showSsoLogin = isChatwootCloud;
 
   const openResetPassword = () => {
     navigation.navigate('ResetPassword' as never);
@@ -119,24 +100,6 @@ const LoginScreen = () => {
 
   const onChangeLanguage = (locale: string) => {
     dispatch(setLocale(locale));
-  };
-
-  const handleSsoLogin = async () => {
-    if (!installationUrl) {
-      return;
-    }
-
-    try {
-      const result = await SsoUtils.loginWithSSO(installationUrl);
-
-      if (result.type === 'success' && result.url) {
-        const ssoParams = SsoUtils.parseCallbackUrl(result.url);
-        await SsoUtils.handleSsoCallback(ssoParams, dispatch);
-      }
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (error) {
-      // SSO login error handled silently
-    }
   };
 
   return (
@@ -167,28 +130,6 @@ const LoginScreen = () => {
               {i18n.t('LOGIN.DESCRIPTION', { baseUrl })}
             </Animated.Text>
           </View>
-
-          {showSsoLogin && (
-            <View>
-              <AuthButton
-                text={i18n.t('LOGIN.LOGIN_VIA_SSO')}
-                icon={<LockIcon />}
-                handlePress={handleSsoLogin}
-                disabled={isLoggingIn}
-                variant="outline"
-                style={tailwind.style('mt-8')}
-              />
-
-              <View style={tailwind.style('flex-row items-center my-6')}>
-                <View style={tailwind.style('flex-1 h-px bg-gray-300')} />
-                <Animated.Text style={tailwind.style('px-4 text-sm text-gray-600')}>
-                  OR
-                </Animated.Text>
-                <View style={tailwind.style('flex-1 h-px bg-gray-300')} />
-              </View>
-            </View>
-          )}
-
           <Controller
             control={control}
             rules={{

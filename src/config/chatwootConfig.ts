@@ -1,5 +1,9 @@
+import Constants from 'expo-constants';
+
 const DEFAULT_CHATWOOT_BASE_URL =
-  process.env.EXPO_PUBLIC_CHATWOOT_BASE_URL ?? 'https://app.chatwoot.com';
+  (Constants?.expoConfig?.extra?.defaultInstallationUrl as string | undefined) ??
+  process.env.EXPO_PUBLIC_CHATWOOT_BASE_URL ??
+  'https://app.chatwoot.com';
 
 const ensureProtocol = (value: string): string => {
   if (!value) {
@@ -40,7 +44,7 @@ const websocketUrl =
 const rawSsoHosts = process.env.EXPO_PUBLIC_CHATWOOT_SSO_HOSTS ?? baseHost;
 const ssoHosts = rawSsoHosts
   .split(',')
-  .map(host => host.trim().toLowerCase())
+  .map((host: string) => host.trim().toLowerCase())
   .filter(Boolean);
 
 export const chatwootConfig = {

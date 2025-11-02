@@ -5,6 +5,9 @@ settings:
   excludeLinksFromLockfile: false
 
 patchedDependencies:
+  expo-modules-core:
+    hash: n56cmldmpvmfsn662ued7mwbwi
+    path: patches/expo-modules-core.patch
   ffmpeg-kit-react-native@6.0.2:
     hash: 2nq3fjhw7kz4xedvlglmwrryxe
     path: patches/ffmpeg-kit-react-native.patch
@@ -11208,7 +11211,7 @@ snapshots:
       require-from-string: 2.0.2
       resolve-from: 5.0.0
 
-  expo-modules-core@2.2.3:
+  expo-modules-core@2.2.3(patch_hash=n56cmldmpvmfsn662ued7mwbwi):
     dependencies:
       invariant: 2.2.4
 
@@ -11254,7 +11257,7 @@ snapshots:
       expo-font: 13.0.4(expo@52.0.46(@babel/core@7.27.1)(@babel/preset-env@7.27.1(@babel/core@7.27.1))(react-native-webview@13.12.5(react-native@0.76.9(@babel/core@7.27.1)(@babel/preset-env@7.27.1(@babel/core@7.27.1))(@types/react@18.3.20)(react@18.3.1))(react@18.3.1))(react-native@0.76.9(@babel/core@7.27.1)(@babel/preset-env@7.27.1(@babel/core@7.27.1))(@types/react@18.3.20)(react@18.3.1))(react@18.3.1))(react@18.3.1)
       expo-keep-awake: 14.0.3(expo@52.0.46(@babel/core@7.27.1)(@babel/preset-env@7.27.1(@babel/core@7.27.1))(react-native-webview@13.12.5(react-native@0.76.9(@babel/core@7.27.1)(@babel/preset-env@7.27.1(@babel/core@7.27.1))(@types/react@18.3.20)(react@18.3.1))(react@18.3.1))(react-native@0.76.9(@babel/core@7.27.1)(@babel/preset-env@7.27.1(@babel/core@7.27.1))(@types/react@18.3.20)(react@18.3.1))(react@18.3.1))(react@18.3.1)
       expo-modules-autolinking: 2.0.8
-      expo-modules-core: 2.2.3
+      expo-modules-core: 2.2.3(patch_hash=n56cmldmpvmfsn662ued7mwbwi)
       fbemitter: 3.0.0
       react: 18.3.1
       react-native: 0.76.9(@babel/core@7.27.1)(@babel/preset-env@7.27.1(@babel/core@7.27.1))(@types/react@18.3.20)(react@18.3.1)

@@ -1,5 +1,5 @@
 import authReducer, { logout, resetAuth, setAccount } from '@/store/auth/authSlice';
-import { mockUser } from './authMockData';
+import { mockUser, mockChatwootSession, mockSaraTokens } from './authMockData';
 import { AuthState } from '@/store/auth/authSlice';
 import { authActions } from '@/store/auth/authActions';
 import { AvailabilityStatus, UserRole } from '@/types';
@@ -28,15 +28,13 @@ jest.mock('@/services/APIService', () => ({
 describe('Auth Slice', () => {
   const initialState: AuthState = {
     user: null,
-    accessToken: null,
+    saraTokens: null,
+    chatwootSession: null,
     uiFlags: {
       isLoggingIn: false,
       isResettingPassword: false,
-      isVerifyingMfa: false,
     },
-    headers: null,
     error: null,
-    mfaToken: null,
   };
 
   const loggedInState = {
@@ -54,8 +52,8 @@ describe('Auth Slice', () => {
       availability_status: 'online' as AvailabilityStatus,
       type: 'user',
     },
-    accessToken: 'token',
-    headers: { 'access-token': 'token', uid: 'uid', client: 'client' },
+    saraTokens: mockSaraTokens,
+    chatwootSession: mockChatwootSession,
   };
 
   const userWithAccounts = {
@@ -197,13 +195,15 @@ describe('Auth Slice', () => {
     it('should handle successful login', () => {
       const payload = {
         user: mockUser,
-        headers: { 'access-token': 'token', uid: 'uid', client: 'client' },
+        saraTokens: mockSaraTokens,
+        chatwootSession: mockChatwootSession,
       };
       const action = { type: authActions.login.fulfilled.type, payload };
       const state = authReducer(initialState, action);
 
       expect(state.user).toEqual(mockUser);
-      expect(state.headers).toEqual(payload.headers);
+      expect(state.saraTokens).toEqual(payload.saraTokens);
+      expect(state.chatwootSession).toEqual(payload.chatwootSession);
       expect(state.uiFlags.isLoggingIn).toBe(false);
       expect(state.error).toBeNull();
     });

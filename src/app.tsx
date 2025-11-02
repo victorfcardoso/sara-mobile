@@ -6,6 +6,7 @@ import { store, persistor } from './store';
 import { AppNavigator } from '@/navigation';
 
 import i18n from '@/i18n';
+import { bootstrapInstallationUrl } from '@/store/settings/bootstrap';
 
 const Chatwoot = () => {
   useEffect(() => {
@@ -33,7 +34,12 @@ const Chatwoot = () => {
 
   return (
     <Provider store={store}>
-      <PersistGate loading={null} persistor={persistor}>
+      <PersistGate
+        loading={null}
+        persistor={persistor}
+        onBeforeLift={() => {
+          store.dispatch(bootstrapInstallationUrl());
+        }}>
         <AppNavigator />
       </PersistGate>
     </Provider>

@@ -96,6 +96,8 @@ export default (_ctx: ConfigContext): ExpoConfig => {
       ],
     },
     extra: {
+      defaultInstallationUrl: process.env.EXPO_PUBLIC_CHATWOOT_BASE_URL,
+      saraApiBaseUrl: process.env.EXPO_PUBLIC_SARA_API_BASE_URL,
       eas: {
         projectId: process.env.EXPO_PUBLIC_PROJECT_ID,
         storybookEnabled: process.env.EXPO_STORYBOOK_ENABLED,

@@ -1,6 +1,6 @@
 import { authActions } from '@/store/auth/authActions';
 import { AuthService } from '@/store/auth/authService';
-import { mockUser } from './authMockData';
+import { mockUser, mockChatwootSession, mockSaraTokens } from './authMockData';
 
 // Mock the entire AuthService module
 jest.mock('@/store/auth/authService', () => ({
@@ -22,11 +22,6 @@ jest.mock('@/utils/toastUtils', () => ({
 }));
 
 describe('Auth Actions', () => {
-  const mockHeaders = {
-    'access-token': 'token',
-    uid: 'uid',
-    client: 'client',
-  };
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -40,7 +35,8 @@ describe('Auth Actions', () => {
 
     const mockLoginResponse = {
       user: mockUser,
-      headers: mockHeaders,
+      chatwootSession: mockChatwootSession,
+      saraTokens: mockSaraTokens,
     };
 
     it('should handle successful login', async () => {
@@ -60,10 +56,14 @@ describe('Auth Actions', () => {
 
       // Check if correct actions were dispatched
       const actions = dispatch.mock.calls.map(call => call[0].type);
-      expect(actions).toEqual([authActions.login.pending.type, authActions.login.fulfilled.type]);
+      expect(actions).toEqual([
+        authActions.login.pending.type,
+        'settings/applyChatwootSession',
+        authActions.login.fulfilled.type,
+      ]);
 
       // Check the payload of the fulfilled action
-      const fulfilledAction = dispatch.mock.calls[1][0];
+      const fulfilledAction = dispatch.mock.calls[2][0];
       expect(fulfilledAction.payload).toEqual(mockLoginResponse);
     });
 

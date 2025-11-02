@@ -1,21 +1,20 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
+
+import I18n from '@/i18n';
+import { applyChatwootSession } from '@/store/settings/settingsSlice';
+
 import { AuthService } from './authService';
 import type {
   LoginPayload,
   LoginResponse,
-  MfaRequiredResponse,
-  MfaVerificationPayload,
   ResetPasswordPayload,
   ResetPasswordResponse,
   AvailabilityPayload,
   ProfileResponse,
   ApiErrorResponse,
   SetActiveAccountPayload,
-  SsoAuthPayload,
-  SsoAuthResponse,
 } from './authTypes';
 import { handleApiError } from './authUtils';
-import I18n from '@/i18n';
 
 const createAuthThunk = <TResponse, TPayload>(
   type: string,
@@ -33,17 +32,35 @@ const createAuthThunk = <TResponse, TPayload>(
     },
   );
 };
-export const authActions = {
-  login: createAuthThunk<LoginResponse | MfaRequiredResponse, LoginPayload>(
-    'auth/login',
-    AuthService.login,
-    I18n.t('ERRORS.AUTH'),
-  ),
 
-  verifyMfa: createAuthThunk<LoginResponse, MfaVerificationPayload>(
-    'auth/verifyMfa',
-    AuthService.verifyMfa,
-    I18n.t('ERRORS.AUTH'),
+const deriveBaseUrl = (installationUrl: string): string => {
+  try {
+    const parsed = new URL(installationUrl);
+    return parsed.host;
+  } catch {
+    return installationUrl.replace(/^https?:\/\//i, '').replace(/\/$/, '');
+  }
+};
+
+export const authActions = {
+  login: createAsyncThunk<LoginResponse, LoginPayload, { rejectValue: ApiErrorResponse }>(
+    'auth/login',
+    async (payload, { rejectWithValue, dispatch }) => {
+      try {
+        const result = await AuthService.login(payload);
+        const { chatwootSession } = result;
+        dispatch(
+          applyChatwootSession({
+            installationUrl: chatwootSession.installationUrl,
+            webSocketUrl: chatwootSession.websocketUrl,
+            baseUrl: deriveBaseUrl(chatwootSession.installationUrl),
+          }),
+        );
+        return result;
+      } catch (error) {
+        return rejectWithValue(handleApiError(error, I18n.t('ERRORS.AUTH')));
+      }
+    },
   ),
 
   getProfile: createAuthThunk<ProfileResponse, void>('auth/getProfile', () =>
@@ -63,11 +80,5 @@ export const authActions = {
   setActiveAccount: createAuthThunk<ProfileResponse, SetActiveAccountPayload>(
     'auth/setActiveAccount',
     AuthService.setActiveAccount,
-  ),
-
-  loginWithSso: createAuthThunk<SsoAuthResponse, SsoAuthPayload>(
-    'auth/loginWithSso',
-    AuthService.loginWithSso,
-    I18n.t('ERRORS.AUTH'),
   ),
 };

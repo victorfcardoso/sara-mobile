@@ -1,4 +1,4 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import * as RootNavigation from '@/utils/navigationUtils';
 import { NotificationSettings } from './settingsTypes';
 import { Theme } from '@/types/common/Theme';
@@ -47,6 +47,17 @@ export const settingsSlice = createSlice({
   name: 'settings',
   initialState,
   reducers: {
+    ensureInstallationDefaults: state => {
+      if (!state.installationUrl) {
+        state.installationUrl = chatwootConfig.installationUrl;
+      }
+      if (!state.baseUrl) {
+        state.baseUrl = chatwootConfig.baseUrl;
+      }
+      if (!state.webSocketUrl) {
+        state.webSocketUrl = chatwootConfig.webSocketUrl;
+      }
+    },
     resetSettings: state => {
       state.uiFlags.isSettingUrl = false;
       state.uiFlags.isUpdating = false;
@@ -54,6 +65,17 @@ export const settingsSlice = createSlice({
     setLocale: (state, action) => {
       state.localeValue = action.payload;
       state.uiFlags.isLocaleSet = true;
+    },
+    applyChatwootSession: (
+      state,
+      action: PayloadAction<{ installationUrl: string; webSocketUrl: string; baseUrl?: string }>,
+    ) => {
+      const { installationUrl, webSocketUrl, baseUrl } = action.payload;
+      state.installationUrl = installationUrl;
+      state.webSocketUrl = webSocketUrl;
+      if (baseUrl) {
+        state.baseUrl = baseUrl;
+      }
     },
   },
   extraReducers: builder => {
@@ -100,5 +122,6 @@ export const settingsSlice = createSlice({
       });
   },
 });
-export const { resetSettings, setLocale } = settingsSlice.actions;
+export const { ensureInstallationDefaults, resetSettings, setLocale, applyChatwootSession } =
+  settingsSlice.actions;
 export default settingsSlice.reducer;

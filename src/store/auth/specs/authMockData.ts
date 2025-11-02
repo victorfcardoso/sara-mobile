@@ -6,8 +6,20 @@ export const mockUser = {
   type: 'user',
 };
 
-export const mockHeaders = {
-  'access-token': 'SxsseweDSEWESDSSSSFDFDf',
-  uid: 'uid',
-  client: 'client',
+export const mockChatwootSession = {
+  agentId: 'agent-1',
+  accountId: 123,
+  installationUrl: 'https://chat.example.com/',
+  websocketUrl: 'wss://chat.example.com/cable',
+  inboxId: 10,
+  apiAccessToken: 'cw-token',
+  ssoUrl: null,
+  chatwootUserId: '500',
+  chatwootAccountId: '123',
+};
+
+export const mockSaraTokens = {
+  accessToken: 'sara-access',
+  refreshToken: 'sara-refresh',
+  tokenType: 'bearer',
 };

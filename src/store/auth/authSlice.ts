@@ -1,30 +1,26 @@
 import { createSlice } from '@reduxjs/toolkit';
 import { authActions } from './authActions';
 import { User } from '@/types/User';
-import { AuthHeaders } from './authTypes';
+import type { ChatwootSession, SaraTokens } from './authTypes';
 export interface AuthState {
   user: User | null;
-  accessToken: string | null;
+  saraTokens: SaraTokens | null;
+  chatwootSession: ChatwootSession | null;
   uiFlags: {
     isLoggingIn: boolean;
     isResettingPassword: boolean;
-    isVerifyingMfa: boolean;
   };
-  headers: AuthHeaders | null;
   error: string | null;
-  mfaToken: string | null;
 }
 const initialState: AuthState = {
   user: null,
-  accessToken: null,
+  saraTokens: null,
+  chatwootSession: null,
   uiFlags: {
     isLoggingIn: false,
     isResettingPassword: false,
-    isVerifyingMfa: false,
   },
-  headers: null,
   error: null,
-  mfaToken: null,
 };
 export const authSlice = createSlice({
   name: 'auth',
@@ -35,21 +31,16 @@ export const authSlice = createSlice({
     },
     resetAuth: state => {
       state.user = null;
-      state.accessToken = null;
-      state.headers = null;
-      state.mfaToken = null;
+      state.saraTokens = null;
+      state.chatwootSession = null;
       state.error = null;
       state.uiFlags = {
         isLoggingIn: false,
         isResettingPassword: false,
-        isVerifyingMfa: false,
       };
     },
     clearAuthError: state => {
       state.error = null;
-    },
-    clearMfaToken: state => {
-      state.mfaToken = null;
     },
     setCurrentUserAvailability(state, action) {
       const { users } = action.payload;
@@ -102,20 +93,11 @@ export const authSlice = createSlice({
         state.error = null;
       })
       .addCase(authActions.login.fulfilled, (state, action) => {
-        // Check if MFA is required
-        if ('mfa_required' in action.payload) {
-          state.mfaToken = action.payload.mfa_token;
-          state.uiFlags.isLoggingIn = false;
-          state.error = null;
-          // MFA token will not be persisted due to blacklist in persist config
-        } else {
-          // Regular login success
-          state.user = action.payload.user;
-          state.headers = action.payload.headers;
-          state.uiFlags.isLoggingIn = false;
-          state.error = null;
-          state.mfaToken = null;
-        }
+        state.user = action.payload.user;
+        state.saraTokens = action.payload.saraTokens;
+        state.chatwootSession = action.payload.chatwootSession;
+        state.uiFlags.isLoggingIn = false;
+        state.error = null;
       })
       .addCase(authActions.getProfile.fulfilled, (state, action) => {
         state.user = {
@@ -143,36 +125,6 @@ export const authSlice = createSlice({
           ...state.user,
           ...action.payload.user,
         };
-      })
-      .addCase(authActions.verifyMfa.pending, state => {
-        state.uiFlags.isVerifyingMfa = true;
-        state.error = null;
-      })
-      .addCase(authActions.verifyMfa.fulfilled, (state, action) => {
-        state.user = action.payload.user;
-        state.headers = action.payload.headers;
-        state.uiFlags.isVerifyingMfa = false;
-        state.error = null;
-        state.mfaToken = null;
-      })
-      .addCase(authActions.verifyMfa.rejected, (state, action) => {
-        state.uiFlags.isVerifyingMfa = false;
-        state.error = action.payload?.errors[0] ?? null;
-      })
-      .addCase(authActions.loginWithSso.pending, state => {
-        state.uiFlags.isLoggingIn = true;
-        state.error = null;
-      })
-      .addCase(authActions.loginWithSso.fulfilled, (state, action) => {
-        state.user = action.payload.user;
-        state.headers = action.payload.headers;
-        state.uiFlags.isLoggingIn = false;
-        state.error = null;
-        state.mfaToken = null;
-      })
-      .addCase(authActions.loginWithSso.rejected, (state, action) => {
-        state.uiFlags.isLoggingIn = false;
-        state.error = action.payload?.errors[0] ?? null;
       });
   },
 });
@@ -182,6 +134,5 @@ export const {
   resetAuth,
   setCurrentUserAvailability,
   clearAuthError,
-  clearMfaToken,
 } = authSlice.actions;
 export default authSlice.reducer;

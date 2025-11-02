@@ -1,6 +1,5 @@
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
-import { authActions } from '@/store/auth/authActions';
 import { AppDispatch } from '@/store';
 import { showToast } from './toastUtils';
 import i18n from '@/i18n';
@@ -49,48 +48,12 @@ export class SsoUtils {
    * @param dispatch - Redux dispatch function
    * @returns Promise<boolean> - Success status
    */
-  static async handleSsoCallback(params: SsoLoginParams, dispatch: AppDispatch): Promise<boolean> {
-    try {
-      // Check for error in callback
-      if (params.error) {
-        showToast({
-          message: i18n.t('LOGIN.SSO_AUTH_FAILED'),
-        });
-        return false;
-      }
+  static async handleSsoCallback(_params: SsoLoginParams, _dispatch: AppDispatch): Promise<boolean> {
+    showToast({
+      message: i18n.t('LOGIN.SSO_AUTH_FAILED'),
+    });
+    return false;
 
-      // Validate required parameters
-      if (!params.email || !params.sso_auth_token) {
-        showToast({
-          message: i18n.t('LOGIN.SSO_INVALID_RESPONSE'),
-        });
-        return false;
-      }
-
-      // Dispatch SSO login action
-      const result = await dispatch(
-        authActions.loginWithSso({
-          email: params.email,
-          sso_auth_token: params.sso_auth_token,
-        }),
-      );
-
-      // Check if login was successful
-      if (authActions.loginWithSso.fulfilled.match(result)) {
-        return true;
-      } else {
-        showToast({
-          message: i18n.t('LOGIN.SSO_AUTH_FAILED'),
-        });
-        return false;
-      }
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (error) {
-      showToast({
-        message: i18n.t('LOGIN.SSO_UNEXPECTED_ERROR'),
-      });
-      return false;
-    }
   }
 
   /**
