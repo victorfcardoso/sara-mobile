@@ -22,6 +22,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { transformNotification } from '@/utils/camelCaseKeys';
 import { SsoUtils } from '@/utils/ssoUtils';
 import { useAppDispatch } from '@/hooks';
+import { appConfig } from '@/config/appConfig';
 import Inter40020 from '@/assets/fonts/Inter-400-20.ttf';
 import Inter42020 from '@/assets/fonts/Inter-420-20.ttf';
 import Inter50024 from '@/assets/fonts/Inter-500-24.ttf';
@@ -66,7 +67,7 @@ export const AppNavigationContainer = () => {
     getStateFromPath: (path: string, config: any) => {
       // Handle SSO callback - App running, receives deep link
       if (path.includes(SSO_CALLBACK_URL) || path.includes('auth/saml')) {
-        const ssoParams = SsoUtils.parseCallbackUrl(`chatwootapp://${path}`);
+        const ssoParams = SsoUtils.parseCallbackUrl(`${appConfig.scheme}://${path}`);
         // Handle both success and error cases
         SsoUtils.handleSsoCallback(ssoParams, dispatch);
         // Return undefined to prevent navigation change for SSO callback

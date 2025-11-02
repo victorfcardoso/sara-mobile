@@ -4,6 +4,7 @@ import { authActions } from '@/store/auth/authActions';
 import { AppDispatch } from '@/store';
 import { showToast } from './toastUtils';
 import i18n from '@/i18n';
+import { appConfig } from '@/config/appConfig';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -25,7 +26,7 @@ export class SsoUtils {
     try {
       // Create redirect URI with custom scheme
       const redirectUri = AuthSession.makeRedirectUri({
-        scheme: 'chatwootapp',
+        scheme: appConfig.scheme,
         path: 'sso/callback',
       });
 
@@ -99,7 +100,7 @@ export class SsoUtils {
    */
   static parseCallbackUrl(url: string): SsoLoginParams {
     try {
-      //  The URL will be in the format chatwootapp://auth/saml?email=<email>&sso_auth_token=<auth_token>&error=<error>
+      //  The URL will be in the format <scheme>://auth/saml?email=<email>&sso_auth_token=<auth_token>&error=<error>
       const urlObj = new URL(url);
       const params: SsoLoginParams = {};
 

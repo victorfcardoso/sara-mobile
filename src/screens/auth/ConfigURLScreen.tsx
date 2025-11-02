@@ -12,6 +12,7 @@ import { useAppSelector, useAppDispatch } from '@/hooks';
 import { selectBaseUrl } from '@/store/settings/settingsSelectors';
 import { resetSettings } from '@/store/settings/settingsSlice';
 import { settingsActions } from '@/store/settings/settingsActions';
+import { chatwootConfig } from '@/config/chatwootConfig';
 
 type FormData = {
   url: string;
@@ -30,7 +31,7 @@ const ConfigURLScreen = () => {
     formState: { errors },
   } = useForm({
     defaultValues: {
-      url: baseUrl ? baseUrl : appName === 'Chatwoot' ? 'app.chatwoot.com' : '',
+      url: baseUrl || chatwootConfig.baseUrl || (appName === 'Chatwoot' ? 'app.chatwoot.com' : ''),
     },
   });
 

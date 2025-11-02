@@ -56,6 +56,17 @@ You can leave the Beta testing program at any time:
 - On Android, [click this link](https://play.google.com/apps/testing/com.chatwoot.app) while logged in with your Google Play email address used to opt-in for the Beta program, then click **Leave the program**.
 - On iOS, access the `Chatwoot` app page in TestFlight and click **Stop Testing**.
 
+## Sara configuration
+
+This fork exposes environment switches so the Sara mobile build can point at our Chatwoot tenant without touching source each time:
+
+1. Duplicate `.env.example` to `.env` and fill the Sara values (app name, bundle IDs, Expo owner) before running `pnpm start`.
+2. Set `EXPO_PUBLIC_CHATWOOT_BASE_URL` to the base URL of the Chatwoot deployment Sara already uses (for example, `https://app.chatwoot.com` or the self-hosted domain). The app derives the websocket endpoint and default installation URL from this value.
+3. If SSO is enabled on multiple hosts, add them as a comma-separated list in `EXPO_PUBLIC_CHATWOOT_SSO_HOSTS`. The login screen will surface the SSO button only when the configured host matches one of these entries.
+4. Adjust `EXPO_PUBLIC_URL_SCHEME` when rebranding the native deep-link scheme so that Expo authentication callbacks and push notification links continue to resolve.
+
+All defaults remain compatible with upstream Chatwoot, so the stock values in `.env.example` continue to work for cloud testing.
+
 ## Feedback & Contributing
 
 Feel free to send us feedback on [X](https://x.com/chatwootapp) or [file an issue](https://github.com/chatwoot/chatwoot-mobile-app/issues).

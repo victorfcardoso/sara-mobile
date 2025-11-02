@@ -1,8 +1,9 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { settingsActions } from './settingsActions';
 import * as RootNavigation from '@/utils/navigationUtils';
 import { NotificationSettings } from './settingsTypes';
 import { Theme } from '@/types/common/Theme';
+import { chatwootConfig } from '@/config/chatwootConfig';
+import { settingsActions } from './settingsActions';
 
 interface SettingsState {
   baseUrl: string;
@@ -20,8 +21,8 @@ interface SettingsState {
   pushToken: string;
 }
 const initialState: SettingsState = {
-  baseUrl: 'app.chatwoot.com',
-  installationUrl: 'https://app.chatwoot.com/',
+  baseUrl: chatwootConfig.baseUrl,
+  installationUrl: chatwootConfig.installationUrl,
   uiFlags: {
     isSettingUrl: false,
     isUpdating: false,
@@ -37,7 +38,7 @@ const initialState: SettingsState = {
     selected_push_flags: [],
     user_id: 0,
   },
-  webSocketUrl: 'wss://app.chatwoot.com/cable',
+  webSocketUrl: chatwootConfig.webSocketUrl,
   theme: 'system',
   version: '',
   pushToken: '',

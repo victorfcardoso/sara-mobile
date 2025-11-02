@@ -1,15 +1,44 @@
 import { ExpoConfig, ConfigContext } from 'expo/config';
 
-export default ({ config }: ConfigContext): ExpoConfig => {
+const parseList = (value: string | undefined, fallback: string[]): string[] => {
+  if (!value) {
+    return fallback;
+  }
+
+  const items = value
+    .split(',')
+    .map(entry => entry.trim())
+    .filter(Boolean);
+
+  return items.length > 0 ? items : fallback;
+};
+
+export default (_ctx: ConfigContext): ExpoConfig => {
+  const appName = process.env.EXPO_PUBLIC_APP_NAME ?? 'Chatwoot';
+  const appSlug = process.env.EXPO_PUBLIC_APP_SLUG || 'chatwoot-mobile';
+  const iosBundleIdentifier =
+    process.env.EXPO_PUBLIC_IOS_BUNDLE_IDENTIFIER ?? 'com.chatwoot.app';
+  const androidPackageName = process.env.EXPO_PUBLIC_ANDROID_PACKAGE ?? 'com.chatwoot.app';
+  const urlScheme = process.env.EXPO_PUBLIC_URL_SCHEME ?? 'chatwootapp';
+  const associatedDomains = parseList(process.env.EXPO_PUBLIC_IOS_ASSOCIATED_DOMAINS, [
+    'applinks:app.chatwoot.com',
+  ]);
+  const androidIntentHost = process.env.EXPO_PUBLIC_ANDROID_INTENT_HOST ?? 'app.chatwoot.com';
+  const androidIntentPathPrefix =
+    process.env.EXPO_PUBLIC_ANDROID_INTENT_PATH_PREFIX ?? '/app/accounts/';
+  const androidIntentPathPattern =
+    process.env.EXPO_PUBLIC_ANDROID_INTENT_PATH_PATTERN ?? '/*/conversations/*';
+  const easOwner = process.env.EXPO_PUBLIC_EAS_OWNER || 'chatwoot';
+
   return {
-    name: 'Chatwoot',
-    slug: process.env.EXPO_PUBLIC_APP_SLUG || 'chatwoot-mobile',
+    name: appName,
+    slug: appSlug,
     version: '4.3.10',
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'light',
     newArchEnabled: false,
-    scheme: 'chatwootapp',
+    scheme: urlScheme,
     splash: {
       image: './assets/splash.png',
       resizeMode: 'contain',
@@ -18,7 +47,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     },
     ios: {
       supportsTablet: true,
-      bundleIdentifier: 'com.chatwoot.app',
+      bundleIdentifier: iosBundleIdentifier,
       infoPlist: {
         NSCameraUsageDescription:
           'This app requires access to the camera to upload images and videos.',
@@ -33,11 +62,11 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       // Please use the relative path to the google-services.json file
       googleServicesFile: process.env.EXPO_PUBLIC_IOS_GOOGLE_SERVICES_FILE,
       entitlements: { 'aps-environment': 'production' },
-      associatedDomains: ['applinks:app.chatwoot.com'],
+      associatedDomains,
     },
     android: {
       adaptiveIcon: { foregroundImage: './assets/adaptive-icon.png', backgroundColor: '#ffffff' },
-      package: 'com.chatwoot.app',
+      package: androidPackageName,
       permissions: ['android.permission.CAMERA', 'android.permission.RECORD_AUDIO'],
       // Please use the relative path to the google-services.json file
       googleServicesFile: process.env.EXPO_PUBLIC_ANDROID_GOOGLE_SERVICES_FILE,
@@ -48,9 +77,9 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           data: [
             {
               scheme: 'https',
-              host: 'app.chatwoot.com',
-              pathPrefix: '/app/accounts/',
-              pathPattern: '/*/conversations/*',
+              host: androidIntentHost,
+              pathPrefix: androidIntentPathPrefix,
+              pathPattern: androidIntentPathPattern,
             },
           ],
           category: ['BROWSABLE', 'DEFAULT'],
@@ -59,7 +88,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           action: 'VIEW',
           data: [
             {
-              scheme: 'chatwootapp',
+              scheme: urlScheme,
             },
           ],
           category: ['BROWSABLE', 'DEFAULT'],
@@ -72,7 +101,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         storybookEnabled: process.env.EXPO_STORYBOOK_ENABLED,
       },
     },
-    owner: 'chatwoot',
+    owner: easOwner,
     plugins: [
       'expo-font',
       ['react-native-permissions', { iosPermissions: ['Camera', 'PhotoLibrary', 'MediaLibrary'] }],

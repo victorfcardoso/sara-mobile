@@ -29,6 +29,7 @@ import {
   selectInstallationUrl,
   selectBaseUrl,
   selectLocale,
+  selectIsChatwootCloud,
 } from '@/store/settings/settingsSelectors';
 import { selectIsLoggingIn } from '@/store/auth/authSelectors';
 import { setLocale } from '@/store/settings/settingsSlice';
@@ -68,6 +69,7 @@ const LoginScreen = () => {
   const installationUrl = useAppSelector(selectInstallationUrl);
   const baseUrl = useAppSelector(selectBaseUrl);
   const activeLocale = useAppSelector(selectLocale);
+  const isChatwootCloud = useAppSelector(selectIsChatwootCloud);
 
   useEffect(() => {
     languagesModalSheetRef.current?.dismiss({
@@ -104,8 +106,8 @@ const LoginScreen = () => {
   };
 
   // TODO: Change this condition based on EE check
-  // Show SSO login button only if installation URL contains app.chatwoot.com
-  const showSsoLogin = installationUrl.includes('app.chatwoot.com');
+  // Show SSO login button only if installation URL is part of the configured Chatwoot cloud hosts
+  const showSsoLogin = isChatwootCloud;
 
   const openResetPassword = () => {
     navigation.navigate('ResetPassword' as never);
