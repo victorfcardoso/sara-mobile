@@ -33,3 +33,7 @@
 - Base secrets on `.env.example`; never commit real credentials and document new keys in the PR.
 - `pnpm run run:doctor` validates native linking; rerun after changing pods or Gradle plugins.
 - When adjusting native modules, update the paired patch in `patches/` and outline migration steps for the release team.
+
+## Sara Mobile Change Log
+
+- November 2025 – Sara-branded defaults landed on branch `feat/sara-mobile-branding`. `.env.example` now targets `https://chat.sara-ai.com.br`, bundle/package IDs default to `com.vfc.sara`, and the display name is **Sara**. Firebase’s `GoogleService-Info.plist` ships in `firebase/`. See `docs/SARA_MOBILE_NOTES.md` for ongoing environment updates and outstanding work.
