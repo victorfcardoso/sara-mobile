@@ -25,6 +25,7 @@ import {
   SettingsStack,
   InboxStack,
   AppointmentsStack,
+  ContactsStack,
 } from '../stack';
 import ChatScreen from '@/screens/chat-screen/ChatScreen';
 import ContactDetailsScreen from '@/screens/contact-details/ContactDetailsScreen';
@@ -52,6 +53,7 @@ export type TabParamList = {
   Inbox: undefined;
   Appointments: undefined;
   Settings: undefined;
+  Contacts: undefined;
   Login: undefined;
   ConfigInstallationURL: undefined;
   ForgotPassword: undefined;
@@ -173,6 +175,7 @@ const Tabs = () => {
           component={ConversationStack}
         />
       )}
+      <Tab.Screen name="Contacts" component={ContactsStack} options={{ headerShown: false }} />
       <Tab.Screen
         name="Appointments"
         options={{ headerShown: false }}

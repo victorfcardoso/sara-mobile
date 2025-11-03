@@ -496,5 +496,27 @@
       "CANCELLED": "Cancelled",
       "NO_SHOW": "No-show"
     }
+  },
+  "CONTACTS": {
+    "TITLE": "Contacts",
+    "SEARCH_PLACEHOLDER": "Name or phone",
+    "FILTER_ALL": "All",
+    "FILTER_HAS_THREAD": "Has thread",
+    "FILTER_UPCOMING": "Upcoming today",
+    "SECTIONS": {
+      "RECENTS": "Recents",
+      "UPCOMING_TODAY": "Upcoming today"
+    },
+    "BADGE_TEMPLATE": "Template",
+    "UNKNOWN_NAME": "Unknown contact",
+    "UNKNOWN_PHONE": "No phone",
+    "UPCOMING_PLACEHOLDER": "Scheduled today",
+    "SERVICE_PLACEHOLDER": "Service",
+    "LAST_SEEN_TODAY": "Last seen today at {{time}}",
+    "LAST_SEEN_DATE": "Last seen {{date}}",
+    "EMPTY_TITLE": "No contacts found",
+    "EMPTY_SUBTITLE": "Try adjusting the filters or search by the customer's phone number.",
+    "ERROR_TITLE": "We couldn't refresh contacts",
+    "NO_THREAD": "We couldn't find a conversation for this contact yet."
   }
 }

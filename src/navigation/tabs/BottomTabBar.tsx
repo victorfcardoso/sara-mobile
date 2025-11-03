@@ -20,6 +20,8 @@ import {
   AppointmentsIconOutline,
   SettingsIconFilled,
   SettingsIconOutline,
+  ContactsIconFilled,
+  ContactsIconOutline,
 } from '@/svg-icons';
 import { tailwind } from '@/theme';
 import { useHaptic, useScaleAnimation, useTabBarHeight } from '@/utils';
@@ -47,6 +49,8 @@ const TabBarIcons = ({ focused, route }: TabBarIconsProps) => {
       return focused ? <AppointmentsIconFilled /> : <AppointmentsIconOutline />;
     case 'Settings':
       return focused ? <SettingsIconFilled /> : <SettingsIconOutline />;
+    case 'Contacts':
+      return focused ? <ContactsIconFilled /> : <ContactsIconOutline />;
   }
 };
 
@@ -119,6 +123,9 @@ const TabItem = (props: any) => {
 export const BottomTabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
   const hapticSelection = useHaptic();
   const tabBarHeight = useTabBarHeight();
+  const tabCount = state.routes.length;
+  const iosHorizontalPadding = tabCount > 4 ? 36 : 72;
+  const androidHorizontalPadding = tabCount > 4 ? 24 : 72;
 
   // Memoize press handlers using useCallback
   const createPressHandler = React.useCallback(
@@ -158,16 +165,20 @@ export const BottomTabBar = ({ state, descriptors, navigation }: BottomTabBarPro
       blurType="light"
       style={Platform.select({
         ios: [
-          tailwind.style(
-            'flex flex-row absolute w-full bottom-0 pl-[72px] pr-[71px] pt-[11px] pb-8 bg-[#00000009]',
-            `h-[${tabBarHeight}px]`,
-          ),
+          tailwind.style('flex flex-row absolute w-full bottom-0 pt-[11px] pb-8 bg-[#00000009]'),
+          {
+            paddingLeft: iosHorizontalPadding,
+            paddingRight: iosHorizontalPadding,
+            height: tabBarHeight,
+          },
         ],
         android: [
-          tailwind.style(
-            'flex flex-row absolute w-full bottom-0 pl-[72px] pr-[71px] py-[11px] bg-white',
-            `h-[${tabBarHeight}px]`,
-          ),
+          tailwind.style('flex flex-row absolute w-full bottom-0 py-[11px] bg-white'),
+          {
+            paddingLeft: androidHorizontalPadding,
+            paddingRight: androidHorizontalPadding,
+            height: tabBarHeight,
+          },
         ],
       })}>
       <Animated.View style={tailwind.style('absolute inset-0 h-[1px] bg-blackA-A3')} />

@@ -473,5 +473,27 @@
       "CANCELLED": "Cancelado",
       "NO_SHOW": "Paciente ausente"
     }
+  },
+  "CONTACTS": {
+    "TITLE": "Contatos",
+    "SEARCH_PLACEHOLDER": "Nome ou telefone",
+    "FILTER_ALL": "Todos",
+    "FILTER_HAS_THREAD": "Com conversa",
+    "FILTER_UPCOMING": "Agendados hoje",
+    "SECTIONS": {
+      "RECENTS": "Recentes",
+      "UPCOMING_TODAY": "Hoje"
+    },
+    "BADGE_TEMPLATE": "Modelo",
+    "UNKNOWN_NAME": "Contato sem nome",
+    "UNKNOWN_PHONE": "Sem telefone",
+    "UPCOMING_PLACEHOLDER": "Hoje",
+    "SERVICE_PLACEHOLDER": "Serviço",
+    "LAST_SEEN_TODAY": "Último contato hoje às {{time}}",
+    "LAST_SEEN_DATE": "Último contato em {{date}}",
+    "EMPTY_TITLE": "Nenhum contato encontrado",
+    "EMPTY_SUBTITLE": "Revise os filtros ou pesquise pelo número do cliente.",
+    "ERROR_TITLE": "Não foi possível atualizar os contatos",
+    "NO_THREAD": "Ainda não encontramos uma conversa para este contato."
   }
 }
