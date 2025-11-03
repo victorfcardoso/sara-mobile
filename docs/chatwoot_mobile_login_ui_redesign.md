@@ -55,6 +55,7 @@
   - Supports pull-to-refresh, infinite scroll (cursor-based), error banners with retry, and localized empty states.  
   - Date strings use `date-fns` to format “Weekday, Month Day • HH:mm”, matching the CRM tone.
 - Translations for the new copy live under the `APPOINTMENTS` namespace in `src/i18n/{en,pt,pt_BR}.json`; other locales fall back to English.
+- Backend dependency: deploy the FastAPI patch on `fix/template-delivery` (mobile appointments endpoint + Dynamo scan fallback when `AgentStartAtIndex` is missing) before shipping mobile builds, otherwise the client receives HTTP 500s.
 - QA checklist:  
   1. Sign in with an operator that has appointments seeded.  
   2. Verify cards appear in chronological order and status colors match CRM.  
