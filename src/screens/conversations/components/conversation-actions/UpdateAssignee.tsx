@@ -41,12 +41,12 @@ const AssigneeCell = (props: AssigneeCellProps) => {
       <Animated.View
         style={tailwind.style(
           'flex-1 ml-3 flex-row justify-between py-[11px] pr-3',
-          !lastItem ? 'border-b-[1px] border-blackA-A3' : '',
+          !lastItem ? 'border-b-[1px] border-[#E6E0D7]' : '',
         )}>
         <Animated.Text
           style={[
             tailwind.style(
-              'text-base text-gray-950 font-inter-420-20 leading-[21px] tracking-[0.16px]',
+              'text-base text-[#16273D] font-inter-420-20 leading-[21px] tracking-[0.16px]',
             ),
           ]}>
           {agent.name}
@@ -137,7 +137,7 @@ export const UpdateAssignee = () => {
         showsVerticalScrollIndicator={false}
         style={tailwind.style('my-1 pl-3')}>
         {isFetching ? (
-          <ActivityIndicator />
+          <ActivityIndicator color="#4CB6AC" />
         ) : (
           <>
             {!isSelfAssign && (
@@ -149,12 +149,12 @@ export const UpdateAssignee = () => {
                 </Animated.View>
                 <Animated.View
                   style={tailwind.style(
-                    'flex-1 ml-3 flex-row justify-between py-[11px] pr-3 border-b-[1px] border-blackA-A3',
+                    'flex-1 ml-3 flex-row justify-between py-[11px] pr-3 border-b-[1px] border-[#E6E0D7]',
                   )}>
                   <Animated.Text
                     style={[
                       tailwind.style(
-                        'text-base text-blue-800 font-inter-420-20 leading-[21px] tracking-[0.16px]',
+                        'text-base text-[#4CB6AC] font-inter-420-20 leading-[21px] tracking-[0.16px]',
                       ),
                     ]}>
                     {i18n.t('CONVERSATION.SELF_ASSIGN')}

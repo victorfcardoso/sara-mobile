@@ -40,7 +40,7 @@ const InboxCell = (props: InboxCellProps) => {
       <Animated.View
         style={tailwind.style(
           'flex-1 ml-3 flex-row justify-between py-[11px] pr-3',
-          !isLastItem ? 'border-b-[1px] border-blackA-A3' : '',
+          !isLastItem ? 'border-b-[1px] border-[#E6E0D7]' : '',
         )}>
         <Animated.View style={tailwind.style('flex-row items-center')}>
           <Icon
@@ -51,7 +51,7 @@ const InboxCell = (props: InboxCellProps) => {
 
           <Animated.Text
             style={tailwind.style(
-              'text-base text-gray-950 font-inter-420-20 leading-[21px] tracking-[0.16px] capitalize ml-2',
+              'text-base text-[#16273D] font-inter-420-20 leading-[21px] tracking-[0.16px] capitalize ml-2',
             )}>
             {value.name}
           </Animated.Text>

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, AppState, RefreshControl, StatusBar } from 'react-native';
+import { ActivityIndicator, AppState, RefreshControl, StatusBar, StyleSheet } from 'react-native';
 import Animated, {
   LinearTransition,
   runOnJS,
@@ -68,6 +68,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const REFRESH_SCREEN_LIST = [SCREENS.CONVERSATION, SCREENS.INBOX, SCREENS.SETTINGS];
 
 const AnimatedFlashList = Animated.createAnimatedComponent(FlashList);
+
+const SARA_COLORS = {
+  background: '#F8F5F3',
+  accent: '#4CB6AC',
+  textSecondary: '#566273',
+};
 
 type FlashListRenderItemType = {
   item: Conversation;
@@ -145,7 +151,9 @@ const ConversationList = () => {
           'flex-1 items-center justify-center pt-8',
           `pb-[${TAB_BAR_HEIGHT}px]`,
         )}>
-        {isAllConversationsFetched ? null : <ActivityIndicator size="small" />}
+        {isAllConversationsFetched ? null : (
+          <ActivityIndicator size="small" color={SARA_COLORS.accent} />
+        )}
       </Animated.View>
     );
   };
@@ -240,7 +248,7 @@ const ConversationList = () => {
   return shouldShowEmptyLoader ? (
     <Animated.View
       style={tailwind.style('flex-1 items-center justify-center', `pb-[${TAB_BAR_HEIGHT}px]`)}>
-      <ActivityIndicator />
+      <ActivityIndicator color={SARA_COLORS.accent} />
     </Animated.View>
   ) : allConversations.length === 0 ? (
     <Animated.ScrollView
@@ -249,8 +257,9 @@ const ConversationList = () => {
         'flex-1 items-center justify-center',
         `pb-[${TAB_BAR_HEIGHT}px]`,
       )}>
-      <EmptyStateIcon />
-      <Animated.Text style={tailwind.style('pt-6 text-md  tracking-[0.32px] text-gray-800')}>
+      <EmptyStateIcon stroke={SARA_COLORS.accent} />
+      <Animated.Text
+        style={[tailwind.style('pt-6 text-md tracking-[0.32px]'), styles.emptyStateText]}>
         {i18n.t('CONVERSATION.EMPTY')}
       </Animated.Text>
     </Animated.ScrollView>
@@ -310,12 +319,8 @@ const ConversationScreen = () => {
   }, [currentBottomSheet]);
 
   return (
-    <SafeAreaView edges={['top']} style={tailwind.style('flex-1 bg-white')}>
-      <StatusBar
-        translucent
-        backgroundColor={tailwind.color('bg-white')}
-        barStyle={'dark-content'}
-      />
+    <SafeAreaView edges={['top']} style={[tailwind.style('flex-1'), styles.container]}>
+      <StatusBar translucent backgroundColor={SARA_COLORS.background} barStyle={'dark-content'} />
       <ConversationListStateProvider>
         <ConversationHeader />
         <ConversationList />
@@ -323,7 +328,7 @@ const ConversationScreen = () => {
           ref={filtersModalSheetRef}
           backdropComponent={BottomSheetBackdrop}
           handleIndicatorStyle={tailwind.style(
-            'overflow-hidden bg-blackA-A6 w-8 h-1 rounded-[11px]',
+            'overflow-hidden bg-[#4CB6AC] w-8 h-1 rounded-[11px]',
           )}
           handleStyle={tailwind.style('p-0 h-4 pt-[5px]')}
           style={tailwind.style('rounded-[26px] overflow-hidden')}
@@ -346,3 +351,12 @@ const ConversationScreen = () => {
 };
 
 export default ConversationScreen;
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: SARA_COLORS.background,
+  },
+  emptyStateText: {
+    color: SARA_COLORS.textSecondary,
+  },
+});

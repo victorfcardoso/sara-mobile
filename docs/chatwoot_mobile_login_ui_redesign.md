@@ -64,3 +64,9 @@
   2. Verify cards appear in chronological order and status colors match CRM.  
   3. Trigger pull-to-refresh and scroll to the end to validate pagination spinners.  
   4. Temporarily revoke the Chatwoot token to ensure the 401 flow logs the user out as expected.
+
+## 3 Nov 2025 – Conversations tab palette refresh
+- Updated the conversations shell (`src/screens/conversations/ConversationScreen.tsx`) to sit on the Sara beige canvas `#F8F5F3`, align the status bar tint, and recolor loaders/empty states with the teal accent `#4CB6AC`.
+- Conversation header (`conversation-header/*`) now renders navy primary text, teal filter badges, a teal filter icon/handle accent, and a neutral divider `#E6E0D7` so the top bar matches the new Inbox and Settings treatments.
+- Row chrome (`conversation-item/*`) adopts Sara typography colors: sender names in navy `#16273D`, message previews and timestamps in slate `#566273`, unread badges in teal, and dividers toned down to the neutral beige line.
+- Supporting primitives (`LastActivityTime`, `ConversationId`, `UnreadIndicator`) use the same palette, eliminating the legacy cyan dividers and blue badges that previously broke the brand language.

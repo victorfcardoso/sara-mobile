@@ -53,12 +53,12 @@ const TeamCell = (props: TeamCellProps) => {
       <Animated.View
         style={tailwind.style(
           'flex-1 ml-3 flex-row justify-between py-[11px] pr-3',
-          !lastItem ? 'border-b-[1px] border-blackA-A3' : '',
+          !lastItem ? 'border-b-[1px] border-[#E6E0D7]' : '',
         )}>
         <Animated.Text
           style={[
             tailwind.style(
-              'text-base text-gray-950 font-inter-420-20 leading-[21px] tracking-[0.16px]',
+              'text-base text-[#16273D] font-inter-420-20 leading-[21px] tracking-[0.16px]',
             ),
           ]}>
           {value.name}
@@ -75,7 +75,7 @@ const TeamStack = ({ teams, teamId }: { teams: Team[]; teamId: string | undefine
   return (
     <BottomSheetScrollView showsVerticalScrollIndicator={false} style={tailwind.style('my-1 pl-3')}>
       {isFetching ? (
-        <ActivityIndicator />
+        <ActivityIndicator color="#4CB6AC" />
       ) : (
         teams.map((value, index) => {
           return (

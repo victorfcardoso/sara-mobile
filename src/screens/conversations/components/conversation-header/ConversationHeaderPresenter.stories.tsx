@@ -28,7 +28,7 @@ const meta: Meta<typeof ConversationHeaderPresenter> = {
   },
   decorators: [
     Story => (
-      <View style={tailwind.style('border-b-[1px] border-blackA-A3')}>
+      <View style={tailwind.style('border-b-[1px] border-[#E6E0D7]')}>
         <Story />
       </View>
     ),
@@ -46,12 +46,12 @@ export const Default: Story = {
 
 const Title = ({ title }: { title: string }) => (
   <View style={tailwind.style('flex items-center justify-center')}>
-    <Text style={tailwind.style('text-md font-medium italic text-gray-800')}>{title}</Text>
+    <Text style={tailwind.style('text-md font-medium italic text-[#566273]')}>{title}</Text>
   </View>
 );
 
 const HeaderContainer = ({ children }: { children: React.ReactNode }) => (
-  <View style={tailwind.style('flex-1 border-b-[1px] border-blackA-A3 ')}>{children}</View>
+  <View style={tailwind.style('flex-1 border-b-[1px] border-[#E6E0D7] ')}>{children}</View>
 );
 
 export const AllVariants: Story = {
