@@ -56,6 +56,7 @@
   - Date strings use `date-fns` to format “Weekday, Month Day • HH:mm”, matching the CRM tone.
 - Translations for the new copy live under the `APPOINTMENTS` namespace in `src/i18n/{en,pt,pt_BR}.json`; other locales fall back to English.
 - Backend dependency: deploy the FastAPI patch on `fix/template-delivery` (mobile appointments endpoint + Dynamo scan fallback when `AgentStartAtIndex` is missing) before shipping mobile builds, otherwise the client receives HTTP 500s.
+- Data flow recap: mobile signs into Sara via `POST /auth/login`, bootstraps Chatwoot with `POST /chatwoot/mobile-auth`, then fetches appointments from `GET /chatwoot/mobile/appointments`. The backend resolves the active agent using `resolve_agent_id`, queries Dynamo through `AppointmentsDB.list_appointments_for_agent`, and returns a slim JSON (id, service, customer, ISO start/end, payment flags, pagination hints); if the Dynamo GSI is missing we fall back to a filtered scan so the call still succeeds.
 - QA checklist:  
   1. Sign in with an operator that has appointments seeded.  
   2. Verify cards appear in chronological order and status colors match CRM.  
