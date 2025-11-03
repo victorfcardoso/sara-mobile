@@ -7,7 +7,7 @@
 
 - **App shell** — `App.tsx` bootstraps Redux, restores persisted state, and calls `bootstrapInstallationUrl` so a default Chatwoot tenant is available before the UI renders.
 - **Navigation** — `src/navigation` wraps React Navigation. `AppTabs` chooses between the logged-in tab navigator and the `AuthStack` (login/reset MFAs). Deep linking and SSO callbacks are handled in `src/navigation/index.tsx`.
-- **State management** — Redux Toolkit + `redux-persist`. Feature slices live under `src/store/<domain>`; `src/store/reducers.ts` combines them. `settingsSlice` seeds URLs (installation/base/websocket) and Redux thunks in `settingsActions.ts` talk to the Chatwoot API.
+- **State management** — Redux Toolkit + `redux-persist`. Feature slices live under `src/store/<domain>`; `src/store/reducers.ts` combines them. `settingsSlice` seeds URLs (installation/base/websocket) and Redux thunks in `settingsActions.ts` talk to the Chatwoot API. Persistence uses `persistStorage` (`AsyncStorage` with an in-memory fallback) so the app still boots if the native storage sandbox isn’t writable on a dev client.
 - **Networking** — `src/services/APIService.ts` configures Axios per request, pulling the current `installationUrl` from state. ActionCable websockets are managed by `src/utils/actionCable.ts` when the user is logged in.
 - **UI layer** — Components follow upstream Chatwoot conventions (`src/components-next`, `src/screens`). Tailwind via `twrnc` drives styling.
 
@@ -42,6 +42,7 @@
 1. **Bootstrap** — `PersistGate` restores state; if `installationUrl` is missing, `bootstrapInstallationUrl()` dispatches `ensureInstallationDefaults` so Redux copies the Expo-configured defaults.
 2. **Auth stack** — With a seeded installation URL, `LoginScreen` jumps straight to email/password auth. If the URL is blank (support/debug), user is redirected to `ConfigURLScreen`.
 3. **Authentication** — `authActions.login` now calls Sara `/auth/login`, then exchanges the Sara JWT for `/chatwoot/mobile-auth` so we receive the agent's `api_access_token`, installation URL, and account metadata. The mobile client immediately fetches `/api/v1/profile` with that token to hydrate the Chatwoot `User` state.
+   - `/chatwoot/mobile-auth` provisions the Chatwoot personal access token on the fly when the linked `AgentsCredentials` row already carries the Chatwoot connection fields (`chatwoot_api_base`, `chatwoot_account_id`, `chatwoot_inbox_id`, `chatwoot_api_token`, `chatwoot_agentbot_webhook_secret`). If those fields are missing the endpoint returns HTTP 409 and the client surfaces a login failure; populate them during onboarding before the first mobile sign-in.
 4. **Post-login** — With the Chatwoot session cached in Redux, `AppTabs` loads inboxes, labels, and configures ActionCable using `settingsSelectors.selectWebSocketUrl`.
 5. **Conversations** — `ChatScreen` consumes state from `conversation/...` slices. Deep links from notifications use the linking config buried in `AppNavigationContainer`.
 
@@ -67,6 +68,7 @@
 
 ## 7. Known Quirks / Gotchas
 
+- **Agent onboarding prerequisite** — New tenants must have Chatwoot fields set on their `AgentsCredentials` item *before* first mobile login; otherwise `/chatwoot/mobile-auth` can’t mint the PAT and the app shows “username/password incorrect.” Seed the base URL, account id, inbox id, account PAT, and agent-bot secret during CRM onboarding.
 - **Firebase config** — Always replace placeholders before running on device; otherwise the app crashes at launch with `com.firebase.core`.
 - **TypeScript warnings** — `tsc` currently fails on storybook and spinner types; track upstream for fixes before enforcing.
 - **Expo patching** — After pulling new dependencies, rerun `pnpm install` so patch packages apply.
@@ -79,4 +81,3 @@
 - `AGENTS.md` (repo root) — cross-repo coordination guide (backend + mobile).
 
 Keep this document updated whenever we introduce new flows (e.g., push notification customizations, Expo EAS adoption, Android branding) so future assistants can reason about the project quickly.
-

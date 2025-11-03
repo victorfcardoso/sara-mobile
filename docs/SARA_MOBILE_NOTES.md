@@ -15,7 +15,7 @@ This log tracks the Sara-branded fork of the Chatwoot mobile client. Update it w
   - SSO buttons are hidden by default; Sara-first login handles authentication via `/auth/login` + `/chatwoot/mobile-auth`.
 - **Sara API**
   - Set `EXPO_PUBLIC_SARA_API_BASE_URL` to the FastAPI base (e.g., `https://app.sara-ai.com`).
-  - Each operator needs a `chatwoot_api_access_token` stored on their user record so the mobile client can pull `/api/v1/profile`.
+  - `/chatwoot/mobile-auth` now auto-mints each operator’s Chatwoot personal access token on first login **if** the linked `AgentsCredentials` row already includes the Chatwoot connection fields (`chatwoot_api_base`, `chatwoot_account_id`, `chatwoot_inbox_id`, `chatwoot_api_token`, `chatwoot_agentbot_webhook_secret`). Missing fields trigger HTTP 409 and the mobile app reports “username/password incorrect.”
 
 - **Firebase**
   - The tenant-specific `GoogleService-Info.plist` lives in `firebase/`. Keep the Android `google-services.json` beside it when ready.
@@ -40,6 +40,7 @@ This log tracks the Sara-branded fork of the Chatwoot mobile client. Update it w
 
 ## Open Items
 
+- Add a CRM/onboarding checklist to guarantee Chatwoot credentials are populated for new tenants before mobile rollout so PAT auto-provisioning doesn’t fail.
 - Add Android `google-services.json` once push notifications are configured.
 - Decide if/when to register an Expo EAS project and populate `EXPO_PUBLIC_PROJECT_ID`.
 - Capture updated screenshots/video after swapping final branding assets (icons, splash).

@@ -30,6 +30,7 @@
 - Sara-first auth flow and localization remain untouched; only presentation changed.
 - New helper styles wrap Tailwind presets with Sara colors to simplify future brand updates.
 - `Button` tone extension is backward compatible (defaults to existing variants).
+- For brand-new tenants, make sure their `AgentsCredentials` row already contains the Chatwoot base URL, account id, inbox id, account PAT, and agent-bot secret before testing the screen—the backend only auto-mints the operator’s personal token when those fields are present.
 
 ## Testing / Validation
 - Lint: `pnpm eslint src/screens/auth/LoginScreen.tsx` (passes).
