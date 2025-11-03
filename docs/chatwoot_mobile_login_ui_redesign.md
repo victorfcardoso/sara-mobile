@@ -47,7 +47,16 @@
 - Footer string now reads `Sara <version>` to keep branding consistent across environments.
 - Updated bottom tab icons (`src/svg-icons/tabs/*.tsx`) to render in Sara navy `#16273D` so the navigation buttons match the rest of the palette.
 
-## 2 Nov 2025 – Appointments tab placeholder
-- Added an `Appointments` entry to the bottom navigation so operators have a dedicated space for scheduling features as they arrive.
-- Stubbed `AppointmentsScreen` with Sara palette, guidance copy, and a "coming soon" badge so QA knows the view is intentionally empty for now.
-- Wired a matching calendar-with-check icon (`AppointmentsIconFilled/Outline`) and exposed an `AppointmentsStack` to keep the implementation modular when we plug in the real data sources.
+## 2 Nov 2025 – Appointments tab MVP
+- Replaced the placeholder view with a live feed of upcoming visits powered by the new backend endpoint (`GET /chatwoot/mobile/appointments`).  
+  - The Redux slice (`src/store/appointments/*`) hydrates appointments, tracks pagination cursors, and dedupes records by `reservation_id`.  
+  - Networking runs through the new Sara API client (`src/services/SaraAPIService.ts`) so every request attaches the Sara bearer token automatically.
+- The screen (`src/screens/appointments/AppointmentsScreen.tsx`) now renders Sara-branded cards with status pills, patient info, location metadata, and badges for payment-required bookings.  
+  - Supports pull-to-refresh, infinite scroll (cursor-based), error banners with retry, and localized empty states.  
+  - Date strings use `date-fns` to format “Weekday, Month Day • HH:mm”, matching the CRM tone.
+- Translations for the new copy live under the `APPOINTMENTS` namespace in `src/i18n/{en,pt,pt_BR}.json`; other locales fall back to English.
+- QA checklist:  
+  1. Sign in with an operator that has appointments seeded.  
+  2. Verify cards appear in chronological order and status colors match CRM.  
+  3. Trigger pull-to-refresh and scroll to the end to validate pagination spinners.  
+  4. Temporarily revoke the Chatwoot token to ensure the 401 flow logs the user out as expected.

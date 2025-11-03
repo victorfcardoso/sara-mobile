@@ -477,5 +477,24 @@
     "EXECUTION_SUCCESS": "Macro executed successfully",
     "EXECUTION_ERROR": "Macro execution failed",
     "NO_MACROS": "No macros found"
+  },
+  "APPOINTMENTS": {
+    "TITLE": "Appointments",
+    "EMPTY_TITLE": "No upcoming visits",
+    "EMPTY_SUBTITLE": "Confirmations that happen in Sara will show up here within a few moments.",
+    "ERROR": "We couldn't load appointments right now.",
+    "RETRY": "Try again",
+    "UPDATED": "Updated {{time}}",
+    "TIME_PLACEHOLDER": "Time to be confirmed",
+    "SERVICE_PLACEHOLDER": "Service not specified",
+    "CUSTOMER_PLACEHOLDER": "Patient without name",
+    "PAYMENT_REQUIRED": "Payment required",
+    "STATUS": {
+      "PENDING": "Pending",
+      "AWAITING_PAYMENT": "Awaiting payment",
+      "CONFIRMED": "Confirmed",
+      "CANCELLED": "Cancelled",
+      "NO_SHOW": "No-show"
+    }
   }
 }

@@ -454,5 +454,24 @@
     "EXECUTION_SUCCESS": "Macro executada com sucesso",
     "EXECUTION_ERROR": "Falha na execução do macro",
     "NO_MACROS": "Nenhuma macro encontrada"
+  },
+  "APPOINTMENTS": {
+    "TITLE": "Agendamentos",
+    "EMPTY_TITLE": "Sem visitas futuras",
+    "EMPTY_SUBTITLE": "Os atendimentos confirmados pela Sara aparecem aqui em poucos instantes.",
+    "ERROR": "Não foi possível carregar os agendamentos agora.",
+    "RETRY": "Tentar novamente",
+    "UPDATED": "Atualizado {{time}}",
+    "TIME_PLACEHOLDER": "Horário a confirmar",
+    "SERVICE_PLACEHOLDER": "Serviço não informado",
+    "CUSTOMER_PLACEHOLDER": "Paciente sem nome",
+    "PAYMENT_REQUIRED": "Pagamento pendente",
+    "STATUS": {
+      "PENDING": "Pendente",
+      "AWAITING_PAYMENT": "Aguardando pagamento",
+      "CONFIRMED": "Confirmado",
+      "CANCELLED": "Cancelado",
+      "NO_SHOW": "Paciente ausente"
+    }
   }
 }
