@@ -1,4 +1,3 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { configureStore, ThunkAction, Action, Middleware, AnyAction } from '@reduxjs/toolkit';
 import {
   persistStore,
@@ -13,6 +12,7 @@ import {
 import { appReducer } from '@/store/reducers';
 import { setStore } from './storeAccessor';
 import { contactListenerMiddleware } from './contact/contactListener';
+import persistStorage from './persistStorage';
 
 // Disable this in testing environment
 const shouldLoadDebugger = __DEV__ && !process.env.JEST_WORKER_ID;
@@ -24,7 +24,7 @@ const CURRENT_VERSION = 2;
 const persistConfig = {
   key: 'Root',
   version: CURRENT_VERSION,
-  storage: AsyncStorage,
+  storage: persistStorage,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   migrate: async (state: any) => {
     // If the stored version is older or doesn't exist, return initial state
