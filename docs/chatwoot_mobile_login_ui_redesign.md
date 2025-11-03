@@ -52,6 +52,7 @@
   - The Redux slice (`src/store/appointments/*`) hydrates appointments, tracks pagination cursors, and dedupes records by `reservation_id`.  
   - Networking runs through the new Sara API client (`src/services/SaraAPIService.ts`) so every request attaches the Sara bearer token automatically.
 - The screen (`src/screens/appointments/AppointmentsScreen.tsx`) now renders Sara-branded cards with status pills, patient info, location metadata, and badges for payment-required bookings.  
+  - The status pill handles payment states, so the old “Payment required” chip was removed to avoid duplicate warnings.  
   - Supports pull-to-refresh, infinite scroll (cursor-based), error banners with retry, and localized empty states.  
   - Date strings use `date-fns` to format “Weekday, Month Day • HH:mm”, matching the CRM tone.
 - Service names coming from the backend now fall back to the agent’s EasyAppointments catalog: `/chatwoot/mobile/appointments` enriches each record with the label stored on `AgentsCredentials.services`, so cards no longer show “Service not specified” when EA didn’t persist `service_name` in the appointment metadata.

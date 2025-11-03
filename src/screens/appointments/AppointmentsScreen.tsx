@@ -95,11 +95,7 @@ const AppointmentCard = ({ appointment }: { appointment: Appointment }) => {
 
       {appointment.location ? <Text style={styles.cardMeta}>{appointment.location}</Text> : null}
 
-      {appointment.paymentRequired ? (
-        <View style={styles.paymentPill}>
-          <Text style={styles.paymentPillText}>{I18n.t('APPOINTMENTS.PAYMENT_REQUIRED')}</Text>
-        </View>
-      ) : null}
+      {/* Payment badge removed – the status pill now reflects payment state */}
     </View>
   );
 };
@@ -376,18 +372,6 @@ const styles = StyleSheet.create({
   cardMeta: {
     color: '#6F7A85',
     fontSize: 13,
-  },
-  paymentPill: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 10,
-    backgroundColor: '#FFE6E0',
-  },
-  paymentPillText: {
-    color: '#9F4E2F',
-    fontSize: 12,
-    fontWeight: '600',
   },
   emptyState: {
     alignItems: 'center',
