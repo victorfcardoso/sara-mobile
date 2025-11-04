@@ -152,4 +152,4 @@ describe('AuthService', () => {
       expect(result).toEqual(mockResponse.data);
     });
   });
-}
+});
