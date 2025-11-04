@@ -214,7 +214,7 @@ const generateValueFromPartsAndChangedText = (
        * - Push new part to the parts with that new text
        */
       case change.added: {
-        newParts.push(generatePlainTextPart(change.value));
+        newParts.push(generatePlainTextPart(change.value ?? ''));
 
         break;
       }

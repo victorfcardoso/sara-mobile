@@ -1,4 +1,5 @@
 import type { RootState } from '@/store';
+import type { Team } from '@/types/Team';
 import { teamAdapter } from './teamSlice';
 import { createSelector } from '@reduxjs/toolkit';
 
@@ -10,18 +11,17 @@ export const { selectAll: selectAllTeams } = teamAdapter.getSelectors<RootState>
 
 export const filterTeams = createSelector(
   [selectAllTeams, (state: RootState, searchTerm: string) => searchTerm],
-  (teams, searchTerm) => {
-    const teamsList = [
-      {
-        id: '0',
-        name: 'None',
-        description: null,
-        allowAutoAssign: false,
-        accountId: 0,
-        isMember: false,
-      },
-      ...teams,
-    ];
+  (teams, searchTerm): Team[] => {
+    const defaultTeam: Team = {
+      id: 0,
+      name: 'None',
+      description: null,
+      allowAutoAssign: false,
+      accountId: 0,
+      isMember: false,
+    };
+
+    const teamsList: Team[] = [defaultTeam, ...teams];
 
     return searchTerm ? teamsList.filter(team => team?.name?.includes(searchTerm)) : teamsList;
   },

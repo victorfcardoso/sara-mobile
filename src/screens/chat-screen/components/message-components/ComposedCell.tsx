@@ -15,7 +15,7 @@ import { INBOX_TYPES, MESSAGE_TYPES, TEXT_MAX_WIDTH } from '@/constants';
 
 import { AudioPlayer } from './AudioCell';
 import { FilePreview } from './FileCell';
-import { ImageContainer } from './ImageCell';
+import { ImageBubbleContainer } from './ImageBubble';
 import { VideoPlayer } from './VideoCell';
 import { DeliveryStatus } from './DeliveryStatus';
 import { useAppSelector } from '@/hooks';
@@ -54,11 +54,13 @@ export const ComposedCell = (props: ComposedCellProps) => {
   const { conversationId } = useChatWindowContext();
 
   const messages = useAppSelector(state => getMessagesByConversationId(state, { conversationId }));
+  const conversationMessages = messages ?? [];
 
   const isIncoming = messageType === MESSAGE_TYPES.INCOMING;
   const isOutgoing = messageType === MESSAGE_TYPES.OUTGOING;
   const isActivity = messageType === MESSAGE_TYPES.ACTIVITY;
   const isTemplate = messageType === MESSAGE_TYPES.TEMPLATE;
+  const senderAvatarSrc = sender?.thumbnail ? { uri: sender.thumbnail } : undefined;
 
   const isReplyMessage = useMemo(
     () => contentAttributes?.inReplyTo !== undefined,
@@ -68,9 +70,9 @@ export const ComposedCell = (props: ComposedCellProps) => {
   const replyMessage = useMemo(
     () =>
       contentAttributes && contentAttributes?.inReplyTo
-        ? messages.find(message => message.id === contentAttributes?.inReplyTo) || null
+        ? conversationMessages.find(message => message.id === contentAttributes?.inReplyTo) || null
         : null,
-    [messages, contentAttributes],
+    [conversationMessages, contentAttributes],
   );
   // const replyMessage = null;
   const errorMessage = contentAttributes?.externalError || '';
@@ -103,7 +105,7 @@ export const ComposedCell = (props: ComposedCellProps) => {
       <Animated.View style={tailwind.style('flex flex-row')}>
         {sender?.name && isIncoming && shouldRenderAvatar ? (
           <Animated.View style={tailwind.style('flex items-end justify-end mr-1')}>
-            <Avatar size={'md'} src={{ uri: sender?.thumbnail }} name={sender?.name || ''} />
+            <Avatar size="md" src={senderAvatarSrc} name={sender?.name || ''} />
           </Animated.View>
         ) : null}
 
@@ -170,7 +172,7 @@ export const ComposedCell = (props: ComposedCellProps) => {
                         <Animated.View
                           key={attachment.fileType + index}
                           style={tailwind.style('my-2')}>
-                          <ImageContainer
+                          <ImageBubbleContainer
                             imageSrc={attachment.dataUrl}
                             width={300 - 24 - (isPrivate ? 13 : 0)}
                             height={215}
@@ -240,11 +242,11 @@ export const ComposedCell = (props: ComposedCellProps) => {
         {shouldRenderAvatar && (isPrivate || isOutgoing || isTemplate) ? (
           <Animated.View style={tailwind.style('flex items-end justify-end ml-1')}>
             <Avatar
-              size={'md'}
+              size="md"
               src={
                 isTemplate
                   ? require('../../../../assets/local/bot-avatar.png') // eslint-disable-line @typescript-eslint/no-require-imports
-                  : { uri: sender?.thumbnail }
+                  : senderAvatarSrc
               }
               name={sender?.name || ''}
             />

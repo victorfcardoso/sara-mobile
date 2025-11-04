@@ -14,11 +14,17 @@ import { tailwind } from '@/theme';
 import { IconProps } from '@/types';
 import { Icon, Slider } from '@/components-next/common';
 import { Spinner } from '@/components-next/spinner';
-import { pausePlayer, resumePlayer, seekTo, startPlayer, stopPlayer } from '../audio-recorder';
+import {
+  pausePlayer,
+  resumePlayer,
+  seekTo,
+  startPlayer,
+  stopPlayer,
+  AudioStatus,
+  Callback,
+} from '../audio-recorder';
 import { MESSAGE_VARIANTS } from '@/constants';
-import { useDispatch } from 'react-redux';
-import { useAppSelector } from '@/hooks';
-// eslint-disable-next-line import/no-unresolved
+import { useAppDispatch, useAppSelector } from '@/hooks';
 import { convertOggToWav } from '@/utils/audioConverter';
 
 // eslint-disable-next-line react/display-name
@@ -56,27 +62,27 @@ export const AudioBubblePlayer = React.memo((props: AudioPlayerProps) => {
   const [isAudioPlaying, setAudioPlaying] = useState(false);
   const [convertedAudioSrc, setConvertedAudioSrc] = useState(audioSrc);
 
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const currentPlayingAudioSrc = useAppSelector(selectCurrentPlayingAudioSrc);
 
   const currentPosition = useSharedValue(0);
   const totalDuration = useSharedValue(0);
 
-  const audioPlayBackStatus = useCallback(
-    (data: { data: PlayBackType }) => {
-      const playBackData = data.data as PlayBackType;
-      if (playBackData) {
-        currentPosition.value = playBackData.currentPosition;
-        totalDuration.value = playBackData.duration;
-        if (playBackData.currentPosition === playBackData.duration) {
-          currentPosition.value = 0;
-          totalDuration.value = 0;
-          setAudioPlaying(false);
-          dispatch(setCurrentPlayingAudioSrc(''));
-        }
+  const audioPlayBackStatus = useCallback<Callback>(
+    ({ status, data }) => {
+      if (data) {
+        currentPosition.value = data.currentPosition;
+        totalDuration.value = data.duration;
+      }
+
+      if (status === AudioStatus.STOPPED && currentPlayingAudioSrc === convertedAudioSrc) {
+        currentPosition.value = 0;
+        totalDuration.value = 0;
+        setAudioPlaying(false);
+        dispatch(setCurrentPlayingAudioSrc(''));
       }
     },
-    [currentPosition, totalDuration, dispatch],
+    [convertedAudioSrc, currentPlayingAudioSrc, currentPosition, totalDuration, dispatch],
   );
 
   useEffect(() => {

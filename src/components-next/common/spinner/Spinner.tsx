@@ -1,5 +1,5 @@
 import React from 'react';
-import { ViewProps } from 'react-native';
+import { ViewProps, ViewStyle } from 'react-native';
 import Animated, {
   Easing,
   FadeIn,
@@ -35,14 +35,14 @@ export const Spinner = (props: SpinnerProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const animatedStyle = useAnimatedStyle(() => {
-    const transforms = withAnchorPoint(
+    const { transform } = withAnchorPoint(
       {
         transform: [{ rotate: `${rotation.value * 360}deg` }],
       },
       { x: 0.5, y: 0.5 },
       { width: size, height: size },
     );
-    return { ...transforms };
+    return { transform } as ViewStyle;
   });
 
   return (

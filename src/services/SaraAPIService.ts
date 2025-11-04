@@ -1,4 +1,11 @@
-import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios, {
+  AxiosError,
+  AxiosInstance,
+  AxiosRequestConfig,
+  AxiosResponse,
+  AxiosHeaders,
+  InternalAxiosRequestConfig,
+} from 'axios';
 
 import I18n from '@/i18n';
 import { saraConfig } from '@/config/saraConfig';
@@ -26,7 +33,7 @@ export class SaraAPIService {
 
   private setupInterceptors() {
     this.api.interceptors.request.use(
-      async config => {
+      async (config: InternalAxiosRequestConfig) => {
         const store = getStore();
         const state = store.getState();
         const tokens = state.auth.saraTokens;
@@ -36,16 +43,16 @@ export class SaraAPIService {
         }
 
         const tokenType = tokens.tokenType ?? 'Bearer';
-        const headers = {
-          Accept: 'application/json',
-          ...config.headers,
-          Authorization: `${tokenType.charAt(0).toUpperCase()}${tokenType.slice(1)} ${tokens.accessToken}`,
-        };
+        const headers = new AxiosHeaders(config.headers);
+        headers.set('Accept', 'application/json');
+        headers.set(
+          'Authorization',
+          `${tokenType.charAt(0).toUpperCase()}${tokenType.slice(1)} ${tokens.accessToken}`,
+        );
 
-        return {
-          ...config,
-          headers,
-        } as AxiosRequestConfig;
+        config.headers = headers;
+
+        return config;
       },
       error => Promise.reject(error),
     );

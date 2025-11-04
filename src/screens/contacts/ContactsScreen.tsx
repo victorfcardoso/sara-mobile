@@ -352,7 +352,7 @@ export const ContactsScreen = () => {
           <ActivityIndicator color={SARA_COLORS.accent} />
         </View>
       ) : (
-        <SectionList
+        <SectionList<ContactSectionItem, ContactSection>
           sections={sections}
           keyExtractor={keyExtractor}
           renderItem={renderItem}

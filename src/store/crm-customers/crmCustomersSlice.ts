@@ -4,7 +4,7 @@ import { crmCustomersActions } from './crmCustomersActions';
 import { CrmCustomersService } from './crmCustomersService';
 import type { CrmCustomer, CrmCustomersState } from './crmCustomersTypes';
 
-const crmCustomersAdapter = createEntityAdapter<CrmCustomer>({
+const crmCustomersAdapter = createEntityAdapter<CrmCustomer, string>({
   selectId: customer => customer.id,
   sortComparer: (a, b) => {
     const aTime = a.latestSeen ? new Date(a.latestSeen).getTime() : 0;

@@ -85,8 +85,17 @@ export interface UserAvatarProps extends ViewProps {
 export const UserAvatar: React.FC<Partial<UserAvatarProps>> = props => {
   const { name, src, status, parentsBackground = 'text-white', style, ...boxProps } = props;
 
-  const isSourceAvailable = useMemo(() => (src ? true : false), [src]);
-  const [imageAvailable, setImageAvailable] = useState(isSourceAvailable);
+  const resolvedSource = useMemo<ImageSourcePropType | undefined>(() => {
+    if (!src) {
+      return undefined;
+    }
+    if (typeof src === 'string') {
+      return { uri: src };
+    }
+    return src;
+  }, [src]);
+
+  const [imageAvailable, setImageAvailable] = useState(Boolean(resolvedSource));
   const loadFallback = () => setImageAvailable(false);
 
   return (
@@ -96,8 +105,8 @@ export const UserAvatar: React.FC<Partial<UserAvatarProps>> = props => {
         styleAdapter(style),
       ]}
       {...boxProps}>
-      {imageAvailable && src ? (
-        <AvatarImage src={src} handleFallback={loadFallback} />
+      {imageAvailable && resolvedSource ? (
+        <AvatarImage src={resolvedSource} handleFallback={loadFallback} />
       ) : name ? (
         <Text
           style={[

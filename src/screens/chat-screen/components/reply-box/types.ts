@@ -1,10 +1,10 @@
 import { PressableProps } from 'react-native';
-import { SharedValue } from 'react-native-reanimated';
+import { DerivedValue } from 'react-native-reanimated';
 
 export type SendMessageButtonProps = PressableProps & {};
 
 export type AddCommandButtonProps = PressableProps & {
-  derivedAddMenuOptionStateValue: SharedValue<number>;
+  derivedAddMenuOptionStateValue: DerivedValue<number>;
 };
 
 export type PhotosCommandButtonProps = PressableProps & {};

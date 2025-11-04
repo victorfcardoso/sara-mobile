@@ -87,7 +87,8 @@ export const QuoteReply = () => {
 
   const handleScrollToMessage = useCallback(() => {
     const messageIndex = messageListRef.current?.props.data?.findIndex(
-      (item: Message) => item.id === quoteMessage?.id,
+      (item: Message | { date: string }) =>
+        'id' in item && typeof item.id === 'number' && item.id === quoteMessage?.id,
     );
     const shouldScrollToMessage = messageIndex !== -1 && messageIndex !== undefined;
 
@@ -108,16 +109,18 @@ export const QuoteReply = () => {
       {quoteMessage?.attachments?.length && quoteMessage?.attachments?.length > 0 ? (
         <Animated.View style={tailwind.style('h-9.5 w-9.5 mr-3 rounded-lg overflow-hidden')}>
           {quoteMessage?.attachments?.length > 0 &&
-          quoteMessage?.attachments[0].fileType === 'image' ? (
+          quoteMessage?.attachments[0].fileType === 'image' &&
+          quoteMessage?.attachments[0].thumbUrl ? (
             <Image
               style={tailwind.style('h-full w-full')}
               contentFit="cover"
-              source={quoteMessage?.attachments[0].thumbUrl}
+              source={{ uri: quoteMessage.attachments[0].thumbUrl }}
             />
           ) : null}
           {quoteMessage?.attachments?.length > 0 &&
-          quoteMessage?.attachments[0].fileType === 'video' ? (
-            <VideoPlayer playerEnabled={false} videoSrc={quoteMessage?.attachments[0].dataUrl} />
+          quoteMessage?.attachments[0].fileType === 'video' &&
+          quoteMessage?.attachments[0].dataUrl ? (
+            <VideoPlayer playerEnabled={false} videoSrc={quoteMessage.attachments[0].dataUrl} />
           ) : null}
           {quoteMessage?.attachments?.length > 0 &&
           quoteMessage?.attachments[0].fileType === 'audio' ? (

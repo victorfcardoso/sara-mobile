@@ -1,4 +1,3 @@
-import type { Change } from 'diff';
 import type { ReactNode, Ref } from 'react';
 import type { StyleProp, TextInput, TextInputProps, TextStyle, ViewStyle } from 'react-native';
 
@@ -14,7 +13,14 @@ type MentionData = {
   id: string;
 };
 
-type CharactersDiffChange = Omit<Change, 'count'> & { count: number };
+type DiffChange = {
+  value?: string;
+  added?: boolean;
+  removed?: boolean;
+  count?: number;
+};
+
+type CharactersDiffChange = Omit<DiffChange, 'count'> & { count: number };
 
 type RegexMatchResult = string[] & {
   // Matched string

@@ -80,6 +80,14 @@ export interface MessagesResponse {
   conversationId: number;
 }
 
+export type AttachmentInput =
+  | File
+  | {
+      uri?: string | null;
+      fileName?: string | null;
+      type?: string | null;
+    };
+
 export interface SendMessagePayload {
   conversationId: number;
   message: string;
@@ -88,7 +96,7 @@ export interface SendMessagePayload {
     id: number;
     thumbnail?: string;
   };
-  file?: File;
+  file?: AttachmentInput;
   contentAttributes?: {
     inReplyTo: number;
   };
@@ -164,12 +172,12 @@ export interface BulkActionLabels {
 export interface AssigneePayload {
   conversationId: number;
   assigneeId?: number;
-  teamId?: string;
+  teamId?: number;
 }
 
 export interface AssignTeamPayload {
   conversationId: number;
-  teamId: string;
+  teamId: number;
 }
 
 export interface AssignTeamAPIResponse {

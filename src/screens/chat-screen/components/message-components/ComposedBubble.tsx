@@ -45,6 +45,7 @@ export const ComposedBubble = (props: ComposedBubbleProps) => {
   const { conversationId } = useChatWindowContext();
 
   const messages = useAppSelector(state => getMessagesByConversationId(state, { conversationId }));
+  const conversationMessages = messages ?? [];
 
   const isReplyMessage = useMemo(
     () => contentAttributes?.inReplyTo !== undefined,
@@ -54,9 +55,9 @@ export const ComposedBubble = (props: ComposedBubbleProps) => {
   const replyMessage = useMemo(
     () =>
       contentAttributes && contentAttributes?.inReplyTo
-        ? messages.find(message => message.id === contentAttributes?.inReplyTo) || null
+        ? conversationMessages.find(message => message.id === contentAttributes?.inReplyTo) || null
         : null,
-    [messages, contentAttributes],
+    [conversationMessages, contentAttributes],
   );
   const { imageType } = contentAttributes || {};
   const isAnInstagramStory = imageType === ATTACHMENT_TYPES.STORY_MENTION;

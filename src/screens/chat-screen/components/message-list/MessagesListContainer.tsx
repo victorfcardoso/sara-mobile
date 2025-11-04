@@ -82,7 +82,8 @@ export const MessagesListContainer = () => {
   const conversation = useAppSelector(state => selectConversationById(state, conversationId));
   const isAllMessagesFetched = useAppSelector(selectIsAllMessagesFetched);
   const isLoadingMessages = useAppSelector(selectIsLoadingMessages);
-  const messages = useAppSelector(state => getMessagesByConversationId(state, { conversationId }));
+  const messages =
+    useAppSelector(state => getMessagesByConversationId(state, { conversationId })) ?? [];
   const attachments = useAppSelector(selectAttachments);
 
   const { setAddMenuOptionSheetState } = useChatWindowContext();

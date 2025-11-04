@@ -7,6 +7,7 @@ import Animated, { SlideInDown, SlideOutDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppDispatch } from '@/hooks';
 import { updateAttachments } from '@/store/conversation/sendMessageSlice';
+import type { AppDispatch } from '@/store';
 import { useRefsContext } from '@/context';
 import { AttachFileIcon, CameraIcon, MacrosIcon, PhotosIcon } from '@/svg-icons';
 import { tailwind } from '@/theme';
@@ -17,7 +18,7 @@ import i18n from '@/i18n';
 import { showToast } from '@/utils/toastUtils';
 import { findFileSize } from '@/utils/fileUtils';
 
-export const handleOpenPhotosLibrary = async dispatch => {
+export const handleOpenPhotosLibrary = async (dispatch: AppDispatch) => {
   const pickedAssets = await launchImageLibrary({
     quality: 1,
     selectionLimit: 4,
@@ -52,7 +53,7 @@ export const handleOpenPhotosLibrary = async dispatch => {
   }
 };
 
-const handleLaunchCamera = async dispatch => {
+const handleLaunchCamera = async (dispatch: AppDispatch) => {
   request(Platform.OS === 'ios' ? PERMISSIONS.IOS.CAMERA : PERMISSIONS.ANDROID.CAMERA).then(
     async result => {
       if (RESULTS.BLOCKED === result) {
@@ -111,7 +112,7 @@ const mapObject = (originalObject: DocumentPickerResponse): Asset[] => {
   ];
 };
 
-const handleAttachFile = async dispatch => {
+const handleAttachFile = async (dispatch: AppDispatch) => {
   try {
     const result = await DocumentPicker.pick({
       type: [
@@ -143,7 +144,13 @@ const handleAttachFile = async dispatch => {
   }
 };
 
-const ADD_MENU_OPTIONS = [
+type AddMenuOption = {
+  icon: JSX.Element;
+  title: string;
+  handlePress: (dispatch: AppDispatch) => void | Promise<void>;
+};
+
+const ADD_MENU_OPTIONS: AddMenuOption[] = [
   {
     icon: <PhotosIcon />,
     title: 'Photos',
@@ -162,12 +169,12 @@ const ADD_MENU_OPTIONS = [
   {
     icon: <MacrosIcon />,
     title: 'Macros',
-    handlePress: () => {},
+    handlePress: (_dispatch: AppDispatch) => {},
   },
 ];
 
-export const validateFileAndSetAttachments = async (dispatch, attachment) => {
-  const { fileSize } = attachment;
+export const validateFileAndSetAttachments = async (dispatch: AppDispatch, attachment: Asset) => {
+  const fileSize = attachment.fileSize ?? 0;
   if (findFileSize(fileSize) <= MAXIMUM_FILE_UPLOAD_SIZE) {
     dispatch(updateAttachments([attachment]));
   } else {
@@ -177,7 +184,7 @@ export const validateFileAndSetAttachments = async (dispatch, attachment) => {
 
 type MenuOptionProps = {
   index: number;
-  menuOption: (typeof ADD_MENU_OPTIONS)[0];
+  menuOption: AddMenuOption;
 };
 
 const MenuOption = (props: MenuOptionProps) => {

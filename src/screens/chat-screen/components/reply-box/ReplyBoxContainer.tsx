@@ -53,7 +53,7 @@ import { SendMessagePayload } from '@/store/conversation/conversationTypes';
 import { TypingIndicator } from './TypingIndicator';
 import { getTypingUsersText } from '@/utils';
 import { selectTypingUsersByConversationId } from '@/store/conversation/conversationTypingSlice';
-import { Agent, CannedResponse, Conversation } from '@/types';
+import { Agent, CannedResponse, Conversation, Message } from '@/types';
 import AnalyticsHelper from '@/utils/analyticsUtils';
 import { CONVERSATION_EVENTS } from '@/constants/analyticsEvents';
 import {
@@ -130,36 +130,38 @@ const BottomSheetContent = () => {
 
   const lastEmail = useAppSelector(state =>
     shouldShowReplyHeader ? getLastEmailInSelectedChat(state, { conversationId }) : null,
-  );
+  ) as Message | null;
 
   useEffect(() => {
     if (!lastEmail) return;
-    const {
-      contentAttributes: { email: emailAttributes = {} },
-    } = lastEmail;
+    const emailAttributes =
+      lastEmail.contentAttributes?.email ??
+      ({ cc: [], from: [], bcc: [] } as { cc?: string[]; from?: string[]; bcc?: string[] });
 
     // Retrieve the email of the current conversation's sender
     const conversationContact = conversation?.meta?.sender?.email || '';
-    let cc = emailAttributes.cc ? [...emailAttributes.cc] : [];
-    let to = [];
+    let cc: string[] = emailAttributes.cc ? [...emailAttributes.cc] : [];
+    let to: string[] = [];
 
     // there might be a situation where the current conversation will include a message from a third person,
     // and the current conversation contact is in CC.
     // This is an edge-case, reported here: CW-1511 [ONLY FOR INTERNAL REFERENCE]
     // So we remove the current conversation contact's email from the CC list if present
     if (cc.includes(conversationContact)) {
-      cc = cc.filter(email => email !== conversationContact);
+      cc = cc.filter((email: string) => email !== conversationContact);
     }
 
     // If the last incoming message sender is different from the conversation contact, add them to the "to"
     // and add the conversation contact to the CC
-    if (!emailAttributes.from.includes(conversationContact)) {
-      to.push(...emailAttributes.from);
+    if (!(emailAttributes.from ?? []).includes(conversationContact)) {
+      to.push(...(emailAttributes.from ?? []));
       cc.push(conversationContact);
     }
 
     // Remove the conversation contact's email from the BCC list if present
-    let bcc = (emailAttributes.bcc || []).filter(email => email !== conversationContact);
+    let bcc = (emailAttributes.bcc || []).filter(
+      (email: string) => email !== conversationContact,
+    );
 
     // Ensure only unique email addresses are in the CC list
     bcc = [...new Set(bcc)];
@@ -185,11 +187,9 @@ const BottomSheetContent = () => {
     }
   }, [inbox, canReply, dispatch]);
 
-  const derivedAddMenuOptionStateValue = useDerivedValue(() => {
-    return isAddMenuOptionSheetOpen
-      ? withSpring(1, SHEET_APPEAR_SPRING_CONFIG)
-      : withSpring(0, SHEET_APPEAR_SPRING_CONFIG);
-  });
+  const derivedAddMenuOptionStateValue = useDerivedValue<number>(() =>
+    withSpring(isAddMenuOptionSheetOpen ? 1 : 0, SHEET_APPEAR_SPRING_CONFIG),
+  );
 
   const animatedInputWrapperStyle = useAnimatedStyle(
     () => ({
@@ -210,10 +210,16 @@ const BottomSheetContent = () => {
   };
 
   // TODO: Implement this
-  const setReplyToInPayload = (messagePayload: Record<string, unknown>) => {
-    //     ...(quoteMessage?.id && {
-    //       contentAttributes: { inReplyTo: quoteMessage.id },
-    //     }),
+  const setReplyToInPayload = (messagePayload: SendMessagePayload): SendMessagePayload => {
+    if (quoteMessage?.id) {
+      return {
+        ...messagePayload,
+        contentAttributes: {
+          ...(messagePayload.contentAttributes ?? {}),
+          inReplyTo: quoteMessage.id,
+        },
+      };
+    }
     return messagePayload;
   };
 
@@ -227,17 +233,15 @@ const BottomSheetContent = () => {
       );
     }
 
-    let messagePayload = {
+    let messagePayload: SendMessagePayload = {
       conversationId,
       message: updatedMessage,
       private: isPrivate,
       sender: {
         id: userId ?? 0,
         thumbnail: userThumbnail ?? '',
-        name: userName ?? '',
       },
-      files: [],
-    } as SendMessagePayload;
+    };
 
     messagePayload = setReplyToInPayload(messagePayload);
 
@@ -246,19 +250,10 @@ const BottomSheetContent = () => {
     }
 
     if (attachedFiles && attachedFiles.length) {
-      // messagePayload.files = [];
-      // TODO: Implement this
-      // attachedFiles.forEach(attachment => {
-      //   if (globalConfig.directUploadsEnabled) {
-      //     messagePayload.files.push(attachment.blobSignedId);
-      //   } else {
-      //     messagePayload.files.push(attachment.resource.file);
-      //   }
-      // });
-      // TODO: Add support for multiple files later
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-expect-error
-      messagePayload.file = attachedFiles[0];
+      const primaryAttachment = attachedFiles[0];
+      if (primaryAttachment?.uri) {
+        messagePayload.file = primaryAttachment as unknown as File;
+      }
     }
 
     // TODO: Implement this

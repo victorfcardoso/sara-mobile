@@ -1,5 +1,6 @@
 import { createDraftSafeSelector, createSelector } from '@reduxjs/toolkit';
 import type { RootState } from '@/store';
+import type { MessageContentAttributes } from '@/types/Message';
 import { conversationAdapter } from './conversationSlice';
 import { FilterState } from '@/store/conversation/conversationFilterSlice';
 import { CONVERSATION_PRIORITY_ORDER } from '@/constants';
@@ -115,7 +116,7 @@ export const getMessagesByConversationId = createDraftSafeSelector(
   ],
   conversation => {
     if (!conversation) {
-      return [];
+      return null;
     }
     // Memoize the sorted and filtered messages using createSelector
     return conversation.messages
@@ -133,18 +134,18 @@ export const getLastEmailInSelectedChat = createDraftSafeSelector(
   ],
   conversation => {
     if (!conversation) {
-      return [];
+      return null;
     }
     const lastEmail = [...conversation.messages].reverse().find(message => {
-      const { contentAttributes = {}, messageType } = message;
-      const { email = {} } = contentAttributes || {};
+      const { contentAttributes, messageType } = message;
+      const email = (contentAttributes as MessageContentAttributes | undefined)?.email;
       const isIncomingOrOutgoing =
         messageType === MESSAGE_TYPES.OUTGOING || messageType === MESSAGE_TYPES.INCOMING;
-      if (email.from && isIncomingOrOutgoing) {
+      if (email?.from && isIncomingOrOutgoing) {
         return true;
       }
       return false;
     });
-    return lastEmail;
+    return lastEmail ?? null;
   },
 );

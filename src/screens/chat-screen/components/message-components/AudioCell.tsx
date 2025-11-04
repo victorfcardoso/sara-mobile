@@ -14,12 +14,19 @@ import { Channel, IconProps, Message, MessageStatus, UnixTimestamp } from '@/typ
 import { unixTimestampToReadableTime } from '@/utils';
 import { Avatar, Icon, Slider } from '@/components-next/common';
 import { Spinner } from '@/components-next/spinner';
-import { pausePlayer, resumePlayer, seekTo, startPlayer, stopPlayer } from '../audio-recorder';
+import {
+  pausePlayer,
+  resumePlayer,
+  seekTo,
+  startPlayer,
+  stopPlayer,
+  AudioStatus,
+  Callback,
+} from '../audio-recorder';
 import { MenuOption, MessageMenu } from '../message-menu';
 import { MESSAGE_TYPES } from '@/constants';
 import { DeliveryStatus } from './DeliveryStatus';
-import { useDispatch } from 'react-redux';
-import { useAppSelector } from '@/hooks';
+import { useAppDispatch, useAppSelector } from '@/hooks';
 
 export const PlayIcon = ({ fill, fillOpacity }: IconProps) => {
   return (
@@ -63,23 +70,23 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
   const [isSoundLoading, setIsSoundLoading] = useState(false);
   const [isAudioPlaying, setAudioPlaying] = useState(false);
 
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const currentPlayingAudioSrc = useAppSelector(selectCurrentPlayingAudioSrc);
 
   const currentPosition = useSharedValue(0);
   const totalDuration = useSharedValue(0);
 
-  const audioPlayBackStatus = (data: { data: PlayBackType }) => {
-    const playBackData = data.data as PlayBackType;
-    if (playBackData) {
-      currentPosition.value = playBackData.currentPosition;
-      totalDuration.value = playBackData.duration;
-      if (playBackData.currentPosition === playBackData.duration) {
-        currentPosition.value = 0;
-        totalDuration.value = 0;
-        setAudioPlaying(false);
-        dispatch(setCurrentPlayingAudioSrc(''));
-      }
+  const audioPlayBackStatus: Callback = ({ status, data }) => {
+    if (data) {
+      currentPosition.value = data.currentPosition;
+      totalDuration.value = data.duration;
+    }
+
+    if (status === AudioStatus.STOPPED && currentPlayingAudioSrc === audioSrc) {
+      currentPosition.value = 0;
+      totalDuration.value = 0;
+      setAudioPlaying(false);
+      dispatch(setCurrentPlayingAudioSrc(''));
     }
   };
 
@@ -199,6 +206,7 @@ export const AudioCell: React.FC<AudioCellProps> = props => {
   } = props;
   const isIncoming = messageType === MESSAGE_TYPES.INCOMING;
   const isOutgoing = messageType === MESSAGE_TYPES.OUTGOING;
+  const senderAvatarSrc = sender?.thumbnail ? { uri: sender.thumbnail } : undefined;
 
   return (
     <Animated.View
@@ -214,7 +222,7 @@ export const AudioCell: React.FC<AudioCellProps> = props => {
       <Animated.View style={tailwind.style('flex flex-row')}>
         {sender?.name && isIncoming && shouldRenderAvatar ? (
           <Animated.View style={tailwind.style('flex items-end justify-end mr-1')}>
-            <Avatar size={'md'} src={{ uri: sender?.thumbnail }} name={sender?.name} />
+            <Avatar size="md" src={senderAvatarSrc} name={sender?.name || ''} />
           </Animated.View>
         ) : null}
         <MessageMenu menuOptions={menuOptions}>
@@ -261,7 +269,7 @@ export const AudioCell: React.FC<AudioCellProps> = props => {
         </MessageMenu>
         {sender?.name && isOutgoing && shouldRenderAvatar ? (
           <Animated.View style={tailwind.style('flex items-end justify-end ml-1')}>
-            <Avatar size={'md'} src={{ uri: sender?.thumbnail }} name={sender?.name} />
+            <Avatar size="md" src={senderAvatarSrc} name={sender?.name || ''} />
           </Animated.View>
         ) : null}
       </Animated.View>

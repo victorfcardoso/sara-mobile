@@ -17,47 +17,46 @@ const isValidSize = (size: Size): boolean => {
 
 const defaultAnchorPoint = { x: 0.5, y: 0.5 };
 
-export const withAnchorPoint = (transform: TransformsStyle, anchorPoint: Point, size: Size) => {
+type TransformValue = Record<string, number | string | number[]>;
+
+export const withAnchorPoint = (
+  transform: TransformsStyle,
+  anchorPoint: Point,
+  size: Size,
+): TransformsStyle => {
   'worklet';
   if (!isValidSize(size)) {
     return transform;
   }
 
-  let injectedTransform = transform.transform;
-  if (!injectedTransform) {
+  const baseTransform = transform.transform;
+  if (!baseTransform) {
     return transform;
   }
 
-  if (anchorPoint.x !== defaultAnchorPoint.x && size.width) {
-    const shiftTranslateX = [];
+  if (!Array.isArray(baseTransform)) {
+    return { transform: baseTransform };
+  }
 
-    // shift before rotation
-    shiftTranslateX.push({
+  const transforms = [...baseTransform] as TransformValue[];
+
+  if (anchorPoint.x !== defaultAnchorPoint.x && size.width) {
+    transforms.unshift({
       translateX: size.width * (anchorPoint.x - defaultAnchorPoint.x),
     });
-    injectedTransform = [...shiftTranslateX, ...injectedTransform];
-    // shift after rotation
-    injectedTransform.push({
+    transforms.push({
       translateX: size.width * (defaultAnchorPoint.x - anchorPoint.x),
     });
   }
 
-  if (!Array.isArray(injectedTransform)) {
-    return { transform: injectedTransform };
-  }
-
   if (anchorPoint.y !== defaultAnchorPoint.y && size.height) {
-    const shiftTranslateY = [];
-    // shift before rotation
-    shiftTranslateY.push({
+    transforms.unshift({
       translateY: size.height * (anchorPoint.y - defaultAnchorPoint.y),
     });
-    injectedTransform = [...shiftTranslateY, ...injectedTransform];
-    // shift after rotation
-    injectedTransform.push({
+    transforms.push({
       translateY: size.height * (defaultAnchorPoint.y - anchorPoint.y),
     });
   }
 
-  return { transform: injectedTransform };
+  return { transform: transforms as unknown as TransformsStyle['transform'] };
 };

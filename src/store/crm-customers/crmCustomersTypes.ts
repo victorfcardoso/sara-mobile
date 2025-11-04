@@ -60,7 +60,7 @@ export interface CrmCustomersUIFlags {
   isLoadingMore: boolean;
 }
 
-export interface CrmCustomersState extends EntityState<CrmCustomer> {
+export interface CrmCustomersState extends EntityState<CrmCustomer, string> {
   uiFlags: CrmCustomersUIFlags;
   pagination: CrmCustomersPagination;
   error: string | null;

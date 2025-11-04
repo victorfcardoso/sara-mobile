@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { Animated, Image, Pressable, StatusBar, StyleSheet, TextInput, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -7,6 +7,7 @@ import {
   BottomSheetScrollView,
   useBottomSheetSpringConfigs,
 } from '@gorhom/bottom-sheet';
+import type { BottomSheetModalProps } from '@gorhom/bottom-sheet';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EMAIL_REGEX } from '@/constants';
@@ -88,6 +89,7 @@ const LoginScreen = () => {
     showsVerticalScrollIndicator: false,
     contentContainerStyle: contentContainerStyles,
   } as const;
+  const bottomSheetSnapPoints = useMemo<(string | number)[]>(() => ['70%'], []);
   const bottomSheetProps = {
     backdropComponent: BottomSheetBackdrop,
     handleIndicatorStyle: tailwind.style('overflow-hidden bg-blackA-A6 w-8 h-1 rounded-[11px]'),
@@ -96,8 +98,8 @@ const LoginScreen = () => {
     animationConfigs,
     handleStyle: tailwind.style('p-0 h-4 pt-[5px]'),
     style: tailwind.style('rounded-[26px] overflow-hidden'),
-    snapPoints: ['70%'] as const,
-  } as const;
+    snapPoints: bottomSheetSnapPoints,
+  } satisfies Partial<BottomSheetModalProps>;
 
   useEffect(() => {
     languagesModalSheetRef.current?.dismiss({
