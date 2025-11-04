@@ -516,7 +516,32 @@
     "LAST_SEEN_DATE": "Last seen {{date}}",
     "EMPTY_TITLE": "No contacts found",
     "EMPTY_SUBTITLE": "Try adjusting the filters or search by the customer's phone number.",
-    "ERROR_TITLE": "We couldn't refresh contacts",
-    "NO_THREAD": "We couldn't find a conversation for this contact yet."
+  "ERROR_TITLE": "We couldn't refresh contacts",
+  "NO_THREAD": "We couldn't find a conversation for this contact yet.",
+  "DETAIL": {
+    "TITLE": "Contact",
+    "BACK_ACCESSIBILITY": "Go back",
+    "ACTIVE_THREAD": "Active conversation",
+    "NO_THREAD_LABEL": "No conversation yet",
+    "AWAITING_NAME": "Awaiting name confirmation",
+    "ACTIONS": {
+      "OPEN_CHAT": "Open chat",
+      "START_CHAT": "Start chat",
+      "SCHEDULE": "Schedule appointment"
+    },
+    "INFO_SECTION": "Contact details",
+    "EMAIL": "Email",
+    "LOCATION": "Location",
+    "CREATED_AT": "Created on",
+    "UPDATED_AT": "Last updated",
+    "APPOINTMENTS_TITLE": "Appointments",
+    "APPOINTMENTS_EMPTY": "No appointments linked to this contact yet.",
+    "APPOINTMENTS_UPCOMING": "Upcoming",
+    "APPOINTMENTS_HISTORY": "Recent history",
+    "SERVICE_PLACEHOLDER": "Service",
+    "VALUE_UNAVAILABLE": "Unavailable",
+    "NOT_FOUND_TITLE": "We could not load this contact",
+    "NOT_FOUND_SUBTITLE": "Try again from the Contacts list."
   }
+}
 }

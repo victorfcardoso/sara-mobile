@@ -11,8 +11,9 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { differenceInHours, format, isSameDay } from 'date-fns';
-import { StackActions, useNavigation } from '@react-navigation/native';
+import { format, isSameDay } from 'date-fns';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import I18n from '@/i18n';
 import { useAppDispatch, useAppSelector } from '@/hooks';
@@ -29,23 +30,17 @@ import {
 import type { CrmCustomer } from '@/store/crm-customers/crmCustomersTypes';
 import { selectAppointmentsList } from '@/store/appointments/appointmentsSelectors';
 import type { Appointment } from '@/store/appointments/appointmentsTypes';
-import { selectAllConversations } from '@/store/conversation/conversationSelectors';
-import type { Conversation } from '@/types';
-import { showToast } from '@/utils/toastUtils';
-
-const SARA_COLORS = {
-  background: '#F8F5F3',
-  card: '#FFFFFF',
-  textPrimary: '#16273D',
-  textSecondary: '#4B5D6E',
-  muted: '#8D9AA8',
-  accent: '#4CB6AC',
-  divider: '#E7E2DD',
-  badgeAmberBg: '#FFEBD6',
-  badgeAmberText: '#8A5A2E',
-  badgeTealBg: '#CCE6DE',
-  badgeTealText: '#0F4D49',
-};
+import { ContactsStackParamList } from '@/navigation/stack/ContactsStack';
+import {
+  CONTACT_COLORS as SARA_COLORS,
+  buildAppointmentIndex,
+  formatPhoneForDisplay,
+  formatUpcomingLabel,
+  getContactDisplayName,
+  isTemplateRequired,
+  normalizePhone,
+  toDateOrNull,
+} from './contactUtils';
 
 type ContactFilter = 'all' | 'has-thread' | 'upcoming';
 
@@ -58,98 +53,6 @@ type ContactSectionItem = {
 type ContactSection = SectionListData<ContactSectionItem> & {
   title?: string;
   key: string;
-};
-
-const normalizePhone = (value?: string | null): string | null => {
-  if (!value) {
-    return null;
-  }
-  const digits = value.replace(/[^0-9+]/g, '');
-  return digits.length ? digits : null;
-};
-
-const getContactDisplayName = (contact: CrmCustomer): string => {
-  return contact.fullName || contact.whatsappPhone || I18n.t('CONTACTS.UNKNOWN_NAME');
-};
-
-const formatPhoneForDisplay = (value?: string | null): string => {
-  if (!value) {
-    return I18n.t('CONTACTS.UNKNOWN_PHONE');
-  }
-  return value;
-};
-
-const isTemplateRequired = (contact: CrmCustomer): boolean => {
-  if (!contact.threadId) {
-    return false;
-  }
-  if (!contact.latestSeen) {
-    return true;
-  }
-  const lastSeen = new Date(contact.latestSeen);
-  if (Number.isNaN(lastSeen.getTime())) {
-    return false;
-  }
-  return differenceInHours(new Date(), lastSeen) >= 24;
-};
-
-const toDateOrNull = (value?: string | null): Date | null => {
-  if (!value) {
-    return null;
-  }
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
-};
-
-const formatUpcomingLabel = (appointment: Appointment): string => {
-  if (!appointment.startAt) {
-    return I18n.t('CONTACTS.UPCOMING_PLACEHOLDER');
-  }
-  const date = new Date(appointment.startAt);
-  if (Number.isNaN(date.getTime())) {
-    return I18n.t('CONTACTS.UPCOMING_PLACEHOLDER');
-  }
-  const timeLabel = format(date, 'HH:mm');
-  const service = appointment.serviceName || I18n.t('CONTACTS.SERVICE_PLACEHOLDER');
-  return `${timeLabel} • ${service}`;
-};
-
-const buildAppointmentIndex = (appointments: Appointment[]): Map<string, Appointment> => {
-  const today = new Date();
-  const startOfDay = new Date(today);
-  startOfDay.setHours(0, 0, 0, 0);
-  const endOfDay = new Date(today);
-  endOfDay.setHours(23, 59, 59, 999);
-
-  const index = new Map<string, Appointment>();
-
-  appointments.forEach(appointment => {
-    if (!appointment.startAt) {
-      return;
-    }
-    const date = new Date(appointment.startAt);
-    if (Number.isNaN(date.getTime())) {
-      return;
-    }
-    if (date < startOfDay || date > endOfDay) {
-      return;
-    }
-    const phone = normalizePhone(appointment.customerPhone);
-    if (!phone) {
-      return;
-    }
-    const existing = index.get(phone);
-    if (!existing) {
-      index.set(phone, appointment);
-      return;
-    }
-    const existingDate = new Date(existing.startAt ?? '');
-    if (Number.isNaN(existingDate.getTime()) || date < existingDate) {
-      index.set(phone, appointment);
-    }
-  });
-
-  return index;
 };
 
 const buildSections = (
@@ -266,47 +169,19 @@ const buildSections = (
 
 export const ContactsScreen = () => {
   const dispatch = useAppDispatch();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<ContactsStackParamList>>();
   const contacts = useAppSelector(selectCrmCustomers) as CrmCustomer[];
   const uiFlags = useAppSelector(selectCrmCustomersUiFlags);
   const pagination = useAppSelector(selectCrmCustomersPagination);
   const error = useAppSelector(selectCrmCustomersError);
   const serverSearchQuery = useAppSelector(selectCrmCustomersSearchQuery);
   const appointments = useAppSelector(selectAppointmentsList);
-  const conversations = useAppSelector(selectAllConversations);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<ContactFilter>('all');
 
   const hasInitialized = useRef(false);
   const upcomingIndex = useMemo(() => buildAppointmentIndex(appointments), [appointments]);
-  const conversationByPhone = useMemo(() => {
-    const map = new Map<string, Conversation>();
-    conversations.forEach(conversation => {
-      const sender = conversation.meta?.sender;
-      if (!sender) {
-        return;
-      }
-
-      const customPhone =
-        sender.customAttributes && typeof sender.customAttributes === 'object'
-          ? normalizePhone((sender.customAttributes['phone_number'] as string) ?? null)
-          : null;
-
-      const candidates = [
-        normalizePhone(sender.phoneNumber ?? null),
-        normalizePhone((sender.identifier as string | null) ?? null),
-        customPhone,
-      ].filter(Boolean) as string[];
-
-      candidates.forEach(candidate => {
-        if (candidate && !map.has(candidate)) {
-          map.set(candidate, conversation);
-        }
-      });
-    });
-    return map;
-  }, [conversations]);
 
   useEffect(() => {
     if (!hasInitialized.current) {
@@ -371,17 +246,7 @@ export const ContactsScreen = () => {
       const showThreadBadge = Boolean(contact.threadId);
 
       const handlePress = () => {
-        const phoneKey = normalizePhone(contact.whatsappPhone);
-        const conversation = phoneKey ? conversationByPhone.get(phoneKey) : undefined;
-        if (conversation) {
-          const action = StackActions.push('ChatScreen', {
-            conversationId: conversation.id,
-            isConversationOpenedExternally: false,
-          });
-          navigation.dispatch(action);
-          return;
-        }
-        showToast({ message: I18n.t('CONTACTS.NO_THREAD') });
+        navigation.navigate('ContactDetailsScreen', { contactId: contact.id });
       };
 
       return (
@@ -421,7 +286,7 @@ export const ContactsScreen = () => {
         </Pressable>
       );
     },
-    [conversationByPhone, navigation],
+    [navigation],
   );
 
   const keyExtractor = useCallback(

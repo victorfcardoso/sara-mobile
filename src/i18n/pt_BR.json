@@ -493,7 +493,32 @@
     "LAST_SEEN_DATE": "Último contato em {{date}}",
     "EMPTY_TITLE": "Nenhum contato encontrado",
     "EMPTY_SUBTITLE": "Revise os filtros ou pesquise pelo número do cliente.",
-    "ERROR_TITLE": "Não foi possível atualizar os contatos",
-    "NO_THREAD": "Ainda não encontramos uma conversa para este contato."
+  "ERROR_TITLE": "Não foi possível atualizar os contatos",
+  "NO_THREAD": "Ainda não encontramos uma conversa para este contato.",
+  "DETAIL": {
+    "TITLE": "Contato",
+    "BACK_ACCESSIBILITY": "Voltar",
+    "ACTIVE_THREAD": "Conversa ativa",
+    "NO_THREAD_LABEL": "Sem conversa",
+    "AWAITING_NAME": "Aguardando confirmação de nome",
+    "ACTIONS": {
+      "OPEN_CHAT": "Abrir conversa",
+      "START_CHAT": "Iniciar conversa",
+      "SCHEDULE": "Agendar atendimento"
+    },
+    "INFO_SECTION": "Detalhes do contato",
+    "EMAIL": "E-mail",
+    "LOCATION": "Localização",
+    "CREATED_AT": "Criado em",
+    "UPDATED_AT": "Atualizado em",
+    "APPOINTMENTS_TITLE": "Agendamentos",
+    "APPOINTMENTS_EMPTY": "Nenhum agendamento vinculado a este contato.",
+    "APPOINTMENTS_UPCOMING": "Próximos",
+    "APPOINTMENTS_HISTORY": "Histórico recente",
+    "SERVICE_PLACEHOLDER": "Serviço",
+    "VALUE_UNAVAILABLE": "Indisponível",
+    "NOT_FOUND_TITLE": "Não conseguimos carregar este contato",
+    "NOT_FOUND_SUBTITLE": "Tente novamente pela lista de contatos."
   }
+}
 }
