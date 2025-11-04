@@ -14,14 +14,14 @@ import { selectCurrentState } from '@/store/conversation/conversationHeaderSlice
 import {
   ConversationIconFilled,
   ConversationIconOutline,
-  InboxIconFilled,
-  InboxIconOutline,
   AppointmentsIconFilled,
   AppointmentsIconOutline,
   SettingsIconFilled,
   SettingsIconOutline,
   ContactsIconFilled,
   ContactsIconOutline,
+  NotificationsIconFilled,
+  NotificationsIconOutline,
 } from '@/svg-icons';
 import { tailwind } from '@/theme';
 import { useHaptic, useScaleAnimation, useTabBarHeight } from '@/utils';
@@ -43,8 +43,8 @@ const TabBarIcons = ({ focused, route }: TabBarIconsProps) => {
   switch (route.name) {
     case 'Conversations':
       return focused ? <ConversationIconFilled /> : <ConversationIconOutline />;
-    case 'Inbox':
-      return focused ? <InboxIconFilled /> : <InboxIconOutline />;
+    case 'Notifications':
+      return focused ? <NotificationsIconFilled /> : <NotificationsIconOutline />;
     case 'Appointments':
       return focused ? <AppointmentsIconFilled /> : <AppointmentsIconOutline />;
     case 'Settings':

@@ -4,3 +4,4 @@ export * from './InboxStack';
 export * from './AppointmentsStack';
 export * from './SettingsStack';
 export * from './ContactsStack';
+export * from './NotificationsStack';

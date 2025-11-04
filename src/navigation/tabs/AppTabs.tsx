@@ -23,9 +23,9 @@ import {
   AuthStack,
   ConversationStack,
   SettingsStack,
-  InboxStack,
   AppointmentsStack,
   ContactsStack,
+  NotificationsStack,
 } from '../stack';
 import ChatScreen from '@/screens/chat-screen/ChatScreen';
 import ContactDetailsScreen from '@/screens/contact-details/ContactDetailsScreen';
@@ -50,7 +50,6 @@ const Tab = createBottomTabNavigator();
 
 export type TabParamList = {
   Conversations: undefined;
-  Inbox: undefined;
   Appointments: undefined;
   Settings: undefined;
   Contacts: undefined;
@@ -164,10 +163,7 @@ const Tabs = () => {
   return (
     <Tab.Navigator
       tabBar={CustomTabBar}
-      initialRouteName={hasConversationPermission ? 'Inbox' : 'Appointments'}>
-      {hasConversationPermission && (
-        <Tab.Screen name="Inbox" component={InboxStack} options={{ headerShown: false }} />
-      )}
+      initialRouteName={hasConversationPermission ? 'Conversations' : 'Appointments'}>
       {hasConversationPermission && (
         <Tab.Screen
           name="Conversations"
@@ -175,6 +171,11 @@ const Tabs = () => {
           component={ConversationStack}
         />
       )}
+      <Tab.Screen
+        name="Notifications"
+        component={NotificationsStack}
+        options={{ headerShown: false }}
+      />
       <Tab.Screen name="Contacts" component={ContactsStack} options={{ headerShown: false }} />
       <Tab.Screen
         name="Appointments"
