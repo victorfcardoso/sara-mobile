@@ -505,6 +505,25 @@ const getStatusLabel = (status: string): string => {
   return translated === translationKey ? status : translated;
 };
 
+const getTimelinePriority = (status?: string | null): number => {
+  const normalized = (status || '').toUpperCase();
+  if (normalized === 'CONFIRMED') {
+    return 0;
+  }
+  if (normalized === 'CANCELLED') {
+    return 2;
+  }
+  return 1;
+};
+
+const getTimelineGroupingKey = (isoString: string): string => {
+  const date = new Date(isoString);
+  if (Number.isNaN(date.getTime())) {
+    return isoString;
+  }
+  return format(date, "yyyy-MM-dd'T'HH:mm");
+};
+
 const AppointmentCard = ({
   appointment,
   onPress,
@@ -696,31 +715,43 @@ const AppointmentsScreen = () => {
   }, [selectedAppointment, selectedAppointmentId]);
 
   const timelineEvents = useMemo<EventItem[]>(() => {
-    return mergedAppointments
-      .map(appointment => {
-        if (!appointment.startAt) {
-          return null;
-        }
-        const start = toISOString(appointment.startAt);
-        if (!start) {
-          return null;
-        }
-        const end = toISOString(getAppointmentEnd(appointment)) ?? start;
-        const statusKey = (appointment.status || '').toUpperCase();
-        const badgeStyle = STATUS_COLORS[statusKey] ?? DEFAULT_STATUS_STYLE;
-        return {
-          id: appointment.id,
-          title:
-            appointment.serviceName ||
-            appointment.customerName ||
-            I18n.t('APPOINTMENTS.SERVICE_PLACEHOLDER'),
-          start: { dateTime: start },
-          end: { dateTime: end },
-          color: badgeStyle.backgroundColor,
-          titleColor: badgeStyle.textColor,
-        } satisfies EventItem;
-      })
-      .filter((event): event is EventItem => Boolean(event));
+    const map = new Map<string, { priority: number; event: EventItem; timestamp: number }>();
+
+    mergedAppointments.forEach(appointment => {
+      if (!appointment.startAt) {
+        return;
+      }
+      const startIso = toISOString(appointment.startAt);
+      if (!startIso) {
+        return;
+      }
+      const endIso = toISOString(getAppointmentEnd(appointment)) ?? startIso;
+      const statusKey = (appointment.status || '').toUpperCase();
+      const badgeStyle = STATUS_COLORS[statusKey] ?? DEFAULT_STATUS_STYLE;
+      const priority = getTimelinePriority(statusKey);
+      const key = `${getTimelineGroupingKey(startIso)}__${getTimelineGroupingKey(endIso)}`;
+      const event: EventItem = {
+        id: appointment.id,
+        title:
+          appointment.serviceName ||
+          appointment.customerName ||
+          I18n.t('APPOINTMENTS.SERVICE_PLACEHOLDER'),
+        start: { dateTime: startIso },
+        end: { dateTime: endIso },
+        color: badgeStyle.backgroundColor,
+        titleColor: badgeStyle.textColor,
+      };
+
+      const existing = map.get(key);
+      if (existing && existing.priority <= priority) {
+        return;
+      }
+      map.set(key, { priority, event, timestamp: new Date(startIso).getTime() });
+    });
+
+    return Array.from(map.values())
+      .sort((a, b) => a.timestamp - b.timestamp)
+      .map(entry => entry.event);
   }, [mergedAppointments]);
 
   const timelineRange = useMemo(() => {
