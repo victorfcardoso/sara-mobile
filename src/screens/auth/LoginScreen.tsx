@@ -29,6 +29,7 @@ import { selectInstallationUrl, selectLocale } from '@/store/settings/settingsSe
 import { selectIsLoggingIn } from '@/store/auth/authSelectors';
 import { setLocale } from '@/store/settings/settingsSlice';
 import { useRefsContext } from '@/context/RefsContext';
+import wordmarkSource from '@/assets/images/sara_wordmark.png';
 
 type FormData = {
   email: string;
@@ -150,10 +151,10 @@ const LoginScreen = () => {
       <View style={[tailwind.style('flex-1'), styles.container]}>
         <Animated.ScrollView {...scrollViewProps}>
           <Image
-            // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
-            source={require('@/assets/images/sara_wordmark.png')}
+            source={wordmarkSource}
             style={styles.wordmark}
             resizeMode="contain"
+            accessibilityIgnoresInvertColors
           />
           <View style={heroSectionStyles}>
             <Animated.Text style={heroTitleStyles}>{brandHeadline}</Animated.Text>
