@@ -38,6 +38,7 @@
     "@chatwoot/react-native-widget": "^0.0.21",
     "@chatwoot/utils": "^0.0.33",
     "@gorhom/bottom-sheet": "^5.1.2",
+    "@howljs/calendar-kit": "^2.5.6",
     "@kesha-antonov/react-native-action-cable": "^1.1.5",
     "@nandorojo/galeria": "^1.2.0",
     "@notifee/react-native": "^9.1.1",

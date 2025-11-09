@@ -17,8 +17,26 @@ import {
   BottomSheetModal,
   BottomSheetView,
 } from '@gorhom/bottom-sheet';
-import { differenceInMinutes, format, formatDistanceToNow, isSameDay, parse } from 'date-fns';
+import {
+  differenceInMinutes,
+  endOfDay,
+  endOfWeek,
+  format,
+  formatDistanceToNow,
+  isSameDay,
+  parse,
+  startOfDay,
+  startOfWeek,
+} from 'date-fns';
 
+import CalendarKit, {
+  type CalendarKitHandle,
+  type DateOrDateTime,
+  type EventItem,
+  type OnEventResponse,
+  type SelectedEventType,
+  type UnavailableHourProps,
+} from '@howljs/calendar-kit';
 import { Calendar, type DateData, type MarkedDates } from 'react-native-calendars';
 import I18n from '@/i18n';
 import { useAppDispatch, useAppSelector } from '@/hooks';
@@ -60,6 +78,15 @@ const STATUS_COLORS: Record<
 
 const DEFAULT_STATUS_STYLE = { backgroundColor: '#E2E6EB', textColor: '#3D4A5C' };
 const DATE_KEY_FORMAT = 'yyyy-MM-dd';
+const TIMELINE_WEEK_OPTIONS = { weekStartsOn: 1 as const };
+const TIMELINE_DEFAULT_DURATION_MINUTES = 30;
+const DEFAULT_UNAVAILABLE_HOURS: UnavailableHourProps[] = [
+  { start: 0, end: 6 * 60, backgroundColor: '#F5EFEA' },
+  { start: 21 * 60, end: 24 * 60, backgroundColor: '#F5EFEA' },
+];
+
+type ViewMode = 'list' | 'month' | 'timeline';
+type TimelineViewMode = 'week' | 'day';
 
 const getDateKey = (value?: string | null): string | null => {
   if (!value) {
@@ -81,6 +108,63 @@ const formatCalendarDayLabel = (dateKey: string): string | null => {
     return null;
   }
   return format(parsedDate, 'EEEE, MMMM d');
+};
+
+const normalizeDateKey = (value: string): string => {
+  if (!value) {
+    return value;
+  }
+  const direct = new Date(value);
+  if (!Number.isNaN(direct.getTime())) {
+    return format(direct, DATE_KEY_FORMAT);
+  }
+  const parsed = parse(value, DATE_KEY_FORMAT, new Date());
+  if (!Number.isNaN(parsed.getTime())) {
+    return format(parsed, DATE_KEY_FORMAT);
+  }
+  return value;
+};
+
+const toDateOrNull = (value?: string | null): Date | null => {
+  if (!value) {
+    return null;
+  }
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const toISOString = (value?: string | null): string | null => {
+  const parsed = toDateOrNull(value);
+  return parsed ? parsed.toISOString() : null;
+};
+
+const getAppointmentEnd = (appointment: Appointment): string | null => {
+  if (appointment.endAt) {
+    return appointment.endAt;
+  }
+  if (!appointment.startAt) {
+    return null;
+  }
+  const derivedMinutes = extractDurationMinutes(appointment) ?? TIMELINE_DEFAULT_DURATION_MINUTES;
+  const startDate = toDateOrNull(appointment.startAt);
+  if (!startDate) {
+    return null;
+  }
+  const endDate = new Date(startDate.getTime() + derivedMinutes * 60 * 1000);
+  return endDate.toISOString();
+};
+
+const resolveCalendarKitDate = (value?: DateOrDateTime): string | null => {
+  if (!value) {
+    return null;
+  }
+  if ('dateTime' in value && value.dateTime) {
+    return value.dateTime;
+  }
+  if ('date' in value && value.date) {
+    return `${value.date}T00:00:00.000Z`;
+  }
+  return null;
 };
 
 const formatAppointmentTime = (appointment: Appointment): string => {
@@ -466,11 +550,20 @@ const AppointmentCard = ({
 const AppointmentsScreen = () => {
   const dispatch = useAppDispatch();
   const detailSheetRef = useRef<BottomSheetModal>(null);
-  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  const timelineRef = useRef<CalendarKitHandle>(null);
+  const timelineSelectionSourceRef = useRef<'timeline' | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [selectedDate, setSelectedDate] = useState<string>(() =>
     format(new Date(), DATE_KEY_FORMAT),
   );
-  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [timelineViewMode, setTimelineViewMode] = useState<TimelineViewMode>('week');
+  const [timelineVisibleDate, setTimelineVisibleDate] = useState<string>(() =>
+    format(new Date(), DATE_KEY_FORMAT),
+  );
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
+  const [timelineOverrides, setTimelineOverrides] = useState<
+    Record<string, { startAt: string; endAt?: string | null }>
+  >({});
   const renderDetailBackdrop = useCallback(
     (props: BottomSheetBackdropProps) => (
       <BottomSheetBackdrop
@@ -483,7 +576,7 @@ const AppointmentsScreen = () => {
     [],
   );
 
-  const appointments = useAppSelector(selectAppointmentsList);
+  const appointmentsFromStore = useAppSelector(selectAppointmentsList);
   const pagination = useAppSelector(selectAppointmentsPagination);
   const uiFlags = useAppSelector(selectAppointmentsUiFlags);
   const error = useAppSelector(selectAppointmentsError);
@@ -491,9 +584,26 @@ const AppointmentsScreen = () => {
   const loadedAgentId = useAppSelector(selectAppointmentsAgentId);
   const sessionAgentId = useAppSelector(state => state.auth.chatwootSession?.agentId ?? null);
 
+  const mergedAppointments = useMemo(() => {
+    if (!Object.keys(timelineOverrides).length) {
+      return appointmentsFromStore;
+    }
+    return appointmentsFromStore.map(appointment => {
+      const override = timelineOverrides[appointment.id];
+      if (!override) {
+        return appointment;
+      }
+      return {
+        ...appointment,
+        startAt: override.startAt,
+        endAt: override.endAt ?? appointment.endAt,
+      };
+    });
+  }, [appointmentsFromStore, timelineOverrides]);
+
   const appointmentsByDate = useMemo(() => {
     const map: Record<string, Appointment[]> = {};
-    appointments.forEach(appointment => {
+    mergedAppointments.forEach(appointment => {
       const dateKey = getDateKey(appointment.startAt);
       if (!dateKey) {
         return;
@@ -513,7 +623,7 @@ const AppointmentsScreen = () => {
     });
 
     return map;
-  }, [appointments]);
+  }, [mergedAppointments]);
 
   const calendarMarkedDates = useMemo<MarkedDates>(() => {
     const markers: MarkedDates = {};
@@ -552,6 +662,10 @@ const AppointmentsScreen = () => {
 
   const selectedDateAppointments = appointmentsByDate[selectedDate] ?? [];
   const selectedDateLabel = useMemo(() => formatCalendarDayLabel(selectedDate), [selectedDate]);
+  const timelineVisibleLabel = useMemo(
+    () => formatCalendarDayLabel(timelineVisibleDate),
+    [timelineVisibleDate],
+  );
   const calendarTheme = useMemo(
     () => ({
       backgroundColor: '#FFFFFF',
@@ -568,6 +682,142 @@ const AppointmentsScreen = () => {
     }),
     [],
   );
+
+  const selectedAppointment = useMemo(
+    () => mergedAppointments.find(appointment => appointment.id === selectedAppointmentId) ?? null,
+    [mergedAppointments, selectedAppointmentId],
+  );
+
+  useEffect(() => {
+    if (selectedAppointmentId && !selectedAppointment) {
+      detailSheetRef.current?.dismiss();
+      setSelectedAppointmentId(null);
+    }
+  }, [selectedAppointment, selectedAppointmentId]);
+
+  const timelineEvents = useMemo<EventItem[]>(() => {
+    return mergedAppointments
+      .map(appointment => {
+        if (!appointment.startAt) {
+          return null;
+        }
+        const start = toISOString(appointment.startAt);
+        if (!start) {
+          return null;
+        }
+        const end = toISOString(getAppointmentEnd(appointment)) ?? start;
+        const statusKey = (appointment.status || '').toUpperCase();
+        const badgeStyle = STATUS_COLORS[statusKey] ?? DEFAULT_STATUS_STYLE;
+        return {
+          id: appointment.id,
+          title:
+            appointment.serviceName ||
+            appointment.customerName ||
+            I18n.t('APPOINTMENTS.SERVICE_PLACEHOLDER'),
+          start: { dateTime: start },
+          end: { dateTime: end },
+          color: badgeStyle.backgroundColor,
+          titleColor: badgeStyle.textColor,
+        } satisfies EventItem;
+      })
+      .filter((event): event is EventItem => Boolean(event));
+  }, [mergedAppointments]);
+
+  const timelineRange = useMemo(() => {
+    const parsed = parse(timelineVisibleDate, DATE_KEY_FORMAT, new Date());
+    if (Number.isNaN(parsed.getTime())) {
+      return null;
+    }
+    if (timelineViewMode === 'day') {
+      return {
+        start: startOfDay(parsed),
+        end: endOfDay(parsed),
+      };
+    }
+    return {
+      start: startOfWeek(parsed, TIMELINE_WEEK_OPTIONS),
+      end: endOfDay(endOfWeek(parsed, TIMELINE_WEEK_OPTIONS)),
+    };
+  }, [timelineVisibleDate, timelineViewMode]);
+
+  const timelineRangeLabel = useMemo(() => {
+    if (!timelineRange) {
+      return null;
+    }
+    if (timelineViewMode === 'day') {
+      return format(timelineRange.start, 'EEEE, MMM d, yyyy');
+    }
+    const sameYear = timelineRange.start.getFullYear() === timelineRange.end.getFullYear();
+    const sameMonth = sameYear && timelineRange.start.getMonth() === timelineRange.end.getMonth();
+    if (sameYear) {
+      const startLabel = format(timelineRange.start, 'MMM d');
+      const endLabel = sameMonth
+        ? format(timelineRange.end, 'd, yyyy')
+        : format(timelineRange.end, 'MMM d, yyyy');
+      return `${startLabel} – ${endLabel}`;
+    }
+    return `${format(timelineRange.start, 'MMM d, yyyy')} – ${format(
+      timelineRange.end,
+      'MMM d, yyyy',
+    )}`;
+  }, [timelineRange, timelineViewMode]);
+
+  const timelineSelectedEvent = useMemo<SelectedEventType | undefined>(() => {
+    if (!selectedAppointment) {
+      return undefined;
+    }
+    const start = toISOString(selectedAppointment.startAt);
+    if (!start) {
+      return undefined;
+    }
+    const end = toISOString(getAppointmentEnd(selectedAppointment)) ?? start;
+    return {
+      id: selectedAppointment.id,
+      start: { dateTime: start },
+      end: { dateTime: end },
+      title: selectedAppointment.serviceName,
+    };
+  }, [selectedAppointment]);
+
+  const timelineTheme = useMemo(
+    () => ({
+      colors: {
+        primary: SARA_COLORS.accent,
+        onPrimary: '#FFFFFF',
+        background: '#FFFFFF',
+        onBackground: SARA_COLORS.textPrimary,
+        border: '#E1E4EA',
+        text: SARA_COLORS.textPrimary,
+        surface: '#F1ECE6',
+        onSurface: SARA_COLORS.textSecondary,
+      },
+      dayBarContainer: {
+        borderRadius: 18,
+        backgroundColor: '#FFFFFF',
+        marginBottom: 4,
+      },
+      unavailableHourBackgroundColor: '#F4EFE9',
+    }),
+    [],
+  );
+
+  useEffect(() => {
+    if (viewMode === 'timeline' || timelineVisibleDate === selectedDate) {
+      return;
+    }
+    setTimelineVisibleDate(selectedDate);
+  }, [selectedDate, timelineVisibleDate, viewMode]);
+
+  useEffect(() => {
+    if (viewMode !== 'timeline') {
+      return;
+    }
+    if (timelineSelectionSourceRef.current === 'timeline') {
+      timelineSelectionSourceRef.current = null;
+      return;
+    }
+    timelineRef.current?.goToDate({ date: selectedDate, animatedDate: true });
+  }, [selectedDate, viewMode]);
 
   const bootstrappedAgentRef = useRef<string | null>(null);
 
@@ -612,24 +862,81 @@ const AppointmentsScreen = () => {
   }, [dispatch, loadedAgentId, sessionAgentId, uiFlags.isLoading, uiFlags.isRefreshing]);
 
   const handleAppointmentPress = useCallback((appointment: Appointment) => {
-    setSelectedAppointment(appointment);
+    setSelectedAppointmentId(appointment.id);
     detailSheetRef.current?.present();
   }, []);
 
   const handleDetailDismiss = useCallback(() => {
-    setSelectedAppointment(null);
+    setSelectedAppointmentId(null);
   }, []);
 
   const handleDetailClosePress = useCallback(() => {
     detailSheetRef.current?.dismiss();
+    setSelectedAppointmentId(null);
   }, []);
 
-  const handleViewModeChange = useCallback((mode: 'list' | 'calendar') => {
-    setViewMode(mode);
-  }, []);
+  const handleViewModeChange = useCallback(
+    (mode: ViewMode) => {
+      setViewMode(mode);
+      if (mode === 'timeline') {
+        timelineRef.current?.goToDate({ date: selectedDate, animatedDate: true });
+      }
+    },
+    [selectedDate],
+  );
 
   const handleDayPress = useCallback((day: DateData) => {
-    setSelectedDate(day.dateString);
+    setSelectedDate(normalizeDateKey(day.dateString));
+  }, []);
+
+  const handleTimelineDateChange = useCallback((date: string) => {
+    const normalized = normalizeDateKey(date);
+    timelineSelectionSourceRef.current = 'timeline';
+    setTimelineVisibleDate(normalized);
+    setSelectedDate(normalized);
+  }, []);
+
+  const handleTimelineEventPress = useCallback(
+    (event: OnEventResponse) => {
+      const appointment = mergedAppointments.find(item => item.id === event.id);
+      if (appointment) {
+        handleAppointmentPress(appointment);
+      }
+    },
+    [handleAppointmentPress, mergedAppointments],
+  );
+
+  const handleTimelineDragEnd = useCallback((event: OnEventResponse) => {
+    if (!event.id) {
+      return;
+    }
+    const newStart = resolveCalendarKitDate(event.start);
+    if (!newStart) {
+      return;
+    }
+    const newEnd = resolveCalendarKitDate(event.end);
+    setTimelineOverrides(prev => ({
+      ...prev,
+      [event.id]: {
+        startAt: newStart,
+        endAt: newEnd ?? null,
+      },
+    }));
+  }, []);
+
+  const handleTimelineViewModeChange = useCallback(
+    (mode: TimelineViewMode) => {
+      setTimelineViewMode(mode);
+      timelineRef.current?.goToDate({ date: timelineVisibleDate, animatedDate: true });
+    },
+    [timelineVisibleDate],
+  );
+
+  const handleTimelineTodayPress = useCallback(() => {
+    const today = format(new Date(), DATE_KEY_FORMAT);
+    setSelectedDate(today);
+    setTimelineVisibleDate(today);
+    timelineRef.current?.goToDate({ date: today, animatedDate: true, hourScroll: true });
   }, []);
 
   const detailRelativeTime = useMemo(() => {
@@ -655,6 +962,13 @@ const AppointmentsScreen = () => {
     );
   }, [dispatch, sessionAgentId]);
 
+  const handleTimelineRefresh = useCallback(
+    (_: string) => {
+      handleRefresh();
+    },
+    [handleRefresh],
+  );
+
   const handleRetry = useCallback(() => {
     dispatch(
       appointmentsActions.fetchAppointments({
@@ -677,7 +991,7 @@ const AppointmentsScreen = () => {
     );
   }, [dispatch, pagination?.hasMore, pagination?.nextCursor, uiFlags.isLoadingMore]);
 
-  const isInitialLoading = uiFlags.isLoading && appointments.length === 0;
+  const isInitialLoading = uiFlags.isLoading && mergedAppointments.length === 0;
 
   const lastUpdatedLabel = useMemo(() => {
     if (!lastUpdated) {
@@ -700,7 +1014,7 @@ const AppointmentsScreen = () => {
   const keyExtractor = useCallback((item: Appointment) => item.id, []);
 
   const listFooter =
-    uiFlags.isLoadingMore && appointments.length > 0 ? (
+    uiFlags.isLoadingMore && mergedAppointments.length > 0 ? (
       <View style={styles.footer}>
         <ActivityIndicator color={SARA_COLORS.accent} />
       </View>
@@ -761,9 +1075,15 @@ const AppointmentsScreen = () => {
     );
   }
 
+  const viewOptions: { mode: ViewMode; label: string }[] = [
+    { mode: 'list', label: I18n.t('APPOINTMENTS.VIEW_TOGGLE_LIST') },
+    { mode: 'month', label: I18n.t('APPOINTMENTS.VIEW_TOGGLE_MONTH') },
+    { mode: 'timeline', label: I18n.t('APPOINTMENTS.VIEW_TOGGLE_WEEK') },
+  ];
+
   const viewToggle = (
     <View style={styles.viewToggleGroup}>
-      {(['list', 'calendar'] as const).map(mode => {
+      {viewOptions.map(({ mode, label }) => {
         const isActive = viewMode === mode;
         return (
           <TouchableOpacity
@@ -775,9 +1095,7 @@ const AppointmentsScreen = () => {
             accessibilityState={{ selected: isActive }}>
             <Text
               style={[styles.viewToggleButtonText, isActive && styles.viewToggleButtonTextActive]}>
-              {mode === 'list'
-                ? I18n.t('APPOINTMENTS.VIEW_TOGGLE_LIST')
-                : I18n.t('APPOINTMENTS.VIEW_TOGGLE_CALENDAR')}
+              {label}
             </Text>
           </TouchableOpacity>
         );
@@ -817,7 +1135,7 @@ const AppointmentsScreen = () => {
       <StatusBar translucent backgroundColor={SARA_COLORS.background} barStyle="dark-content" />
       {viewMode === 'list' ? (
         <FlatList
-          data={appointments}
+          data={mergedAppointments}
           keyExtractor={keyExtractor}
           renderItem={renderItem}
           ListHeaderComponent={header}
@@ -831,7 +1149,7 @@ const AppointmentsScreen = () => {
           onRefresh={handleRefresh}
           showsVerticalScrollIndicator={false}
         />
-      ) : (
+      ) : viewMode === 'month' ? (
         <ScrollView
           style={styles.calendarScroll}
           contentContainerStyle={styles.calendarScrollContent}
@@ -870,6 +1188,72 @@ const AppointmentsScreen = () => {
             )}
           </View>
         </ScrollView>
+      ) : (
+        <View style={styles.timelineContainer}>
+          {header}
+          <View style={styles.timelineControls}>
+            <View style={styles.timelineModeGroup}>
+              {(['week', 'day'] as const).map(mode => {
+                const isActive = timelineViewMode === mode;
+                return (
+                  <TouchableOpacity
+                    key={mode}
+                    style={[styles.timelineModeButton, isActive && styles.timelineModeButtonActive]}
+                    onPress={() => handleTimelineViewModeChange(mode)}
+                    accessibilityState={{ selected: isActive }}>
+                    <Text
+                      style={[
+                        styles.timelineModeButtonText,
+                        isActive && styles.timelineModeButtonTextActive,
+                      ]}>
+                      {mode === 'week'
+                        ? I18n.t('APPOINTMENTS.TIMELINE_MODE_WEEK')
+                        : I18n.t('APPOINTMENTS.TIMELINE_MODE_DAY')}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            <TouchableOpacity
+              style={styles.timelineTodayButton}
+              onPress={handleTimelineTodayPress}
+              accessibilityRole="button">
+              <Text style={styles.timelineTodayText}>{I18n.t('APPOINTMENTS.TIMELINE_TODAY')}</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.timelineRangeRow}>
+            <Text style={styles.timelineRangeLabel}>
+              {timelineRangeLabel ?? timelineVisibleLabel ?? selectedDateLabel ?? selectedDate}
+            </Text>
+          </View>
+          <View style={styles.timelineCalendarCard}>
+            <CalendarKit
+              ref={timelineRef}
+              events={timelineEvents}
+              numberOfDays={timelineViewMode === 'week' ? 7 : 1}
+              scrollByDay={timelineViewMode === 'day'}
+              allowDragToEdit
+              allowDragToCreate={false}
+              dragStep={15}
+              timeInterval={30}
+              start={6 * 60}
+              end={22 * 60}
+              showNowIndicator
+              selectedEvent={timelineSelectedEvent}
+              unavailableHours={DEFAULT_UNAVAILABLE_HOURS}
+              theme={timelineTheme}
+              onPressEvent={handleTimelineEventPress}
+              onDragEventEnd={handleTimelineDragEnd}
+              onDateChanged={handleTimelineDateChange}
+              onChange={handleTimelineDateChange}
+              onRefresh={handleTimelineRefresh}
+              isLoading={uiFlags.isRefreshing}
+              initialDate={selectedDate}
+              scrollToNow
+              style={styles.timelineCalendar}
+            />
+          </View>
+        </View>
       )}
       <BottomSheetModal
         ref={detailSheetRef}
@@ -1125,6 +1509,86 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 8,
     paddingHorizontal: 16,
+  },
+  timelineContainer: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingBottom: 24,
+    paddingTop: 16,
+    gap: 16,
+  },
+  timelineControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  timelineModeGroup: {
+    flexDirection: 'row',
+    backgroundColor: '#ECE7E1',
+    borderRadius: 14,
+    padding: 4,
+    gap: 4,
+  },
+  timelineModeButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  timelineModeButtonActive: {
+    backgroundColor: '#FFFFFF',
+    shadowColor: SARA_COLORS.cardShadow,
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  timelineModeButtonText: {
+    color: SARA_COLORS.textSecondary,
+    fontWeight: '600',
+  },
+  timelineModeButtonTextActive: {
+    color: SARA_COLORS.textPrimary,
+  },
+  timelineTodayButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: '#FFFFFF',
+    shadowColor: SARA_COLORS.cardShadow,
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  timelineTodayText: {
+    color: SARA_COLORS.accent,
+    fontWeight: '600',
+  },
+  timelineRangeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  timelineRangeLabel: {
+    color: SARA_COLORS.textPrimary,
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  timelineCalendarCard: {
+    flex: 1,
+    borderRadius: 24,
+    backgroundColor: '#FFFFFF',
+    padding: 8,
+    shadowColor: SARA_COLORS.cardShadow,
+    shadowOpacity: 0.08,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 4,
+  },
+  timelineCalendar: {
+    flex: 1,
   },
   calendarScroll: {
     flex: 1,
