@@ -516,14 +516,6 @@ const getTimelinePriority = (status?: string | null): number => {
   return 1;
 };
 
-const getTimelineGroupingKey = (isoString: string): string => {
-  const date = new Date(isoString);
-  if (Number.isNaN(date.getTime())) {
-    return isoString;
-  }
-  return format(date, "yyyy-MM-dd'T'HH:mm");
-};
-
 const AppointmentCard = ({
   appointment,
   onPress,
@@ -714,9 +706,15 @@ const AppointmentsScreen = () => {
     }
   }, [selectedAppointment, selectedAppointmentId]);
 
-  const timelineEvents = useMemo<EventItem[]>(() => {
-    const map = new Map<string, { priority: number; event: EventItem; timestamp: number }>();
+  type TimelineEventCandidate = {
+    event: EventItem;
+    priority: number;
+    startMs: number;
+    endMs: number;
+  };
 
+  const timelineEventCandidates = useMemo<TimelineEventCandidate[]>(() => {
+    const candidates: TimelineEventCandidate[] = [];
     mergedAppointments.forEach(appointment => {
       if (!appointment.startAt) {
         return;
@@ -726,33 +724,64 @@ const AppointmentsScreen = () => {
         return;
       }
       const endIso = toISOString(getAppointmentEnd(appointment)) ?? startIso;
+      const startDate = new Date(startIso);
+      const endDate = new Date(endIso);
+      if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+        return;
+      }
       const statusKey = (appointment.status || '').toUpperCase();
       const badgeStyle = STATUS_COLORS[statusKey] ?? DEFAULT_STATUS_STYLE;
       const priority = getTimelinePriority(statusKey);
-      const key = `${getTimelineGroupingKey(startIso)}__${getTimelineGroupingKey(endIso)}`;
-      const event: EventItem = {
-        id: appointment.id,
-        title:
-          appointment.serviceName ||
-          appointment.customerName ||
-          I18n.t('APPOINTMENTS.SERVICE_PLACEHOLDER'),
-        start: { dateTime: startIso },
-        end: { dateTime: endIso },
-        color: badgeStyle.backgroundColor,
-        titleColor: badgeStyle.textColor,
-      };
-
-      const existing = map.get(key);
-      if (existing && existing.priority <= priority) {
-        return;
-      }
-      map.set(key, { priority, event, timestamp: new Date(startIso).getTime() });
+      candidates.push({
+        priority,
+        startMs: startDate.getTime(),
+        endMs: endDate.getTime(),
+        event: {
+          id: appointment.id,
+          title:
+            appointment.serviceName ||
+            appointment.customerName ||
+            I18n.t('APPOINTMENTS.SERVICE_PLACEHOLDER'),
+          start: { dateTime: startIso },
+          end: { dateTime: endIso },
+          color: badgeStyle.backgroundColor,
+          titleColor: badgeStyle.textColor,
+        },
+      });
     });
 
-    return Array.from(map.values())
-      .sort((a, b) => a.timestamp - b.timestamp)
-      .map(entry => entry.event);
+    return candidates.sort((a, b) => a.startMs - b.startMs);
   }, [mergedAppointments]);
+
+  const timelineEvents = useMemo<EventItem[]>(() => {
+    if (timelineViewMode === 'day') {
+      return timelineEventCandidates.map(candidate => candidate.event);
+    }
+
+    const condensed: TimelineEventCandidate[] = [];
+
+    timelineEventCandidates.forEach(candidate => {
+      let merged = false;
+      for (let i = 0; i < condensed.length; i += 1) {
+        const existing = condensed[i];
+        const overlaps = candidate.startMs < existing.endMs && candidate.endMs > existing.startMs;
+        if (!overlaps) {
+          continue;
+        }
+        if (candidate.priority < existing.priority) {
+          condensed[i] = candidate;
+        }
+        merged = true;
+        break;
+      }
+
+      if (!merged) {
+        condensed.push(candidate);
+      }
+    });
+
+    return condensed.sort((a, b) => a.startMs - b.startMs).map(candidate => candidate.event);
+  }, [timelineEventCandidates, timelineViewMode]);
 
   const timelineRange = useMemo(() => {
     const parsed = parse(timelineVisibleDate, DATE_KEY_FORMAT, new Date());
