@@ -40,7 +40,11 @@ import CalendarKit, {
 import { Calendar, type DateData, type MarkedDates } from 'react-native-calendars';
 import I18n from '@/i18n';
 import { useAppDispatch, useAppSelector } from '@/hooks';
+import { OfficeHoursService } from '@/services/OfficeHoursService';
+import type { WorkingPlanBlock } from '@/services/OfficeHoursService';
 import { EmptyStateIcon } from '@/svg-icons';
+import { agentSettingsActions } from '@/store/agent-settings/agentSettingsActions';
+import { selectAgentSettingsIntegrations } from '@/store/agent-settings';
 import { appointmentsActions } from '@/store/appointments/appointmentsActions';
 import {
   selectAppointmentsAgentId,
@@ -80,9 +84,21 @@ const DEFAULT_STATUS_STYLE = { backgroundColor: '#E2E6EB', textColor: '#3D4A5C' 
 const DATE_KEY_FORMAT = 'yyyy-MM-dd';
 const TIMELINE_WEEK_OPTIONS = { weekStartsOn: 1 as const };
 const TIMELINE_DEFAULT_DURATION_MINUTES = 30;
+const TIMELINE_UNAVAILABLE_COLOR = '#F5EFEA';
+const MINUTES_PER_DAY = 24 * 60;
+const WEEKDAY_INDEX_LOOKUP = {
+  monday: 1,
+  tuesday: 2,
+  wednesday: 3,
+  thursday: 4,
+  friday: 5,
+  saturday: 6,
+  sunday: 7,
+} as const;
+type WeekdayKey = keyof typeof WEEKDAY_INDEX_LOOKUP;
 const DEFAULT_UNAVAILABLE_HOURS: UnavailableHourProps[] = [
-  { start: 0, end: 6 * 60, backgroundColor: '#F5EFEA' },
-  { start: 21 * 60, end: 24 * 60, backgroundColor: '#F5EFEA' },
+  { start: 0, end: 6 * 60, backgroundColor: TIMELINE_UNAVAILABLE_COLOR },
+  { start: 21 * 60, end: 24 * 60, backgroundColor: TIMELINE_UNAVAILABLE_COLOR },
 ];
 
 type ViewMode = 'list' | 'month' | 'timeline';
@@ -123,6 +139,170 @@ const normalizeDateKey = (value: string): string => {
     return format(parsed, DATE_KEY_FORMAT);
   }
   return value;
+};
+
+const isWeekdayKey = (value: string): value is WeekdayKey =>
+  Object.prototype.hasOwnProperty.call(WEEKDAY_INDEX_LOOKUP, value);
+
+const getWeekdayIndex = (value?: string | null): number | null => {
+  if (!value) {
+    return null;
+  }
+  const normalized = value.toLowerCase();
+  return isWeekdayKey(normalized) ? WEEKDAY_INDEX_LOOKUP[normalized] : null;
+};
+
+const clampMinutes = (value: number): number => {
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+  if (value < 0) {
+    return 0;
+  }
+  if (value > MINUTES_PER_DAY) {
+    return MINUTES_PER_DAY;
+  }
+  return value;
+};
+
+const parseTimeToMinutes = (value?: string | null): number | null => {
+  if (!value) {
+    return null;
+  }
+  const match = /(\d{1,2}):(\d{2})/.exec(value);
+  if (!match) {
+    return null;
+  }
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) {
+    return null;
+  }
+  if (hours < 0 || minutes < 0 || minutes >= 60) {
+    return null;
+  }
+  if (hours > 24 || (hours === 24 && minutes > 0)) {
+    return null;
+  }
+  return clampMinutes(hours * 60 + minutes);
+};
+
+const buildUnavailableSegment = (start: number, end: number): UnavailableHourProps => ({
+  start,
+  end,
+  backgroundColor: TIMELINE_UNAVAILABLE_COLOR,
+});
+
+const mergeUnavailableSegments = (segments: UnavailableHourProps[]): UnavailableHourProps[] => {
+  const sorted = segments
+    .map(segment => ({
+      ...segment,
+      start: clampMinutes(segment.start),
+      end: clampMinutes(segment.end),
+    }))
+    .filter(segment => segment.end > segment.start)
+    .sort((a, b) => a.start - b.start);
+
+  return sorted.reduce<UnavailableHourProps[]>((acc, segment) => {
+    const last = acc[acc.length - 1];
+    if (last && segment.start <= last.end) {
+      last.end = Math.max(last.end, segment.end);
+      return acc;
+    }
+    acc.push({ ...segment });
+    return acc;
+  }, []);
+};
+
+const buildUnavailableSegmentsFromBlock = (
+  block?: WorkingPlanBlock | null,
+): UnavailableHourProps[] => {
+  if (!block || !block.start || !block.end) {
+    return [buildUnavailableSegment(0, MINUTES_PER_DAY)];
+  }
+
+  const startMinutes = parseTimeToMinutes(block.start);
+  const endMinutes = parseTimeToMinutes(block.end);
+
+  if (
+    startMinutes === null ||
+    endMinutes === null ||
+    startMinutes < 0 ||
+    endMinutes > MINUTES_PER_DAY ||
+    startMinutes >= endMinutes
+  ) {
+    return [buildUnavailableSegment(0, MINUTES_PER_DAY)];
+  }
+
+  const segments: UnavailableHourProps[] = [];
+  if (startMinutes > 0) {
+    segments.push(buildUnavailableSegment(0, startMinutes));
+  }
+  if (endMinutes < MINUTES_PER_DAY) {
+    segments.push(buildUnavailableSegment(endMinutes, MINUTES_PER_DAY));
+  }
+
+  if (Array.isArray(block.breaks)) {
+    block.breaks.forEach(breakWindow => {
+      const breakStart = parseTimeToMinutes(breakWindow.start);
+      const breakEnd = parseTimeToMinutes(breakWindow.end);
+      if (breakStart === null || breakEnd === null) {
+        return;
+      }
+      const clampedStart = clampMinutes(Math.max(breakStart, startMinutes));
+      const clampedEnd = clampMinutes(Math.min(breakEnd, endMinutes));
+      if (clampedStart < clampedEnd) {
+        segments.push(buildUnavailableSegment(clampedStart, clampedEnd));
+      }
+    });
+  }
+
+  return mergeUnavailableSegments(segments);
+};
+
+const buildUnavailableHoursLookup = (
+  workingPlan?: Record<string, WorkingPlanBlock | null>,
+  workingPlanExceptions?: Record<string, WorkingPlanBlock | null>,
+): Record<string, UnavailableHourProps[]> => {
+  const lookup: Record<string, UnavailableHourProps[]> = {};
+
+  if (workingPlan) {
+    Object.entries(workingPlan).forEach(([dayKey, block]) => {
+      const weekDay = getWeekdayIndex(dayKey);
+      if (!weekDay) {
+        return;
+      }
+      const segments = buildUnavailableSegmentsFromBlock(block);
+      if (segments.length > 0) {
+        lookup[String(weekDay)] = segments;
+      } else if (lookup[String(weekDay)]) {
+        delete lookup[String(weekDay)];
+      }
+    });
+  }
+
+  if (workingPlanExceptions) {
+    Object.entries(workingPlanExceptions).forEach(([dateKey, block]) => {
+      const normalizedDate = normalizeDateKey(dateKey);
+      const segments = buildUnavailableSegmentsFromBlock(block);
+      if (segments.length > 0) {
+        lookup[normalizedDate] = segments;
+      } else if (lookup[normalizedDate]) {
+        delete lookup[normalizedDate];
+      }
+    });
+  }
+
+  return lookup;
+};
+
+const hasWorkingPlanDefinitions = (
+  workingPlan?: Record<string, WorkingPlanBlock | null> | null,
+): boolean => {
+  if (!workingPlan) {
+    return false;
+  }
+  return Object.keys(workingPlan).some(dayKey => getWeekdayIndex(dayKey) !== null);
 };
 
 const toDateOrNull = (value?: string | null): Date | null => {
@@ -575,6 +755,9 @@ const AppointmentsScreen = () => {
   const [timelineOverrides, setTimelineOverrides] = useState<
     Record<string, { startAt: string; endAt?: string | null }>
   >({});
+  const [timelineUnavailableHours, setTimelineUnavailableHours] = useState<
+    Record<string, UnavailableHourProps[]> | UnavailableHourProps[]
+  >(DEFAULT_UNAVAILABLE_HOURS);
   const renderDetailBackdrop = useCallback(
     (props: BottomSheetBackdropProps) => (
       <BottomSheetBackdrop
@@ -594,6 +777,74 @@ const AppointmentsScreen = () => {
   const lastUpdated = useAppSelector(selectAppointmentsLastUpdated);
   const loadedAgentId = useAppSelector(selectAppointmentsAgentId);
   const sessionAgentId = useAppSelector(state => state.auth.chatwootSession?.agentId ?? null);
+  const agentSettingsIntegrations = useAppSelector(selectAgentSettingsIntegrations);
+  const easyAppointmentsIntegration = agentSettingsIntegrations?.easyAppointments ?? null;
+  const easyAppointmentsProviderId = easyAppointmentsIntegration?.providerId ?? null;
+  const easyAppointmentsConnected = Boolean(easyAppointmentsIntegration?.connected);
+  const providerKey =
+    easyAppointmentsProviderId != null ? String(easyAppointmentsProviderId) : null;
+
+  useEffect(() => {
+    if (!sessionAgentId) {
+      return;
+    }
+    dispatch(agentSettingsActions.fetchAgentSettings());
+  }, [dispatch, sessionAgentId]);
+
+  useEffect(() => {
+    if (!sessionAgentId) {
+      setTimelineUnavailableHours(DEFAULT_UNAVAILABLE_HOURS);
+      return;
+    }
+    if (!easyAppointmentsConnected || !providerKey) {
+      setTimelineUnavailableHours(DEFAULT_UNAVAILABLE_HOURS);
+      return;
+    }
+
+    let isCancelled = false;
+    setTimelineUnavailableHours(DEFAULT_UNAVAILABLE_HOURS);
+
+    const syncOfficeHours = async () => {
+      try {
+        const snapshot = await OfficeHoursService.fetchWeekly({
+          providerId: providerKey,
+          agentId: sessionAgentId,
+        });
+        if (isCancelled) {
+          return;
+        }
+        const planHasDefinitions = hasWorkingPlanDefinitions(snapshot.workingPlan);
+        const hasExceptions = Boolean(
+          snapshot.workingPlanExceptions && Object.keys(snapshot.workingPlanExceptions).length > 0,
+        );
+        if (!planHasDefinitions && !hasExceptions) {
+          setTimelineUnavailableHours(DEFAULT_UNAVAILABLE_HOURS);
+          return;
+        }
+        const unavailableLookup = buildUnavailableHoursLookup(
+          snapshot.workingPlan,
+          snapshot.workingPlanExceptions,
+        );
+        if (Object.keys(unavailableLookup).length > 0) {
+          setTimelineUnavailableHours(unavailableLookup);
+        } else {
+          setTimelineUnavailableHours([]);
+        }
+      } catch (err) {
+        if (isCancelled) {
+          return;
+        }
+        console.warn('Failed to sync office hours for timeline view', err);
+        setTimelineUnavailableHours(DEFAULT_UNAVAILABLE_HOURS);
+      }
+    };
+
+    syncOfficeHours();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [sessionAgentId, providerKey, easyAppointmentsConnected]);
 
   const mergedAppointments = useMemo(() => {
     if (!Object.keys(timelineOverrides).length) {
@@ -1300,7 +1551,7 @@ const AppointmentsScreen = () => {
               end={22 * 60}
               showNowIndicator
               selectedEvent={timelineSelectedEvent}
-              unavailableHours={DEFAULT_UNAVAILABLE_HOURS}
+              unavailableHours={timelineUnavailableHours}
               theme={timelineTheme}
               onPressEvent={handleTimelineEventPress}
               onDragEventEnd={handleTimelineDragEnd}
