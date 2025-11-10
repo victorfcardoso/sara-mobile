@@ -37,6 +37,7 @@ export class SaraAPIService {
         const store = getStore();
         const state = store.getState();
         const tokens = state.auth.saraTokens;
+        const activeAgentId = state.auth.chatwootSession?.agentId?.trim();
 
         if (!tokens?.accessToken) {
           throw new Error('Sara authentication token missing.');
@@ -49,6 +50,14 @@ export class SaraAPIService {
           'Authorization',
           `${tokenType.charAt(0).toUpperCase()}${tokenType.slice(1)} ${tokens.accessToken}`,
         );
+
+        const hasAgentHeader = headers.has('X-Agent-Id');
+        if (!hasAgentHeader) {
+          if (!activeAgentId) {
+            throw new Error('Active agent not selected. Please log in again.');
+          }
+          headers.set('X-Agent-Id', activeAgentId);
+        }
 
         config.headers = headers;
 
@@ -79,6 +88,18 @@ export class SaraAPIService {
 
   public async post<T, D = unknown>(path: string, data?: D, config?: AxiosRequestConfig) {
     return this.api.post<T>(path, data, config);
+  }
+
+  public async patch<T, D = unknown>(path: string, data?: D, config?: AxiosRequestConfig) {
+    return this.api.patch<T>(path, data, config);
+  }
+
+  public async put<T, D = unknown>(path: string, data?: D, config?: AxiosRequestConfig) {
+    return this.api.put<T>(path, data, config);
+  }
+
+  public async delete<T>(path: string, config?: AxiosRequestConfig) {
+    return this.api.delete<T>(path, config);
   }
 }
 

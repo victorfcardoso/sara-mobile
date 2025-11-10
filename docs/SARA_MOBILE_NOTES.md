@@ -16,6 +16,13 @@ This log tracks the Sara-branded fork of the Chatwoot mobile client. Update it w
 - **Sara API**
   - Set `EXPO_PUBLIC_SARA_API_BASE_URL` to the FastAPI base (e.g., `https://app.sara-ai.com`).
   - `/chatwoot/mobile-auth` now auto-mints each operator’s Chatwoot personal access token on first login **if** the linked `AgentsCredentials` row already includes the Chatwoot connection fields (`chatwoot_api_base`, `chatwoot_account_id`, `chatwoot_inbox_id`, `chatwoot_api_token`, `chatwoot_agentbot_webhook_secret`). Missing fields trigger HTTP 409 and the mobile app reports “username/password incorrect.”
+  - `SaraAPIService` automatically attaches the Sara bearer token **and** the active agent’s `X-Agent-Id` header, so CRM endpoints (customers, appointments, services, office hours) always match the tenant selected inside React Admin.
+- **Contacts tab**
+  - `src/screens/contacts/ContactsScreen.tsx` only renders CRM customers. Upcoming appointments (from `/chatwoot/mobile/appointments`) are merged into today’s section, recent contacts show next, and alphabetical groups hide any contact that already appears elsewhere to avoid duplicates between sections.
+- **FAQ viewer**
+  - Settings → **FAQ** shows the number of entries from the inline `### FAQ (GROUND TRUTH)` block and opens a dedicated screen with Sara-styled question/answer cards.
+  - Screen lives at `src/screens/settings/FaqScreen.tsx` and reuses `parseFaqsFromInstructions` (`src/utils/faq.ts`) so any CRM edits sync automatically after a refresh.
+  - Escalated FAQs surface their trigger phrases, pause TTL, and custom customer copy so operators know exactly what will happen when the bot routes to humans.
 
 - **Firebase**
   - The tenant-specific `GoogleService-Info.plist` lives in `firebase/`. Keep the Android `google-services.json` beside it when ready.

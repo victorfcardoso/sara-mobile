@@ -85,76 +85,100 @@ const buildSections = (
     return true;
   });
 
-  const recents = filtered
-    .filter(contact => contact.latestSeen)
-    .map(contact => ({ contact, date: toDateOrNull(contact.latestSeen) }))
-    .filter(item => item.date)
-    .sort((a, b) => (b.date?.getTime() || 0) - (a.date?.getTime() || 0))
-    .slice(0, 3)
-    .map(item => ({ contact: item.contact, upcomingAppointment: null, sectionId: 'recents' }));
+	type UpcomingCandidate = {
+		contact: CrmCustomer;
+		upcomingAppointment: Appointment;
+		appointmentDate: Date | null;
+	};
 
-  const upcomingToday = filtered
-    .map(contact => {
-      const phone = normalizePhone(contact.whatsappPhone);
-      if (!phone || !upcomingIndex.has(phone)) {
-        return null;
-      }
-      const appointment = upcomingIndex.get(phone) ?? null;
-      return appointment
-        ? {
-            contact,
-            appointmentDate: toDateOrNull(appointment.startAt),
-            upcomingAppointment: appointment,
-          }
-        : null;
-    })
-    .filter(Boolean)
-    .sort((a, b) => {
-      const dateA = a?.appointmentDate?.getTime() ?? 0;
-      const dateB = b?.appointmentDate?.getTime() ?? 0;
-      return dateA - dateB;
-    })
-    .map(item => ({
-      contact: item!.contact,
-      upcomingAppointment:
-        (item as { upcomingAppointment?: Appointment | null }).upcomingAppointment ?? null,
-      sectionId: 'upcoming',
-    }));
+	const upcomingCandidates: UpcomingCandidate[] = filtered
+		.map(contact => {
+			const phone = normalizePhone(contact.whatsappPhone);
+			if (!phone || !upcomingIndex.has(phone)) {
+				return null;
+			}
+			const appointment = upcomingIndex.get(phone);
+			if (!appointment) {
+				return null;
+			}
+			return {
+				contact,
+				upcomingAppointment: appointment,
+				appointmentDate: toDateOrNull(appointment.startAt),
+			};
+		})
+		.filter((candidate): candidate is UpcomingCandidate => Boolean(candidate));
+
+	const upcomingToday: ContactSectionItem[] = upcomingCandidates
+		.sort((a, b) => {
+			const dateA = a.appointmentDate?.getTime() ?? 0;
+			const dateB = b.appointmentDate?.getTime() ?? 0;
+			return dateA - dateB;
+		})
+		.map(candidate => ({
+			contact: candidate.contact,
+			upcomingAppointment: candidate.upcomingAppointment,
+			sectionId: 'upcoming',
+		}));
+
+	const upcomingContactIds = new Set(upcomingToday.map(item => item.contact.id));
+
+	const recents = filtered
+		.filter(contact => contact.latestSeen && !upcomingContactIds.has(contact.id))
+		.map(contact => ({ contact, date: toDateOrNull(contact.latestSeen) }))
+		.filter(item => item.date)
+		.sort((a, b) => (b.date?.getTime() || 0) - (a.date?.getTime() || 0))
+		.slice(0, 3)
+		.map(item => ({ contact: item.contact, upcomingAppointment: null, sectionId: 'recents' }));
 
   const alphabeticallySorted = filtered
     .slice()
     .sort((a, b) => getContactDisplayName(a).localeCompare(getContactDisplayName(b)));
 
-  const alphabeticalSectionsMap = new Map<string, ContactSectionItem[]>();
-  alphabeticallySorted.forEach(contact => {
-    const label = getContactDisplayName(contact).charAt(0).toUpperCase() || '#';
-    if (!alphabeticalSectionsMap.has(label)) {
-      alphabeticalSectionsMap.set(label, []);
-    }
-    const phone = normalizePhone(contact.whatsappPhone);
-    const appointment = phone ? (upcomingIndex.get(phone) ?? null) : null;
-    alphabeticalSectionsMap.get(label)?.push({
-      contact,
-      upcomingAppointment: appointment,
-      sectionId: `alpha-${label}`,
-    });
-  });
+	const shouldShowRecents = !normalizedSearch && recents.length > 0;
+	const shouldShowUpcoming = !normalizedSearch && upcomingToday.length > 0;
 
-  const sections: ContactSection[] = [];
+	const excludedContactIds = new Set<string>();
+	if (shouldShowUpcoming) {
+		upcomingToday.forEach(item => excludedContactIds.add(item.contact.id));
+	}
+	if (shouldShowRecents) {
+		recents.forEach(item => excludedContactIds.add(item.contact.id));
+	}
 
-  if (!normalizedSearch && recents.length > 0) {
-    sections.push({
-      key: 'recents',
-      title: I18n.t('CONTACTS.SECTIONS.RECENTS'),
-      data: recents,
-    });
-  }
+	const alphabeticalSectionsMap = new Map<string, ContactSectionItem[]>();
+	alphabeticallySorted.forEach(contact => {
+		if (excludedContactIds.has(contact.id)) {
+			return;
+		}
+		const label = getContactDisplayName(contact).charAt(0).toUpperCase() || '#';
+		if (!alphabeticalSectionsMap.has(label)) {
+			alphabeticalSectionsMap.set(label, []);
+		}
+		const phone = normalizePhone(contact.whatsappPhone);
+		const appointment = phone ? (upcomingIndex.get(phone) ?? null) : null;
+		alphabeticalSectionsMap.get(label)?.push({
+			contact,
+			upcomingAppointment: appointment,
+			sectionId: `alpha-${label}`,
+		});
+	});
 
-  if (!normalizedSearch && upcomingToday.length > 0) {
-    sections.push({
-      key: 'upcoming',
-      title: I18n.t('CONTACTS.SECTIONS.UPCOMING_TODAY'),
-      data: upcomingToday,
+	const sections: ContactSection[] = [];
+
+	if (shouldShowRecents) {
+		sections.push({
+			key: 'recents',
+			title: I18n.t('CONTACTS.SECTIONS.RECENTS'),
+			data: recents,
+		});
+	}
+
+	if (shouldShowUpcoming) {
+		sections.push({
+			key: 'upcoming',
+			title: I18n.t('CONTACTS.SECTIONS.UPCOMING_TODAY'),
+			data: upcomingToday,
     });
   }
 

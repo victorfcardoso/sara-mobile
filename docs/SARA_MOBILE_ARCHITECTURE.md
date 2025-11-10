@@ -1,15 +1,16 @@
 # Sara Mobile Architecture Overview
 
-> Last updated: 2 Nov 2025  
+> Last updated: 5 Nov 2025  
 > Audience: teammates & LLM agents bringing Sara branding to the Chatwoot mobile fork.
 
 ## 1. High-Level Layout
 
 - **App shell** — `App.tsx` bootstraps Redux, restores persisted state, and calls `bootstrapInstallationUrl` so a default Chatwoot tenant is available before the UI renders.
 - **Navigation** — `src/navigation` wraps React Navigation. `AppTabs` chooses between the logged-in tab navigator and the `AuthStack` (login/reset MFAs). Deep linking and SSO callbacks are handled in `src/navigation/index.tsx`.
-- **State management** — Redux Toolkit + `redux-persist`. Feature slices live under `src/store/<domain>`; `src/store/reducers.ts` combines them. `settingsSlice` seeds URLs (installation/base/websocket) and Redux thunks in `settingsActions.ts` talk to the Chatwoot API. Persistence uses `persistStorage` (`AsyncStorage` with an in-memory fallback) so the app still boots if the native storage sandbox isn’t writable on a dev client.
+- **State management** — Redux Toolkit + `redux-persist`. Feature slices live under `src/store/<domain>`; `src/store/reducers.ts` combines them. `settingsSlice` seeds URLs (installation/base/websocket) and Redux thunks in `settingsActions.ts` talk to the Chatwoot API. The new `agent-settings` slice (`src/store/agent-settings/*`) talks to the Sara API (`/agents/{id}`) so the Settings screen mirrors CRM toggles (payment required, doctor confirmation, integrations) in real time. Persistence uses `persistStorage` (`AsyncStorage` with an in-memory fallback) so the app still boots if the native storage sandbox isn’t writable on a dev client.
 - **Networking** — `src/services/APIService.ts` configures Axios per request, pulling the current `installationUrl` from state. ActionCable websockets are managed by `src/utils/actionCable.ts` when the user is logged in.
 - **UI layer** — Components follow upstream Chatwoot conventions (`src/components-next`, `src/screens`). Tailwind via `twrnc` drives styling.
+- **FAQ inspector** — Settings → FAQ counts entries from the inline instruction block and displays them through `src/screens/settings/FaqScreen.tsx`, which relies on `src/utils/faq.ts` to parse `### FAQ (GROUND TRUTH)`.
 
 ## 2. Directory Cheat Sheet
 
@@ -49,6 +50,7 @@
 ## 5. Networking & Realtime
 
 - **REST** — All API calls go through `APIService` (Axios). The interceptor pulls the Chatwoot installation URL + `api_access_token` from the Sara-backed session and rewrites routes to `api/v1/accounts/<account_id>/…`.
+- **Sara CRM API** — `src/services/SaraAPIService.ts` now injects both the Sara bearer token and the active agent’s `X-Agent-Id` header on every request (unless a call overrides it). This keeps mobile CRM reads aligned with the React Admin surface when users manage multiple tenants.
 - **ActionCable** — `src/utils/actionCable.ts` connects to `webSocketUrl` (derived as `wss://<install>/cable`). Credentials (`pubSubToken`, `accountId`) are sourced from Redux selectors.
 - **Push notifications** — Firebase Cloud Messaging via `@react-native-firebase/messaging`. Device registration happens inside `settingsActions.saveDeviceDetails`.
 - **SSO** — `SsoUtils` now only surfaces error toasts if the legacy `/app/login/sso` flow fires unexpectedly; the primary path is Sara-first login.
