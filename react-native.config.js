@@ -1,4 +1,5 @@
 module.exports = {
+  assets: ['./src/assets/fonts/'],
   dependencies: {
     'ffmpeg-kit-react-native': {
       platforms: {

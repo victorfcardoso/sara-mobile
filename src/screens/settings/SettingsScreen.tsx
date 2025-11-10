@@ -8,6 +8,7 @@ import {
   Switch,
   ActivityIndicator,
   View,
+  RefreshControl,
 } from 'react-native';
 import Animated from 'react-native-reanimated';
 // import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -137,6 +138,7 @@ const SettingsScreen = () => {
   // const { bottom } = useSafeAreaInsets();
 
   const [showWidget, toggleWidget] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const user = useSelector(selectUser);
   const {
     name,
@@ -501,6 +503,18 @@ const SettingsScreen = () => {
     navigation.dispatch(StackActions.replace('Tab'));
   };
 
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await Promise.allSettled([
+        dispatch(agentSettingsActions.fetchAgentSettings()),
+        dispatch(settingsActions.getNotificationSettings()),
+      ]);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [dispatch]);
+
   const handleSelectPlanTier = useCallback(
     async (tier: AgentPlanTier) => {
       if (!agentSettings || agentSettingsUpdating) {
@@ -680,7 +694,15 @@ const SettingsScreen = () => {
       <SettingsHeader />
       <Animated.ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={tailwind.style(`pb-[${TAB_BAR_HEIGHT - 1}px]`)}>
+        contentContainerStyle={tailwind.style(`pb-[${TAB_BAR_HEIGHT - 1}px]`)}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing || agentSettingsLoading}
+            onRefresh={handleRefresh}
+            tintColor={SARA_COLORS.textPrimary}
+            colors={[SARA_COLORS.textPrimary]}
+          />
+        }>
         <Animated.View style={tailwind.style('flex justify-center items-center pt-4 gap-3')}>
           <Animated.View style={tailwind.style('flex flex-col items-center gap-2')}>
             <Animated.Text

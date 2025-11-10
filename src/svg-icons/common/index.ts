@@ -41,3 +41,8 @@ export * from './SelfAssign';
 export * from './Company';
 export * from './SocialIcons';
 export * from './Error';
+export * from './Calendar';
+export * from './Clock';
+export * from './CreditCard';
+export * from './Zap';
+export * from './Pencil';

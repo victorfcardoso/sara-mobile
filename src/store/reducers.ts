@@ -28,6 +28,8 @@ import localRecordedAudioCacheSlice from '@/store/conversation/localRecordedAudi
 import cannedResponseSlice from '@/store/canned-response/cannedResponseSlice';
 import macroSlice from '@/store/macro/macroSlice';
 import { crmCustomersReducer } from '@/store/crm-customers';
+import { agentSettingsReducer } from '@/store/agent-settings';
+import { manageableAgentReducer } from './manageable-agents';
 
 export const appReducer = combineReducers({
   auth: authSlice,
@@ -57,4 +59,6 @@ export const appReducer = combineReducers({
   cannedResponses: cannedResponseSlice,
   localRecordedAudioCache: localRecordedAudioCacheSlice,
   crmCustomers: crmCustomersReducer,
+  agentSettings: agentSettingsReducer,
+  manageableAgents: manageableAgentReducer,
 });

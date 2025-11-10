@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 import { apiService } from '@/services/APIService';
+import { saraApiService } from '@/services/SaraAPIService';
 import type { User } from '@/types/User';
 import { buildSaraApiUrl } from '@/config/saraConfig';
 
@@ -15,6 +16,7 @@ import type {
   AvailabilityPayload,
   ProfileResponse,
   SetActiveAccountPayload,
+  ChatwootSession,
 } from './authTypes';
 const toNumberOrNull = (value: unknown): number | null => {
   if (value === null || value === undefined || value === '') {
@@ -30,8 +32,9 @@ const toNumberOrNull = (value: unknown): number | null => {
 
 const ensureAgent = (
   response: ChatwootMobileAuthResponse,
+  preferredAgentId?: string | null,
 ): ChatwootMobileAuthAgent => {
-  const preferredId = response.default_agent_id;
+  const preferredId = preferredAgentId ?? response.default_agent_id;
   const { agents } = response;
 
   if (!agents?.length) {
@@ -39,7 +42,7 @@ const ensureAgent = (
   }
 
   const preferred =
-    agents.find(agent => agent.agent_id === preferredId) ?? agents[0];
+    (preferredId && agents.find(agent => agent.agent_id === preferredId)) ?? agents[0];
 
   return preferred;
 };
@@ -149,5 +152,55 @@ export class AuthService {
   static async setActiveAccount(payload: SetActiveAccountPayload): Promise<ProfileResponse> {
     const response = await apiService.put<ProfileResponse>('profile/set_active_account', payload);
     return response.data;
+  }
+
+  static async switchAgent(agentId: string): Promise<{
+    user: User;
+    chatwootSession: ChatwootSession;
+  }> {
+    if (!agentId) {
+      throw new Error('Missing agent identifier.');
+    }
+
+    const mobileAuthResponse = await saraApiService.post<ChatwootMobileAuthResponse>(
+      '/chatwoot/mobile-auth',
+      { agent_id: agentId },
+    );
+
+    const mobileAuth = mobileAuthResponse.data;
+    const agent = ensureAgent(mobileAuth, agentId);
+
+    const installationUrl = agent.installation_url;
+    const apiAccessToken = agent.api_access_token ?? null;
+
+    if (!installationUrl) {
+      throw new Error('Chatwoot installation URL missing for the selected agent.');
+    }
+
+    if (!apiAccessToken) {
+      throw new Error('Chatwoot API access token not configured for the selected agent.');
+    }
+
+    const profileUrl = new URL('api/v1/profile', installationUrl).toString();
+    const profileResponse = await axios.get<ProfileResponse>(profileUrl, {
+      headers: { api_access_token: apiAccessToken },
+    });
+
+    const chatwootUser: User = profileResponse.data.user;
+
+    return {
+      user: chatwootUser,
+      chatwootSession: {
+        agentId: agent.agent_id ?? null,
+        accountId: toNumberOrNull(agent.account_id ?? chatwootUser?.account_id),
+        installationUrl,
+        websocketUrl: agent.websocket_url,
+        inboxId: toNumberOrNull(agent.inbox_id),
+        apiAccessToken,
+        ssoUrl: agent.sso_url ?? null,
+        chatwootUserId: mobileAuth.chatwoot_user_id ?? null,
+        chatwootAccountId: mobileAuth.chatwoot_account_id ?? null,
+      },
+    };
   }
 }

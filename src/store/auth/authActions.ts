@@ -2,6 +2,7 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 
 import I18n from '@/i18n';
 import { applyChatwootSession } from '@/store/settings/settingsSlice';
+import type { User } from '@/types/User';
 
 import { AuthService } from './authService';
 import type {
@@ -13,6 +14,7 @@ import type {
   ProfileResponse,
   ApiErrorResponse,
   SetActiveAccountPayload,
+  ChatwootSession,
 } from './authTypes';
 import { handleApiError } from './authUtils';
 
@@ -81,4 +83,25 @@ export const authActions = {
     'auth/setActiveAccount',
     AuthService.setActiveAccount,
   ),
+
+  switchAgent: createAsyncThunk<
+    { user: User; chatwootSession: ChatwootSession },
+    string,
+    { rejectValue: ApiErrorResponse }
+  >('auth/switchAgent', async (agentId, { rejectWithValue, dispatch }) => {
+    try {
+      const result = await AuthService.switchAgent(agentId);
+      const { chatwootSession } = result;
+      dispatch(
+        applyChatwootSession({
+          installationUrl: chatwootSession.installationUrl,
+          webSocketUrl: chatwootSession.websocketUrl,
+          baseUrl: deriveBaseUrl(chatwootSession.installationUrl),
+        }),
+      );
+      return result;
+    } catch (error) {
+      return rejectWithValue(handleApiError(error, I18n.t('ERRORS.AUTH')));
+    }
+  }),
 };

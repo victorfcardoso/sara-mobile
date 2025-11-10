@@ -9,6 +9,7 @@ export interface AuthState {
   uiFlags: {
     isLoggingIn: boolean;
     isResettingPassword: boolean;
+    isSwitchingAgent: boolean;
   };
   error: string | null;
 }
@@ -19,6 +20,7 @@ const initialState: AuthState = {
   uiFlags: {
     isLoggingIn: false,
     isResettingPassword: false,
+    isSwitchingAgent: false,
   },
   error: null,
 };
@@ -37,6 +39,7 @@ export const authSlice = createSlice({
       state.uiFlags = {
         isLoggingIn: false,
         isResettingPassword: false,
+        isSwitchingAgent: false,
       };
     },
     clearAuthError: state => {
@@ -125,6 +128,22 @@ export const authSlice = createSlice({
           ...state.user,
           ...action.payload.user,
         };
+      })
+      .addCase(authActions.switchAgent.pending, state => {
+        state.uiFlags.isSwitchingAgent = true;
+        state.error = null;
+      })
+      .addCase(authActions.switchAgent.fulfilled, (state, action) => {
+        state.uiFlags.isSwitchingAgent = false;
+        state.error = null;
+        state.user = action.payload.user;
+        state.chatwootSession = action.payload.chatwootSession;
+      })
+      .addCase(authActions.switchAgent.rejected, (state, action) => {
+        state.uiFlags.isSwitchingAgent = false;
+        state.error =
+          action.payload?.message ??
+          (Array.isArray(action.payload?.errors) ? action.payload?.errors[0] ?? null : null);
       });
   },
 });

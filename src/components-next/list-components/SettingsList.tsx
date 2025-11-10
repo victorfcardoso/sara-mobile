@@ -62,20 +62,33 @@ const ListItem = (props: ListItemProps) => {
               {listItem.title}
             </Animated.Text>
           </Animated.View>
-          <Animated.View style={tailwind.style('flex flex-row items-center pr-3')}>
-            <Animated.Text
-              style={[
-                tailwind.style('text-base font-inter-normal-20 leading-[22px] tracking-[0.16px]'),
-                {
-                  color:
-                    listItem.subtitleType === 'light'
-                      ? SARA_COLORS.textSecondary
-                      : SARA_COLORS.textPrimary,
-                },
-              ]}>
-              {listItem.subtitle}
-            </Animated.Text>
-            {listItem.hasChevron ? <Icon icon={<CaretRight />} size={20} /> : null}
+          <Animated.View style={tailwind.style('flex flex-row items-center pr-3 gap-2')}>
+            {listItem.renderAccessory ? (
+              <>
+                <Animated.View>{listItem.renderAccessory}</Animated.View>
+                {listItem.hasChevron ? <Icon icon={<CaretRight />} size={20} /> : null}
+              </>
+            ) : (
+              <>
+                {listItem.subtitle ? (
+                  <Animated.Text
+                    style={[
+                      tailwind.style(
+                        'text-base font-inter-normal-20 leading-[22px] tracking-[0.16px]',
+                      ),
+                      {
+                        color:
+                          listItem.subtitleType === 'light'
+                            ? SARA_COLORS.textSecondary
+                            : SARA_COLORS.textPrimary,
+                      },
+                    ]}>
+                    {listItem.subtitle}
+                  </Animated.Text>
+                ) : null}
+                {listItem.hasChevron ? <Icon icon={<CaretRight />} size={20} /> : null}
+              </>
+            )}
           </Animated.View>
         </Animated.View>
       </Animated.View>

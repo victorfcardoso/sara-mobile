@@ -16,6 +16,8 @@ export interface RawMobileAppointment {
   source?: string | null;
   location?: string | null;
   notes?: string | null;
+  provider_name?: string | null;
+  duration_minutes?: number | null;
 }
 
 export interface MobileAppointmentsResponse {
@@ -49,6 +51,8 @@ export interface Appointment {
   source?: string | null;
   location?: string | null;
   notes?: string | null;
+  providerName?: string | null;
+  durationMinutes?: number | null;
 }
 
 export interface AppointmentPagination {

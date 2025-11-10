@@ -28,6 +28,7 @@ export interface GenericListType {
     actionName: string;
     actionParams: string[];
   }[];
+  renderAccessory?: React.ReactNode;
 }
 
 export interface AttributeListType {

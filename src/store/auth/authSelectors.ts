@@ -34,6 +34,11 @@ export const selectResetPasswordLoading = createSelector(
   auth => auth.uiFlags.isResettingPassword,
 );
 
+export const selectIsSwitchingAgent = createSelector(
+  selectAuth,
+  auth => auth.uiFlags.isSwitchingAgent,
+);
+
 export const selectAccounts = createSelector(selectAuth, auth => auth.user?.accounts);
 
 export const selectCurrentUserAvailability = createSelector(selectAuth, auth => {

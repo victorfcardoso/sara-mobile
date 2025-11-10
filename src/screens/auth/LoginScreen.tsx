@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { Animated, Image, Pressable, StatusBar, StyleSheet, TextInput, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -49,6 +49,7 @@ const LoginScreen = () => {
       password: '',
     },
   });
+  const passwordInputRef = useRef<TextInput | null>(null);
 
   const { languagesModalSheetRef } = useRefsContext();
 
@@ -170,12 +171,13 @@ const LoginScreen = () => {
                   message: i18n.t('LOGIN.EMAIL_ERROR'),
                 },
               }}
-              render={({ field: { onChange, onBlur, value } }) => (
+              render={({ field: { onChange, onBlur, value, ref } }) => (
                 <View style={tailwind.style('pt-2 gap-2')}>
                   <Animated.Text style={[tailwind.style('font-inter-420-20'), styles.label]}>
                     {i18n.t('LOGIN.EMAIL')}
                   </Animated.Text>
                   <TextInput
+                    ref={ref}
                     style={[
                       tailwind.style(
                         'text-base font-inter-normal-20 tracking-[0.24px] leading-[20px] android:leading-[18px]',
@@ -190,6 +192,9 @@ const LoginScreen = () => {
                     placeholderTextColor="#6C778A"
                     keyboardType="email-address"
                     autoCapitalize="none"
+                    returnKeyType="next"
+                    blurOnSubmit={false}
+                    onSubmitEditing={() => passwordInputRef.current?.focus()}
                   />
                   {errors.email && (
                     <Animated.Text style={tailwind.style('font-inter-normal-20 text-ruby-900')}>
@@ -210,13 +215,17 @@ const LoginScreen = () => {
                   message: i18n.t('LOGIN.PASSWORD_ERROR'),
                 },
               }}
-              render={({ field: { onChange, onBlur, value } }) => (
+              render={({ field: { onChange, onBlur, value, ref } }) => (
                 <View style={tailwind.style('pt-8 gap-2')}>
                   <Animated.Text style={[tailwind.style('font-inter-420-20'), styles.label]}>
                     {i18n.t('LOGIN.PASSWORD')}
                   </Animated.Text>
                   <View style={tailwind.style('relative')}>
                     <TextInput
+                      ref={node => {
+                        passwordInputRef.current = node;
+                        ref?.(node);
+                      }}
                       style={[
                         tailwind.style(
                           'text-base font-inter-normal-20 tracking-[0.24px] leading-[20px] android:leading-[18px]',
@@ -230,6 +239,8 @@ const LoginScreen = () => {
                       value={value}
                       placeholderTextColor="#6C778A"
                       secureTextEntry={!showPassword}
+                      returnKeyType="done"
+                      onSubmitEditing={handleSubmit(onSubmit)}
                     />
                     <Pressable style={passwordToggleStyle} onPress={handleTogglePasswordVisibility}>
                       <Icon size={20} icon={showPassword ? <EyeIcon /> : <EyeSlash />} />

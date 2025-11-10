@@ -48,6 +48,12 @@
 - Footer string now reads `Sara <version>` to keep branding consistent across environments.
 - Updated bottom tab icons (`src/svg-icons/tabs/*.tsx`) to render in Sara navy `#16273D` so the navigation buttons match the rest of the palette.
 
+## 5 Nov 2025 – Settings info architecture update
+- Settings data now hydrates from the Sara agent settings endpoint via `src/store/agent-settings`, so toggles reflect live CRM state.
+- Trimmed the "Agent Profile" card to remove the redundant name/email block; plan tier now appears as a badge inside Preferences alongside the manager WhatsApp number for quicker editing.
+- Rearranged Workflow, Scheduling, and Bot Configuration sections to show only actionable rows (WhatsApp Business, Stripe, Office hours, Availability blocks, Service catalog, Instructions), each styled with chevrons/badges that match the new list accessory API.
+- Footer copy now shows `Sara 0.1`, giving operators a lightweight build indicator without the old CRM prefix.
+
 ## 2 Nov 2025 – Appointments tab MVP
 - Replaced the placeholder view with a live feed of upcoming visits powered by the new backend endpoint (`GET /chatwoot/mobile/appointments`).  
   - The Redux slice (`src/store/appointments/*`) hydrates appointments, tracks pagination cursors, and dedupes records by `reservation_id`.  

@@ -94,6 +94,8 @@ const mapAppointment = (raw: RawMobileAppointment): Appointment => {
     source: raw.source ?? null,
     location: raw.location ?? null,
     notes: raw.notes ?? null,
+    providerName: raw.provider_name ?? null,
+    durationMinutes: raw.duration_minutes ?? null,
   };
 };
 
