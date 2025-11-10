@@ -49,7 +49,6 @@ import { appointmentsActions } from '@/store/appointments/appointmentsActions';
 import {
   selectAppointmentsAgentId,
   selectAppointmentsError,
-  selectAppointmentsLastUpdated,
   selectAppointmentsList,
   selectAppointmentsPagination,
   selectAppointmentsUiFlags,
@@ -774,7 +773,6 @@ const AppointmentsScreen = () => {
   const pagination = useAppSelector(selectAppointmentsPagination);
   const uiFlags = useAppSelector(selectAppointmentsUiFlags);
   const error = useAppSelector(selectAppointmentsError);
-  const lastUpdated = useAppSelector(selectAppointmentsLastUpdated);
   const loadedAgentId = useAppSelector(selectAppointmentsAgentId);
   const sessionAgentId = useAppSelector(state => state.auth.chatwootSession?.agentId ?? null);
   const agentSettingsIntegrations = useAppSelector(selectAgentSettingsIntegrations);
@@ -1304,17 +1302,6 @@ const AppointmentsScreen = () => {
 
   const isInitialLoading = uiFlags.isLoading && mergedAppointments.length === 0;
 
-  const lastUpdatedLabel = useMemo(() => {
-    if (!lastUpdated) {
-      return null;
-    }
-    const parsed = new Date(lastUpdated);
-    if (Number.isNaN(parsed.getTime())) {
-      return null;
-    }
-    return formatDistanceToNow(parsed, { addSuffix: true });
-  }, [lastUpdated]);
-
   const renderItem = useCallback(
     ({ item }: { item: Appointment }) => (
       <AppointmentCard appointment={item} onPress={handleAppointmentPress} />
@@ -1417,11 +1404,6 @@ const AppointmentsScreen = () => {
   const header = (
     <View style={styles.hero}>
       <Text style={styles.title}>{I18n.t('APPOINTMENTS.TITLE')}</Text>
-      {lastUpdatedLabel ? (
-        <Text style={styles.updatedText}>
-          {I18n.t('APPOINTMENTS.UPDATED', { time: lastUpdatedLabel })}
-        </Text>
-      ) : null}
       {error ? (
         <View style={styles.errorBanner}>
           <Text style={styles.errorText}>{error || I18n.t('APPOINTMENTS.ERROR')}</Text>
