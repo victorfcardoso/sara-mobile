@@ -6,6 +6,7 @@ import { Message } from '@/types';
 
 interface RefsContextType {
   userAvailabilityStatusSheetRef: React.RefObject<BottomSheetModal>;
+  planTierSheetRef: React.RefObject<BottomSheetModal>;
   filtersModalSheetRef: React.RefObject<BottomSheetModal>;
   actionsModalSheetRef: React.RefObject<BottomSheetModal>;
   languagesModalSheetRef: React.RefObject<BottomSheetModal>;
@@ -37,6 +38,7 @@ const useRefsContext = (): RefsContextType => {
 
 const RefsProvider: React.FC<Partial<RefsContextType & { children: React.ReactNode }>> = props => {
   const userAvailabilityStatusSheetRef = useRef<BottomSheetModal>(null);
+  const planTierSheetRef = useRef<BottomSheetModal>(null);
   const filtersModalSheetRef = useRef<BottomSheetModal>(null);
   const actionsModalSheetRef = useRef<BottomSheetModal>(null);
   const languagesModalSheetRef = useRef<BottomSheetModal>(null);
@@ -56,6 +58,7 @@ const RefsProvider: React.FC<Partial<RefsContextType & { children: React.ReactNo
 
   const contextRefValues = {
     userAvailabilityStatusSheetRef,
+    planTierSheetRef,
     filtersModalSheetRef,
     actionsModalSheetRef,
     languagesModalSheetRef,
