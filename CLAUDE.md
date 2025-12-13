@@ -120,6 +120,30 @@ src/
 3. **Reuse existing code** - Check for existing abstractions first
 4. **Use Sara tokens** - Never hardcode colors, use `sara-*` theme tokens
 
+---
+
+## Refactoring Slices
+
+See **[docs/REFACTORING_SLICES.md](./docs/REFACTORING_SLICES.md)** for full details.
+
+| Slice | Name | Files | Parallel? |
+|-------|------|-------|-----------|
+| S01 | Theme | ~9 | Yes |
+| S02 | Navigation | ~9 | Yes |
+| S03 | Auth | ~13 | Yes |
+| S04 | Chat | ~75 | Sub-slices (a/b/c/d) |
+| S05 | Conversations | ~41 | Depends S04 |
+| S06 | Notifications | ~15 | Yes |
+| S07 | Appointments | ~10 | Yes |
+| S08 | Contacts | ~26 | Yes |
+| S09 | Settings | ~24 | Yes |
+| S10 | Components | ~62 | Yes |
+| S11 | Store | ~148 | Core (careful) |
+| S12 | Services | ~4 | Yes |
+| S13 | Utils/Types | ~78 | Yes |
+
+**Quick Wins:** S01 (520+ hardcoded colors), S07 (small/isolated), S10 (Storybook), S13 (cleanup)
+
 ## NOTIFY WORKFLOW (IMPORTANT)
 
 When the user asks to "notify" (explicitly or at the end of a long task), send a notification via `curl https://ntfy.sh/codex-victor`. Use a terminal/hacker style format:
