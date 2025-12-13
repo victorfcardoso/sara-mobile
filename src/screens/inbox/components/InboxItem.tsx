@@ -110,14 +110,13 @@ export const InboxItemComponent = (props: InboxItemProps) => {
           'border',
           isRead ? 'border-sara-border' : 'border-sara-border-strong',
         )}>
-        {/* Left accent bar */}
+        {/* Left accent bar - uses notification type color */}
         <View
           style={[
             tailwind.style('w-1'),
             {
-              backgroundColor: isRead
-                ? tailwind.color('sara-accent-muted')
-                : tailwind.color('sara-accent'),
+              backgroundColor: config.hexColor,
+              opacity: isRead ? 0.4 : 1,
             },
           ]}
         />

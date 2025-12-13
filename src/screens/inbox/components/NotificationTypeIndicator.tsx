@@ -5,7 +5,7 @@ import Animated from 'react-native-reanimated';
 import { NotificationType } from '@/types/Notification';
 
 // Brand colors matching DESIGN_GUIDELINES.md
-const BRAND_COLORS = {
+export const BRAND_COLORS = {
   teal: '#6AB4B6',
   navy: '#16273D',
   mint: '#CCE6DE',
@@ -164,6 +164,7 @@ export interface NotificationTypeConfig {
   icon: React.ReactNode;
   color: string;
   bgColor: string;
+  hexColor: string; // For accent bar
 }
 
 export const getNotificationTypeConfig = (type: NotificationType | string): NotificationTypeConfig => {
@@ -174,54 +175,63 @@ export const getNotificationTypeConfig = (type: NotificationType | string): Noti
       icon: <ConfirmedIcon color={BRAND_COLORS.teal} />,
       color: 'teal-700',
       bgColor: 'teal-100',
+      hexColor: BRAND_COLORS.teal,
     },
     'booking.rescheduled': {
       label: 'Rescheduled',
       icon: <RescheduledIcon color={BRAND_COLORS.warning} />,
       color: 'amber-700',
       bgColor: 'amber-100',
+      hexColor: BRAND_COLORS.warning,
     },
     'booking.cancelled_by_patient': {
       label: 'Cancelled',
       icon: <CancelledIcon color={BRAND_COLORS.error} />,
       color: 'ruby-700',
       bgColor: 'ruby-100',
+      hexColor: BRAND_COLORS.error,
     },
     'booking.cancelled_by_doctor': {
       label: 'Cancelled',
       icon: <CancelledIcon color={BRAND_COLORS.error} />,
       color: 'ruby-700',
       bgColor: 'ruby-100',
+      hexColor: BRAND_COLORS.error,
     },
     'booking.no_show_flagged': {
       label: 'No Show',
       icon: <CancelledIcon color={BRAND_COLORS.error} />,
       color: 'ruby-700',
       bgColor: 'ruby-100',
+      hexColor: BRAND_COLORS.error,
     },
     'booking.followup_due': {
       label: 'Follow-up Due',
       icon: <RescheduledIcon color={BRAND_COLORS.warning} />,
       color: 'amber-700',
       bgColor: 'amber-100',
+      hexColor: BRAND_COLORS.warning,
     },
     'booking.provider_assignment_required': {
       label: 'Assign Provider',
       icon: <AssignIcon color={BRAND_COLORS.navy} />,
       color: 'slate-950',
       bgColor: 'gray-100',
+      hexColor: BRAND_COLORS.navy,
     },
     'booking.provider_assigned': {
       label: 'Provider Assigned',
       icon: <AssignIcon color={BRAND_COLORS.teal} />,
       color: 'teal-700',
       bgColor: 'teal-100',
+      hexColor: BRAND_COLORS.teal,
     },
     'booking.provider_assignment_expired': {
       label: 'Expired',
       icon: <CancelledIcon color={BRAND_COLORS.error} />,
       color: 'ruby-700',
       bgColor: 'ruby-100',
+      hexColor: BRAND_COLORS.error,
     },
     // Payment types
     'payment.awaiting': {
@@ -229,30 +239,35 @@ export const getNotificationTypeConfig = (type: NotificationType | string): Noti
       icon: <PaymentIcon color={BRAND_COLORS.warning} />,
       color: 'amber-700',
       bgColor: 'amber-100',
+      hexColor: BRAND_COLORS.warning,
     },
     'payment.completed': {
       label: 'Payment Complete',
       icon: <PaymentIcon color={BRAND_COLORS.teal} />,
       color: 'teal-700',
       bgColor: 'teal-100',
+      hexColor: BRAND_COLORS.teal,
     },
     'payment.failed': {
       label: 'Payment Failed',
       icon: <PaymentIcon color={BRAND_COLORS.error} />,
       color: 'ruby-700',
       bgColor: 'ruby-100',
+      hexColor: BRAND_COLORS.error,
     },
     'payment.refunded': {
       label: 'Refunded',
       icon: <PaymentIcon color={BRAND_COLORS.warning} />,
       color: 'amber-700',
       bgColor: 'amber-100',
+      hexColor: BRAND_COLORS.warning,
     },
     'payment.chargeback_alert': {
       label: 'Chargeback',
       icon: <PaymentIcon color={BRAND_COLORS.error} />,
       color: 'ruby-700',
       bgColor: 'ruby-100',
+      hexColor: BRAND_COLORS.error,
     },
     // Doctor workflow types
     'doctor.decision_required': {
@@ -260,18 +275,21 @@ export const getNotificationTypeConfig = (type: NotificationType | string): Noti
       icon: <DecisionIcon color={BRAND_COLORS.navy} />,
       color: 'slate-950',
       bgColor: 'gray-100',
+      hexColor: BRAND_COLORS.navy,
     },
     'doctor.decision_submitted': {
       label: 'Decision Made',
       icon: <ConfirmedIcon color={BRAND_COLORS.teal} />,
       color: 'teal-700',
       bgColor: 'teal-100',
+      hexColor: BRAND_COLORS.teal,
     },
     'doctor.decision_timeout': {
       label: 'Decision Timeout',
       icon: <DecisionIcon color={BRAND_COLORS.error} />,
       color: 'ruby-700',
       bgColor: 'ruby-100',
+      hexColor: BRAND_COLORS.error,
     },
     // Conversation escalation types
     'conversation.escalate_to_human': {
@@ -279,18 +297,21 @@ export const getNotificationTypeConfig = (type: NotificationType | string): Noti
       icon: <EscalateIcon color={BRAND_COLORS.warning} />,
       color: 'amber-700',
       bgColor: 'amber-100',
+      hexColor: BRAND_COLORS.warning,
     },
     'conversation.first_message': {
       label: 'New Contact',
       icon: <MessageIcon color={BRAND_COLORS.teal} />,
       color: 'teal-700',
       bgColor: 'teal-100',
+      hexColor: BRAND_COLORS.teal,
     },
     'conversation.handoff_requested': {
       label: 'Handoff',
       icon: <EscalateIcon color={BRAND_COLORS.warning} />,
       color: 'amber-700',
       bgColor: 'amber-100',
+      hexColor: BRAND_COLORS.warning,
     },
     // Chatwoot conversation types
     conversation_assignment: {
@@ -298,30 +319,35 @@ export const getNotificationTypeConfig = (type: NotificationType | string): Noti
       icon: <AssignIcon color={BRAND_COLORS.navy} />,
       color: 'slate-950',
       bgColor: 'gray-100',
+      hexColor: BRAND_COLORS.navy,
     },
     conversation_mention: {
       label: 'Mentioned',
       icon: <MentionIcon color={BRAND_COLORS.blue} />,
       color: 'blue-700',
       bgColor: 'blue-100',
+      hexColor: BRAND_COLORS.blue,
     },
     assigned_conversation_new_message: {
       label: 'New Message',
       icon: <MessageIcon color={BRAND_COLORS.teal} />,
       color: 'teal-700',
       bgColor: 'teal-100',
+      hexColor: BRAND_COLORS.teal,
     },
     participating_conversation_new_message: {
       label: 'New Message',
       icon: <MessageIcon color={BRAND_COLORS.teal} />,
       color: 'teal-700',
       bgColor: 'teal-100',
+      hexColor: BRAND_COLORS.teal,
     },
     conversation_creation: {
       label: 'New Conversation',
       icon: <MessageIcon color={BRAND_COLORS.teal} />,
       color: 'teal-700',
       bgColor: 'teal-100',
+      hexColor: BRAND_COLORS.teal,
     },
     // SLA types
     sla_missed_first_response: {
@@ -329,18 +355,21 @@ export const getNotificationTypeConfig = (type: NotificationType | string): Noti
       icon: <SLAIcon color={BRAND_COLORS.error} />,
       color: 'ruby-700',
       bgColor: 'ruby-100',
+      hexColor: BRAND_COLORS.error,
     },
     sla_missed_next_response: {
       label: 'SLA Missed',
       icon: <SLAIcon color={BRAND_COLORS.error} />,
       color: 'ruby-700',
       bgColor: 'ruby-100',
+      hexColor: BRAND_COLORS.error,
     },
     sla_missed_resolution: {
       label: 'SLA Missed',
       icon: <SLAIcon color={BRAND_COLORS.error} />,
       color: 'ruby-700',
       bgColor: 'ruby-100',
+      hexColor: BRAND_COLORS.error,
     },
   };
 
@@ -350,6 +379,7 @@ export const getNotificationTypeConfig = (type: NotificationType | string): Noti
       icon: <DefaultIcon color={BRAND_COLORS.teal} />,
       color: 'teal-700',
       bgColor: 'teal-100',
+      hexColor: BRAND_COLORS.teal,
     }
   );
 };

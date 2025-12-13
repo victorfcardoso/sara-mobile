@@ -81,7 +81,10 @@ function transformSaraNotification(record: SaraNotificationRecord): Notification
     booking_data: bookingData,
   };
 
-  const createdAt = record.created_at ? new Date(record.created_at).getTime() : Date.now();
+  // Convert to Unix seconds (not milliseconds) since formatRelativeTime uses fromUnixTime
+  const createdAt = record.created_at
+    ? Math.floor(new Date(record.created_at).getTime() / 1000)
+    : Math.floor(Date.now() / 1000);
 
   return {
     id: parseInt((record.id || record.notif_ulid || '').replace(/\D/g, '').slice(0, 10)) || Date.now() + Math.random() * 1000,

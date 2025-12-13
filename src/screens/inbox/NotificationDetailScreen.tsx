@@ -150,7 +150,7 @@ const ActionButton = ({
   disabled,
 }: {
   label: string;
-  variant: 'primary' | 'secondary' | 'danger';
+  variant: 'primary' | 'secondary';
   onPress: () => void;
   loading?: boolean;
   disabled?: boolean;
@@ -158,13 +158,11 @@ const ActionButton = ({
   const bgColor = {
     primary: 'bg-sara-accent',
     secondary: 'bg-sara-background-light border border-sara-border',
-    danger: 'bg-ruby-600',
   }[variant];
 
   const textColor = {
     primary: 'text-white',
     secondary: 'text-sara-text-primary',
-    danger: 'text-white',
   }[variant];
 
   return (
@@ -398,7 +396,7 @@ const NotificationDetailScreen = ({ route, navigation }: NotificationDetailScree
             <View style={tailwind.style('flex-row gap-3')}>
               <ActionButton
                 label={i18n.t('NOTIFICATION.DECISION.DECLINE_BUTTON', { defaultValue: 'Decline' })}
-                variant="danger"
+                variant="secondary"
                 onPress={() => handleDecision('decline')}
                 loading={actionLoading === 'decline'}
                 disabled={actionLoading !== null}
