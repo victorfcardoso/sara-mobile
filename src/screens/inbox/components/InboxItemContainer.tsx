@@ -4,7 +4,7 @@ import { SharedValue } from 'react-native-reanimated';
 import Animated from 'react-native-reanimated';
 
 import { notificationActions } from '@/store/notification/notificationAction';
-import { useAppDispatch, useAppSelector } from '@/hooks';
+import { useAppDispatch } from '@/hooks';
 import type { Notification } from '@/types/Notification';
 import type { MarkAsReadPayload } from '@/store/notification/notificationTypes';
 import { MarkAsRead, MarkAsUnRead, DeleteIcon } from '@/svg-icons';
@@ -13,7 +13,6 @@ import { formatRelativeTime } from '@/utils/dateTimeUtils';
 import { formatTimeToShortForm } from '@/utils/dateTimeUtils';
 import { tailwind } from '@/theme';
 import { Icon, Swipeable } from '@/components-next';
-import { selectInboxById } from '@/store/inbox/inboxSelectors';
 import i18n from '@/i18n';
 import { showToast } from '@/utils/toastUtils';
 import { StackActions, useNavigation } from '@react-navigation/native';
@@ -57,8 +56,6 @@ export const InboxItemContainerComponent = (props: InboxItemContainerProps) => {
   const dispatch = useAppDispatch();
 
   const navigation = useNavigation();
-  const meta = item.primaryActor?.meta;
-  const inboxId = item.primaryActor?.inboxId;
   const isRead = !!item.readAt;
 
   const onPressAction = async () => {
@@ -116,15 +113,10 @@ export const InboxItemContainerComponent = (props: InboxItemContainerProps) => {
     return formatTimeToShortForm(time, true);
   }, [item.lastActivityAt]);
 
-  const inbox = useAppSelector(state => selectInboxById(state, inboxId));
-
-  const additionalAttributes = item.primaryActor?.additionalAttributes;
-  const sender = meta?.sender;
-  const assignee = meta?.assignee;
-  const conversationId = item.primaryActor?.id;
-  const priority = item.primaryActor?.priority;
   const notificationType = item.notificationType;
-  const pushTitle = i18n.t(`NOTIFICATION.TYPES.${notificationType.toUpperCase()}`);
+  const pushTitle = i18n.t(`NOTIFICATION.TYPES.${notificationType.toUpperCase()}`, {
+    defaultValue: item.pushMessageTitle,
+  });
 
   return (
     <Swipeable
@@ -141,15 +133,10 @@ export const InboxItemContainerComponent = (props: InboxItemContainerProps) => {
       {...{ index, openedRowIndex }}>
       <InboxItem
         isRead={isRead}
-        assignee={assignee}
         lastActivityAt={lastActivityAt}
-        sender={sender}
-        conversationId={conversationId}
-        priority={priority}
-        inbox={inbox || null}
-        additionalAttributes={additionalAttributes}
         pushMessageTitle={pushTitle}
         notificationType={notificationType}
+        payload={item.payload}
       />
     </Swipeable>
   );
