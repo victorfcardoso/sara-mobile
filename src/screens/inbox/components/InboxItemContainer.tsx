@@ -15,8 +15,9 @@ import { tailwind } from '@/theme';
 import { Icon, Swipeable } from '@/components-next';
 import i18n from '@/i18n';
 import { showToast } from '@/utils/toastUtils';
-import { StackActions, useNavigation } from '@react-navigation/native';
-import { conversationActions } from '@/store/conversation/conversationActions';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { NotificationsStackParamList } from '@/navigation/stack/NotificationsStack';
 
 type InboxItemContainerProps = {
   item: Notification;
@@ -55,38 +56,12 @@ export const InboxItemContainerComponent = (props: InboxItemContainerProps) => {
   const { index, item, openedRowIndex } = props;
   const dispatch = useAppDispatch();
 
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<NotificationsStackParamList>>();
   const isRead = !!item.readAt;
 
   const onPressAction = async () => {
-    markNotificationAsRead({
-      shouldShowToast: false,
-    });
-
-    const notificationType = item.notificationType;
-
-    // Booking/appointment notifications → navigate to Appointments tab
-    if (notificationType.startsWith('booking.') || notificationType.startsWith('doctor.')) {
-      const parentNavigator = navigation.getParent();
-      parentNavigator?.navigate('Appointments');
-      return;
-    }
-
-    // Payment notifications → show toast for now (no dedicated screen)
-    if (notificationType.startsWith('payment.')) {
-      showToast({ message: i18n.t('NOTIFICATION.PAYMENT_DETAILS_COMING_SOON', { defaultValue: 'Payment details coming soon' }) });
-      return;
-    }
-
-    // Conversation notifications → navigate to ChatScreen
-    if (item.primaryActor?.id) {
-      await dispatch(conversationActions.fetchConversation(item.primaryActor?.id));
-      const pushToChatScreen = StackActions.push('ChatScreen', {
-        conversationId: item.primaryActor?.id,
-        isConversationOpenedExternally: false,
-      });
-      navigation.dispatch(pushToChatScreen);
-    }
+    // Navigate to notification detail screen
+    navigation.navigate('NotificationDetail', { notificationId: item.id });
   };
 
   const markNotificationAsRead = useCallback(
