@@ -1,7 +1,7 @@
 import { createDraftSafeSelector, createSelector } from '@reduxjs/toolkit';
 import type { RootState } from '@/store';
 import { notificationsAdapter } from './notificationSlice';
-import { SortTypes } from './notificationFilterSlice';
+import { SortTypes, StatusFilter } from './notificationFilterSlice';
 import { Notification } from '@/types/Notification';
 export const selectNotificationsState = (state: RootState) => state.notifications;
 
@@ -44,8 +44,21 @@ export const selectIsAllNotificationsFetched = createSelector(
 );
 
 export const getFilteredNotifications = createDraftSafeSelector(
-  [selectAllNotifications, (_, sortOrder: SortTypes) => sortOrder],
-  (notifications, sortOrder) => {
+  [
+    selectAllNotifications,
+    (_, sortOrder: SortTypes) => sortOrder,
+    (_, _sortOrder: SortTypes, statusFilter: StatusFilter) => statusFilter,
+  ],
+  (notifications, sortOrder, statusFilter) => {
+    // Filter by status
+    let filtered = notifications;
+    if (statusFilter === 'unread') {
+      filtered = notifications.filter(n => !n.readAt);
+    } else if (statusFilter === 'read') {
+      filtered = notifications.filter(n => !!n.readAt);
+    }
+
+    // Sort
     type SortComparator = {
       asc: (a: Notification, b: Notification) => number;
       desc: (a: Notification, b: Notification) => number;
@@ -54,6 +67,6 @@ export const getFilteredNotifications = createDraftSafeSelector(
       asc: (a, b) => a.createdAt - b.createdAt,
       desc: (a, b) => b.createdAt - a.createdAt,
     };
-    return notifications.sort(comparator[sortOrder]);
+    return [...filtered].sort(comparator[sortOrder]);
   },
 );

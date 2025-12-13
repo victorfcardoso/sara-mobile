@@ -1,135 +1,199 @@
 import React from 'react';
+import { View, StyleSheet } from 'react-native';
 import Animated from 'react-native-reanimated';
-import { Avatar } from '@/components-next';
 import { tailwind } from '@/theme';
-import type { NotificationType } from '@/types/Notification';
-import { ConversationPriority } from '@/types/common';
-import { AnimatedNativeView, NativeView } from '@/components-next/native-components';
-import { PriorityIndicator, ChannelIndicator } from '@/components-next/list-components';
-
-import { Inbox } from '@/types/Inbox';
-import { ConversationAdditionalAttributes } from '@/types/Conversation';
-import { NotificationTypeIndicator } from './NotificationTypeIndicator';
-import { Dimensions, StyleSheet } from 'react-native';
+import type { NotificationType, NotificationPayload } from '@/types/Notification';
+import { getNotificationTypeConfig } from './NotificationTypeIndicator';
 
 const SARA_COLORS = {
   primaryText: '#16273D',
   secondaryText: '#4B5D6E',
   metaText: '#6C778A',
   divider: '#E6E2DD',
-  readOverlay: 'rgba(248, 245, 243, 0.65)',
+  cardBorder: '#E6E2DD',
+  cardBorderUnread: '#D1CCC6',
+  background: '#FFFFFF',
+  chipBackground: '#F5F3F0',
 };
 
 type InboxItemProps = {
   isRead: boolean;
-  conversationId: number;
-  sender: {
-    name: string;
-    thumbnail: string;
-  };
-  assignee: {
-    name: string;
-    thumbnail: string;
-  };
-  lastActivityAt: () => string;
-  priority?: ConversationPriority | null;
-  inbox: Inbox | null;
-  additionalAttributes: ConversationAdditionalAttributes;
+  notificationType: NotificationType | string;
   pushMessageTitle: string;
-  notificationType: NotificationType;
+  lastActivityAt: () => string;
+  payload?: NotificationPayload;
 };
 
-const { width } = Dimensions.get('screen');
+// Extract meaningful summary from payload (similar to web CRM)
+const getPayloadSummary = (
+  payload?: NotificationPayload,
+  pushMessageTitle?: string
+): { title: string; subtitle?: string; providerName?: string; appointmentTime?: string } => {
+  if (!payload) {
+    return { title: pushMessageTitle || 'New notification' };
+  }
+
+  const bookingData = payload.booking_data || {};
+
+  // Try to get customer/patient name
+  const customerName =
+    payload.customer_name ||
+    payload.client_name ||
+    bookingData.customer_name ||
+    bookingData.client_name ||
+    payload.patient_name;
+
+  // Try to get service name
+  const serviceName =
+    payload.service_name || payload.service_label || bookingData.service_name || bookingData.service_label;
+
+  // Try to get provider name
+  const providerName = payload.provider_name || bookingData.provider_name;
+
+  // Try to get appointment time
+  const appointmentTime = payload.slot_time || payload.start_time || bookingData.start_time;
+
+  if (customerName && serviceName) {
+    return {
+      title: String(customerName),
+      subtitle: String(serviceName),
+      providerName: providerName ? String(providerName) : undefined,
+      appointmentTime: appointmentTime ? formatAppointmentTime(appointmentTime) : undefined,
+    };
+  }
+  if (customerName) {
+    return {
+      title: String(customerName),
+      providerName: providerName ? String(providerName) : undefined,
+      appointmentTime: appointmentTime ? formatAppointmentTime(appointmentTime) : undefined,
+    };
+  }
+  if (payload.title && payload.title !== pushMessageTitle) {
+    return { title: String(payload.title) };
+  }
+  if (payload.message) {
+    return { title: String(payload.message) };
+  }
+
+  return { title: pushMessageTitle || 'New notification' };
+};
+
+// Format appointment time (Today at 2:30 PM, Tomorrow at 10:00 AM, etc.)
+const formatAppointmentTime = (iso?: string): string => {
+  if (!iso) return '';
+  try {
+    const date = new Date(iso);
+    const now = new Date();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const timeStr = date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+
+    if (date.toDateString() === now.toDateString()) return `Today at ${timeStr}`;
+    if (date.toDateString() === tomorrow.toDateString()) return `Tomorrow at ${timeStr}`;
+
+    const dateStr = date.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+    });
+    return `${dateStr} at ${timeStr}`;
+  } catch {
+    return '';
+  }
+};
 
 export const InboxItemComponent = (props: InboxItemProps) => {
-  const {
-    isRead,
-    inbox,
-    assignee,
-    conversationId,
-    sender,
-    lastActivityAt,
-    priority,
-    additionalAttributes,
-    pushMessageTitle,
-    notificationType,
-  } = props;
+  const { isRead, notificationType, pushMessageTitle, lastActivityAt, payload } = props;
 
-  const hasAssignee = assignee?.name || assignee?.thumbnail;
+  const config = getNotificationTypeConfig(notificationType);
+  const { title, subtitle, providerName, appointmentTime } = getPayloadSummary(payload, pushMessageTitle);
 
   return (
-    <Animated.View style={[tailwind.style('ml-3 py-3 pr-4 border-b-[1px]'), styles.divider]}>
-      <Animated.View>
-        <AnimatedNativeView
-          style={tailwind.style('flex flex-row justify-between items-center h-[24px]')}>
-          <AnimatedNativeView
-            style={tailwind.style('flex flex-row items-center h-[24px] gap-[5px]')}>
-            <Animated.Text
-              numberOfLines={1}
-              style={[
-                tailwind.style(
-                  'text-base font-inter-medium-24 tracking-[0.24px] capitalize',
-                  `max-w-[${width - 250}px]`,
-                ),
-                styles.primaryText,
-              ]}>
-              {sender.name || ''}
-            </Animated.Text>
-            <NativeView style={tailwind.style('flex flex-row items-center gap-0.5')}>
-              <Animated.Text style={[tailwind.style('text-sm font-inter-420-20'), styles.metaText]}>
-                #
-              </Animated.Text>
-              <Animated.Text style={[tailwind.style('text-sm font-inter-420-20'), styles.metaText]}>
-                {conversationId}
-              </Animated.Text>
-            </NativeView>
-          </AnimatedNativeView>
-          <AnimatedNativeView style={tailwind.style('flex flex-row items-center gap-2')}>
-            {priority ? <PriorityIndicator {...{ priority }} /> : null}
-            {inbox && (
-              <ChannelIndicator inbox={inbox} additionalAttributes={additionalAttributes} />
-            )}
-            <NativeView>
-              <Animated.Text
-                style={[
-                  tailwind.style('text-sm font-inter-420-20 leading-[16px] tracking-[0.32px]'),
-                  styles.metaText,
-                ]}>
-                {lastActivityAt()}
-              </Animated.Text>
-            </NativeView>
-          </AnimatedNativeView>
-        </AnimatedNativeView>
+    <View style={tailwind.style('mx-3 my-1.5')}>
+      <View
+        style={[
+          tailwind.style('rounded-2xl overflow-hidden flex-row'),
+          styles.card,
+          !isRead && styles.cardUnread,
+        ]}>
+        {/* Left accent bar */}
+        <View
+          style={[
+            tailwind.style('w-1'),
+            {
+              backgroundColor: isRead
+                ? tailwind.color(`${config.color}`) + '40' // 25% opacity when read
+                : tailwind.color(`${config.color}`),
+            },
+          ]}
+        />
 
-        <Animated.View style={tailwind.style('flex flex-row justify-between mt-1.5')}>
-          <Animated.View style={tailwind.style('flex flex-row items-center gap-1.5 flex-1')}>
-            {hasAssignee && (
-              <Avatar
-                src={assignee.thumbnail ? { uri: assignee.thumbnail } : undefined}
-                size="md"
-                name={assignee?.name || ''}
-              />
-            )}
+        {/* Card content */}
+        <View style={tailwind.style('flex-1 p-3')}>
+          {/* Header: Icon + Type + Dot + Time */}
+          <View style={tailwind.style('flex-row items-center mb-2')}>
+            {/* Icon container */}
+            <View
+              style={tailwind.style('w-8 h-8 rounded-lg items-center justify-center mr-2', `bg-${config.bgColor}`)}>
+              {config.icon}
+            </View>
 
+            {/* Type label */}
             <Animated.Text
-              style={[
-                tailwind.style(
-                  'font-inter-420-20 text-md leading-[17px] tracking-[0.32px] flex-shrink',
-                ),
-                styles.secondaryText,
-              ]}
-              numberOfLines={1}
-              ellipsizeMode="tail">
-              {pushMessageTitle}
+              style={tailwind.style(
+                'text-xs font-inter-medium-24 uppercase tracking-wide',
+                `text-${config.color}`
+              )}>
+              {config.label}
             </Animated.Text>
-          </Animated.View>
-          <NotificationTypeIndicator type={notificationType} />
-        </Animated.View>
-      </Animated.View>
-      {isRead && (
-        <Animated.View style={[tailwind.style('absolute inset-0 z-20'), styles.readOverlay]} />
-      )}
-    </Animated.View>
+
+            {/* Spacer */}
+            <View style={tailwind.style('flex-1')} />
+
+            {/* Unread dot */}
+            {!isRead && <View style={tailwind.style('w-2 h-2 rounded-full mr-2', `bg-${config.color}`)} />}
+
+            {/* Time */}
+            <Animated.Text style={[tailwind.style('text-xs font-inter-normal-20'), styles.metaText]}>
+              {lastActivityAt()}
+            </Animated.Text>
+          </View>
+
+          {/* Main content: Title + Subtitle + Provider */}
+          <Animated.Text
+            style={[tailwind.style('text-base font-inter-semibold-20 leading-tight'), styles.primaryText]}
+            numberOfLines={1}>
+            {title}
+          </Animated.Text>
+
+          {(subtitle || providerName) && (
+            <Animated.Text
+              style={[tailwind.style('text-sm font-inter-normal-20 mt-0.5'), styles.secondaryText]}
+              numberOfLines={1}>
+              {subtitle}
+              {subtitle && providerName && ' \u2022 '}
+              {providerName}
+            </Animated.Text>
+          )}
+
+          {/* Appointment time chip (if available) */}
+          {appointmentTime && (
+            <View style={tailwind.style('flex-row mt-2')}>
+              <View style={[tailwind.style('flex-row items-center px-2 py-1 rounded-lg'), styles.chip]}>
+                <Animated.Text style={[tailwind.style('text-xs font-inter-medium-24'), styles.chipText]}>
+                  {appointmentTime}
+                </Animated.Text>
+              </View>
+            </View>
+          )}
+        </View>
+      </View>
+    </View>
   );
 };
 
@@ -137,8 +201,13 @@ InboxItemComponent.displayName = 'InboxItem';
 export const InboxItem = React.memo(InboxItemComponent);
 
 const styles = StyleSheet.create({
-  divider: {
-    borderBottomColor: SARA_COLORS.divider,
+  card: {
+    backgroundColor: SARA_COLORS.background,
+    borderWidth: 1,
+    borderColor: SARA_COLORS.cardBorder,
+  },
+  cardUnread: {
+    borderColor: SARA_COLORS.cardBorderUnread,
   },
   primaryText: {
     color: SARA_COLORS.primaryText,
@@ -149,7 +218,10 @@ const styles = StyleSheet.create({
   metaText: {
     color: SARA_COLORS.metaText,
   },
-  readOverlay: {
-    backgroundColor: SARA_COLORS.readOverlay,
+  chip: {
+    backgroundColor: SARA_COLORS.chipBackground,
+  },
+  chipText: {
+    color: SARA_COLORS.secondaryText,
   },
 });

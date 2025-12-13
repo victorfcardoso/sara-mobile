@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, RefreshControl, StatusBar, StyleSheet } from 'react-native';
+import { ActivityIndicator, RefreshControl, StatusBar, StyleSheet, View } from 'react-native';
+import Svg, { Path, Circle } from 'react-native-svg';
 import Animated, {
   LinearTransition,
   runOnJS,
@@ -25,8 +26,7 @@ import { useInboxListStateContext } from '@/context';
 import { resetNotifications } from '@/store/notification/notificationSlice';
 import { showToast } from '@/utils/toastUtils';
 import i18n from '@/i18n';
-import { selectSortOrder } from '@/store/notification/notificationFilterSlice';
-import { EmptyStateIcon } from '@/svg-icons';
+import { selectSortOrder, selectStatusFilter } from '@/store/notification/notificationFilterSlice';
 import { InboxSortTypes } from '@/store/notification/notificationTypes';
 
 const SARA_COLORS = {
@@ -34,6 +34,20 @@ const SARA_COLORS = {
   accent: '#4CB6AC',
   textSecondary: '#4B5D6E',
 };
+
+// Empty state icon (checkmark in circle)
+const EmptyInboxIcon = () => (
+  <Svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+    <Circle cx="16" cy="16" r="14" stroke={SARA_COLORS.accent} strokeWidth="2.5" />
+    <Path
+      d="M10 16L14 20L22 12"
+      stroke={SARA_COLORS.accent}
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
 
 const AnimatedFlashlist = Animated.createAnimatedComponent(FlashList<Notification>);
 
@@ -46,10 +60,12 @@ const InboxList = () => {
   const isNotificationsLoading = useAppSelector(selectIsLoadingNotifications);
   const isAllNotificationsFetched = useAppSelector(selectIsAllNotificationsFetched);
   const sortOrder = useAppSelector(selectSortOrder);
+  const statusFilter = useAppSelector(selectStatusFilter);
 
-  const notifications = useAppSelector(state => getFilteredNotifications(state, sortOrder));
+  const notifications = useAppSelector(state => getFilteredNotifications(state, sortOrder, statusFilter));
 
   const previousSortOrder = useRef(sortOrder);
+  const previousStatusFilter = useRef(statusFilter);
 
   const dispatch = useAppDispatch();
 
@@ -60,6 +76,11 @@ const InboxList = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sortOrder]);
+
+  useEffect(() => {
+    // Status filter is client-side only, no need to refetch
+    previousStatusFilter.current = statusFilter;
+  }, [statusFilter]);
 
   // eslint-disable-next-line react/display-name
   const ListFooterComponent = React.memo(() => {
@@ -151,13 +172,22 @@ const InboxList = () => {
     <Animated.ScrollView
       refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />}
       contentContainerStyle={tailwind.style(
-        'flex-1 items-center justify-center',
+        'flex-1 items-center justify-center px-4',
         `pb-[${TAB_BAR_HEIGHT}px]`,
       )}>
-      <EmptyStateIcon stroke={SARA_COLORS.accent} />
-      <Animated.Text
-        style={[tailwind.style('pt-6 text-md tracking-[0.32px]'), styles.emptyStateText]}>
-        {i18n.t('NOTIFICATION.EMPTY')}
+{/* Icon container */}
+      <View style={[tailwind.style('w-16 h-16 rounded-2xl items-center justify-center mb-4'), styles.iconContainer]}>
+        <EmptyInboxIcon />
+      </View>
+      {/* Title */}
+      <Animated.Text style={[tailwind.style('text-lg font-inter-semibold-20 mb-1'), styles.emptyTitle]}>
+        {i18n.t('NOTIFICATION.EMPTY_TITLE', { defaultValue: 'All caught up!' })}
+      </Animated.Text>
+      {/* Subtitle */}
+      <Animated.Text style={[tailwind.style('text-base font-inter-normal-20 text-center'), styles.emptyStateText]}>
+        {i18n.t('NOTIFICATION.EMPTY_SUBTITLE', {
+          defaultValue: 'New bookings, payments, and messages will appear here.',
+        })}
       </Animated.Text>
     </Animated.ScrollView>
   ) : (
@@ -166,7 +196,7 @@ const InboxList = () => {
       layout={LinearTransition.springify().damping(18).stiffness(120)}
       showsVerticalScrollIndicator={false}
       data={notifications}
-      estimatedItemSize={71}
+      estimatedItemSize={120}
       onScroll={scrollHandler}
       onEndReached={handleOnEndReached}
       onEndReachedThreshold={0.5}
@@ -189,7 +219,7 @@ const InboxScreen = () => {
   }, [dispatch]);
 
   return (
-    <SafeAreaView edges={['top']} style={[tailwind.style('flex-1'), styles.container]}>
+<SafeAreaView edges={['top']} style={[tailwind.style('flex-1'), styles.container]}>
       <StatusBar translucent backgroundColor={SARA_COLORS.background} barStyle={'dark-content'} />
       <InboxListStateProvider>
         <InboxHeader markAllAsRead={markAllAsRead} />
@@ -204,6 +234,12 @@ export default InboxScreen;
 const styles = StyleSheet.create({
   container: {
     backgroundColor: SARA_COLORS.background,
+  },
+  iconContainer: {
+    backgroundColor: '#E6F5F4',
+  },
+  emptyTitle: {
+    color: '#16273D',
   },
   emptyStateText: {
     color: SARA_COLORS.textSecondary,
