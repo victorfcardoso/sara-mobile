@@ -1,20 +1,9 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { tailwind } from '@/theme';
 import type { NotificationType, NotificationPayload } from '@/types/Notification';
 import { getNotificationTypeConfig } from './NotificationTypeIndicator';
-
-const SARA_COLORS = {
-  primaryText: '#16273D',
-  secondaryText: '#4B5D6E',
-  metaText: '#6C778A',
-  divider: '#E6E2DD',
-  cardBorder: '#E6E2DD',
-  cardBorderUnread: '#D1CCC6',
-  background: '#FFFFFF',
-  chipBackground: '#F5F3F0',
-};
 
 type InboxItemProps = {
   isRead: boolean;
@@ -116,19 +105,19 @@ export const InboxItemComponent = (props: InboxItemProps) => {
   return (
     <View style={tailwind.style('mx-3 my-1.5')}>
       <View
-        style={[
-          tailwind.style('rounded-2xl overflow-hidden flex-row'),
-          styles.card,
-          !isRead && styles.cardUnread,
-        ]}>
+        style={tailwind.style(
+          'rounded-2xl overflow-hidden flex-row bg-sara-background-light',
+          'border',
+          isRead ? 'border-sara-border' : 'border-sara-border-strong',
+        )}>
         {/* Left accent bar */}
         <View
           style={[
             tailwind.style('w-1'),
             {
               backgroundColor: isRead
-                ? tailwind.color(`${config.color}`) + '40' // 25% opacity when read
-                : tailwind.color(`${config.color}`),
+                ? tailwind.color('sara-accent-muted')
+                : tailwind.color('sara-accent'),
             },
           ]}
         />
@@ -159,21 +148,21 @@ export const InboxItemComponent = (props: InboxItemProps) => {
             {!isRead && <View style={tailwind.style('w-2 h-2 rounded-full mr-2', `bg-${config.color}`)} />}
 
             {/* Time */}
-            <Animated.Text style={[tailwind.style('text-xs font-inter-normal-20'), styles.metaText]}>
+            <Animated.Text style={tailwind.style('text-xs font-inter-normal-20 text-sara-text-meta')}>
               {lastActivityAt()}
             </Animated.Text>
           </View>
 
           {/* Main content: Title + Subtitle + Provider */}
           <Animated.Text
-            style={[tailwind.style('text-base font-inter-semibold-20 leading-tight'), styles.primaryText]}
+            style={tailwind.style('text-base font-inter-semibold-20 leading-tight text-sara-text-primary')}
             numberOfLines={1}>
             {title}
           </Animated.Text>
 
           {(subtitle || providerName) && (
             <Animated.Text
-              style={[tailwind.style('text-sm font-inter-normal-20 mt-0.5'), styles.secondaryText]}
+              style={tailwind.style('text-sm font-inter-normal-20 mt-0.5 text-sara-text-secondary')}
               numberOfLines={1}>
               {subtitle}
               {subtitle && providerName && ' \u2022 '}
@@ -184,8 +173,8 @@ export const InboxItemComponent = (props: InboxItemProps) => {
           {/* Appointment time chip (if available) */}
           {appointmentTime && (
             <View style={tailwind.style('flex-row mt-2')}>
-              <View style={[tailwind.style('flex-row items-center px-2 py-1 rounded-lg'), styles.chip]}>
-                <Animated.Text style={[tailwind.style('text-xs font-inter-medium-24'), styles.chipText]}>
+              <View style={tailwind.style('flex-row items-center px-2 py-1 rounded-lg bg-sara-chip')}>
+                <Animated.Text style={tailwind.style('text-xs font-inter-medium-24 text-sara-text-secondary')}>
                   {appointmentTime}
                 </Animated.Text>
               </View>
@@ -199,29 +188,3 @@ export const InboxItemComponent = (props: InboxItemProps) => {
 
 InboxItemComponent.displayName = 'InboxItem';
 export const InboxItem = React.memo(InboxItemComponent);
-
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: SARA_COLORS.background,
-    borderWidth: 1,
-    borderColor: SARA_COLORS.cardBorder,
-  },
-  cardUnread: {
-    borderColor: SARA_COLORS.cardBorderUnread,
-  },
-  primaryText: {
-    color: SARA_COLORS.primaryText,
-  },
-  secondaryText: {
-    color: SARA_COLORS.secondaryText,
-  },
-  metaText: {
-    color: SARA_COLORS.metaText,
-  },
-  chip: {
-    backgroundColor: SARA_COLORS.chipBackground,
-  },
-  chipText: {
-    color: SARA_COLORS.secondaryText,
-  },
-});

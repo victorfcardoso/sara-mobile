@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, RefreshControl, StatusBar, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, RefreshControl, StatusBar, View } from 'react-native';
 import Svg, { Path, Circle } from 'react-native-svg';
 import Animated, {
   LinearTransition,
@@ -29,19 +29,13 @@ import i18n from '@/i18n';
 import { selectSortOrder, selectStatusFilter } from '@/store/notification/notificationFilterSlice';
 import { InboxSortTypes } from '@/store/notification/notificationTypes';
 
-const SARA_COLORS = {
-  background: '#F8F5F3',
-  accent: '#4CB6AC',
-  textSecondary: '#4B5D6E',
-};
-
 // Empty state icon (checkmark in circle)
 const EmptyInboxIcon = () => (
   <Svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-    <Circle cx="16" cy="16" r="14" stroke={SARA_COLORS.accent} strokeWidth="2.5" />
+    <Circle cx="16" cy="16" r="14" stroke={tailwind.color('sara-accent')} strokeWidth="2.5" />
     <Path
       d="M10 16L14 20L22 12"
-      stroke={SARA_COLORS.accent}
+      stroke={tailwind.color('sara-accent')}
       strokeWidth="2.5"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -92,7 +86,7 @@ const InboxList = () => {
           `pb-[${TAB_BAR_HEIGHT}px]`,
         )}>
         {isAllNotificationsFetched ? null : (
-          <ActivityIndicator size="small" color={SARA_COLORS.accent} />
+          <ActivityIndicator size="small" color={tailwind.color('sara-accent')} />
         )}
       </Animated.View>
     );
@@ -166,7 +160,7 @@ const InboxList = () => {
   return shouldShowEmptyLoader ? (
     <Animated.View
       style={tailwind.style('flex-1 items-center justify-center', `pb-[${TAB_BAR_HEIGHT}px]`)}>
-      <ActivityIndicator color={SARA_COLORS.accent} />
+      <ActivityIndicator color={tailwind.color('sara-accent')} />
     </Animated.View>
   ) : notifications.length === 0 ? (
     <Animated.ScrollView
@@ -175,16 +169,16 @@ const InboxList = () => {
         'flex-1 items-center justify-center px-4',
         `pb-[${TAB_BAR_HEIGHT}px]`,
       )}>
-{/* Icon container */}
-      <View style={[tailwind.style('w-16 h-16 rounded-2xl items-center justify-center mb-4'), styles.iconContainer]}>
+      {/* Icon container */}
+      <View style={tailwind.style('w-16 h-16 rounded-2xl items-center justify-center mb-4 bg-sara-accent-light')}>
         <EmptyInboxIcon />
       </View>
       {/* Title */}
-      <Animated.Text style={[tailwind.style('text-lg font-inter-semibold-20 mb-1'), styles.emptyTitle]}>
+      <Animated.Text style={tailwind.style('text-lg font-inter-semibold-20 mb-1 text-sara-text-primary')}>
         {i18n.t('NOTIFICATION.EMPTY_TITLE', { defaultValue: 'All caught up!' })}
       </Animated.Text>
       {/* Subtitle */}
-      <Animated.Text style={[tailwind.style('text-base font-inter-normal-20 text-center'), styles.emptyStateText]}>
+      <Animated.Text style={tailwind.style('text-base font-inter-normal-20 text-center text-sara-text-secondary')}>
         {i18n.t('NOTIFICATION.EMPTY_SUBTITLE', {
           defaultValue: 'New bookings, payments, and messages will appear here.',
         })}
@@ -219,8 +213,8 @@ const InboxScreen = () => {
   }, [dispatch]);
 
   return (
-<SafeAreaView edges={['top']} style={[tailwind.style('flex-1'), styles.container]}>
-      <StatusBar translucent backgroundColor={SARA_COLORS.background} barStyle={'dark-content'} />
+    <SafeAreaView edges={['top']} style={tailwind.style('flex-1 bg-sara-background')}>
+      <StatusBar translucent backgroundColor={tailwind.color('sara-background')} barStyle={'dark-content'} />
       <InboxListStateProvider>
         <InboxHeader markAllAsRead={markAllAsRead} />
         <InboxList />
@@ -230,18 +224,3 @@ const InboxScreen = () => {
 };
 
 export default InboxScreen;
-
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: SARA_COLORS.background,
-  },
-  iconContainer: {
-    backgroundColor: '#E6F5F4',
-  },
-  emptyTitle: {
-    color: '#16273D',
-  },
-  emptyStateText: {
-    color: SARA_COLORS.textSecondary,
-  },
-});

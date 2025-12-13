@@ -62,6 +62,23 @@ export const InboxItemContainerComponent = (props: InboxItemContainerProps) => {
     markNotificationAsRead({
       shouldShowToast: false,
     });
+
+    const notificationType = item.notificationType;
+
+    // Booking/appointment notifications → navigate to Appointments tab
+    if (notificationType.startsWith('booking.') || notificationType.startsWith('doctor.')) {
+      const parentNavigator = navigation.getParent();
+      parentNavigator?.navigate('Appointments');
+      return;
+    }
+
+    // Payment notifications → show toast for now (no dedicated screen)
+    if (notificationType.startsWith('payment.')) {
+      showToast({ message: i18n.t('NOTIFICATION.PAYMENT_DETAILS_COMING_SOON', { defaultValue: 'Payment details coming soon' }) });
+      return;
+    }
+
+    // Conversation notifications → navigate to ChatScreen
     if (item.primaryActor?.id) {
       await dispatch(conversationActions.fetchConversation(item.primaryActor?.id));
       const pushToChatScreen = StackActions.push('ChatScreen', {

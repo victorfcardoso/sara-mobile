@@ -11,11 +11,29 @@ const blackA = require('./colors/blackA');
 // White with alpha variations
 const whiteA = require('./colors/whiteA');
 
+// Sara brand colors - warm, approachable palette
+const saraColors = {
+  sara: {
+    background: '#F8F5F3',
+    'background-light': '#FFFFFF',
+    accent: '#4CB6AC',
+    'accent-light': '#E6F5F4',
+    'accent-muted': 'rgba(76, 182, 172, 0.25)',
+    'text-primary': '#16273D',
+    'text-secondary': '#4B5D6E',
+    'text-meta': '#6C778A',
+    border: '#E6E2DD',
+    'border-strong': '#D1CCC6',
+    chip: '#F5F3F0',
+  },
+};
+
 const chatwootAppColors = {
   ...blackA,
   ...whiteA,
   ...radixUILightColors,
   ...radixUIDarkColors,
+  ...saraColors,
 };
 
 export const twConfig = {
