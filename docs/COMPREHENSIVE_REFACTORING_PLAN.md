@@ -1,25 +1,27 @@
 # Sara Platform Comprehensive Refactoring Plan
 
 > **Generated**: 2025-12-13
-> **Scope**: Backend (cb2) + Mobile Frontend (sara-mobile)
+> **Scope**: Mobile Frontend (sara-mobile) only
 > **Execution Model**: Staged parallel slices with Opus subagents
+
+> ⚠️ **Note**: Backend (cb2) refactoring is **OUT OF SCOPE** for this plan.
 
 ---
 
 ## Executive Summary
 
-This document outlines a comprehensive refactoring plan for the Sara platform spanning both the FastAPI backend (`cb2`) and the React Native mobile app (`sara-mobile`). The plan is organized into **4 stages** with up to **15 parallel slices per stage**, designed for execution by autonomous subagents.
+This document outlines a comprehensive refactoring plan for the Sara mobile app (`sara-mobile`). The plan is organized into **3 stages** with up to **10 parallel slices per stage**, designed for execution by autonomous subagents.
 
 ### Key Findings
 
 | Area | Current State | Priority |
 |------|---------------|----------|
-| **Backend Code Quality** | 2,846-line files, 172 untested paths, duplicated normalizers | HIGH |
-| **Mobile Theming** | 499 hardcoded hex colors vs 11 Sara tokens defined | HIGH |
+| **Mobile Theming** | ✅ DONE - Migrated to Sara tokens | COMPLETE |
 | **Dark Mode** | Infrastructure exists, not implemented | MEDIUM |
 | **i18n** | Complete (42 languages) | LOW |
-| **Testing** | Backend improved (207%), mobile has 0 unit tests | HIGH |
-| **Logo Assets** | PNG only, no SVG source in repo | MEDIUM |
+| **Testing** | ✅ DONE - 185 tests, 38 suites | COMPLETE |
+| **Logo Assets** | ✅ DONE - SVG components created | COMPLETE |
+| **Storybook** | ✅ DONE - 28 story files | COMPLETE |
 
 ---
 
@@ -221,111 +223,19 @@ This document outlines a comprehensive refactoring plan for the Sara platform sp
 
 ---
 
-## Stage 2: Backend Decomposition
+## ~~Stage 2: Backend Decomposition~~ (OUT OF SCOPE)
 
-**Goal**: Break down massive files, improve maintainability.
-
-**Dependencies**: Stage 1 completion (especially Slice 1.1, 1.2, 1.3)
-
-### Slice 2.1: Split scheduling/routes.py (Part 1 - Booking)
-**Priority**: HIGH | **Files**: 1→4 | **Agent**: opus
-
-**Current**: `app/scheduling/routes.py` (2,846 lines)
-
-**Tasks**:
-1. Extract booking endpoints to `app/scheduling/booking_routes.py`
-2. Move `/s/{token}` and related booking link handlers
-3. Maintain backward compatibility
-4. Update imports in `main.py`
+> ⚠️ **This stage has been removed from scope.** Backend (cb2) refactoring will be handled separately.
 
 ---
 
-### Slice 2.2: Split scheduling/routes.py (Part 2 - Management)
-**Priority**: HIGH | **Files**: 1→2 | **Agent**: opus
-
-**Tasks**:
-1. Extract management endpoints to `app/scheduling/management_routes.py`
-2. Move `/s/m/{token}` management link handlers
-3. Extract SPA serving logic
-
----
-
-### Slice 2.3: Split scheduling/routes.py (Part 3 - Proxy)
-**Priority**: MEDIUM | **Files**: 1→2 | **Agent**: opus
-
-**Tasks**:
-1. Extract EA proxy endpoints to `app/scheduling/proxy_routes.py`
-2. Move `/s/agents/{id}/ea/proxy/*` handlers
-3. Consolidate proxy authentication logic
-
----
-
-### Slice 2.4: Split easyappointments_webhook.py
-**Priority**: HIGH | **Files**: 1→3 | **Agent**: opus
-
-**Current**: `app/webhooks/easyappointments_webhook.py` (1,680 lines)
-
-**Tasks**:
-1. Extract event handlers to `app/webhooks/ea_handlers.py`
-2. Extract notification logic to `app/webhooks/ea_notifications.py`
-3. Keep main webhook router thin
-
----
-
-### Slice 2.5: Split notifications/sender.py
-**Priority**: HIGH | **Files**: 1→3 | **Agent**: opus
-
-**Current**: `app/notifications/sender.py` (1,362 lines, 14 functions)
-
-**Tasks**:
-1. Extract message builders to `app/notifications/builders.py`
-2. Extract delivery logic to `app/notifications/delivery.py`
-3. Keep sender.py as orchestration layer
-
----
-
-### Slice 2.6: Split db/customers.py
-**Priority**: MEDIUM | **Files**: 1→2 | **Agent**: opus
-
-**Current**: `app/db/customers.py` (1,425 lines)
-
-**Tasks**:
-1. Extract sync logic to `app/db/customer_sync.py`
-2. Keep CRUD operations in `customers.py`
-3. Separate concerns: data layer vs business logic
-
----
-
-### Slice 2.7: Refactor chatwoot/routes.py
-**Priority**: MEDIUM | **Files**: 1→2 | **Agent**: opus
-
-**Current**: `app/chatwoot/routes.py` (990 lines)
-
-**Tasks**:
-1. Extract SSO logic to `app/chatwoot/sso.py`
-2. Keep mobile API routes in `routes.py`
-3. Add proper response models
-
----
-
-### Slice 2.8: Backend Route Documentation
-**Priority**: LOW | **Files**: ~1 | **Agent**: haiku
-
-**Tasks**:
-1. Generate OpenAPI documentation review
-2. Add missing endpoint descriptions
-3. Document request/response schemas
-4. Create API reference document
-
----
-
-## Stage 3: Mobile Feature Implementation
+## Stage 2: Mobile Feature Implementation
 
 **Goal**: Implement dark mode, align with CRM routes, improve UX.
 
-**Dependencies**: Stage 1 Slices 1.4-1.6 (color migration)
+**Dependencies**: Stage 1 complete ✅
 
-### Slice 3.1: Dark Mode — Theme Context
+### Slice 2.1: Dark Mode — Theme Context
 **Priority**: HIGH | **Files**: ~5 | **Agent**: opus
 
 **Tasks**:
@@ -337,7 +247,7 @@ This document outlines a comprehensive refactoring plan for the Sara platform sp
 
 ---
 
-### Slice 3.2: Dark Mode — Color Tokens
+### Slice 2.2: Dark Mode — Color Tokens
 **Priority**: HIGH | **Files**: ~3 | **Agent**: opus
 
 **Tasks**:
@@ -355,7 +265,7 @@ This document outlines a comprehensive refactoring plan for the Sara platform sp
 
 ---
 
-### Slice 3.3: Dark Mode — Component Updates
+### Slice 2.3: Dark Mode — Component Updates
 **Priority**: MEDIUM | **Files**: ~20 | **Agent**: opus
 
 **Tasks**:
@@ -369,7 +279,7 @@ This document outlines a comprehensive refactoring plan for the Sara platform sp
 
 ---
 
-### Slice 3.4: Dark Mode — Screen Updates
+### Slice 2.4: Dark Mode — Screen Updates
 **Priority**: MEDIUM | **Files**: ~15 | **Agent**: opus
 
 **Tasks**:
@@ -383,7 +293,7 @@ This document outlines a comprehensive refactoring plan for the Sara platform sp
 
 ---
 
-### Slice 3.5: Mobile — Route Alignment with CRM
+### Slice 2.5: Mobile — Route Alignment with CRM
 **Priority**: MEDIUM | **Files**: ~8 | **Agent**: opus
 
 **CRM Routes to Mirror**:
@@ -406,7 +316,7 @@ This document outlines a comprehensive refactoring plan for the Sara platform sp
 
 ---
 
-### Slice 3.6: Mobile — i18n Sara Key Audit
+### Slice 2.6: Mobile — i18n Sara Key Audit
 **Priority**: LOW | **Files**: ~42 | **Agent**: haiku
 
 **Tasks**:
@@ -417,7 +327,7 @@ This document outlines a comprehensive refactoring plan for the Sara platform sp
 
 ---
 
-### Slice 3.7: Mobile — Splash Screen Enhancement
+### Slice 2.7: Mobile — Splash Screen Enhancement
 **Priority**: LOW | **Files**: ~3 | **Agent**: haiku
 
 **Tasks**:
@@ -428,7 +338,7 @@ This document outlines a comprehensive refactoring plan for the Sara platform sp
 
 ---
 
-### Slice 3.8: Mobile — App Icon Polish
+### Slice 2.8: Mobile — App Icon Polish
 **Priority**: LOW | **Files**: ~5 | **Agent**: haiku
 
 **Tasks**:
@@ -439,24 +349,13 @@ This document outlines a comprehensive refactoring plan for the Sara platform sp
 
 ---
 
-## Stage 4: Integration & Polish
+## Stage 3: Integration & Polish
 
-**Goal**: Complete integration testing, documentation, cleanup.
+**Goal**: Complete E2E testing, documentation, cleanup.
 
-**Dependencies**: Stages 1-3 completion
+**Dependencies**: Stages 1-2 completion
 
-### Slice 4.1: Backend — Integration Tests
-**Priority**: HIGH | **Files**: ~10 | **Agent**: opus
-
-**Tasks**:
-1. Add integration tests for mobile API endpoints
-2. Test `/chatwoot/mobile-auth` flow
-3. Test `/chatwoot/mobile/appointments` pagination
-4. Test notification CRUD operations
-
----
-
-### Slice 4.2: Mobile — E2E Test Setup
+### Slice 3.1: Mobile — E2E Test Setup
 **Priority**: MEDIUM | **Files**: ~5 | **Agent**: opus
 
 **Tasks**:
@@ -467,32 +366,7 @@ This document outlines a comprehensive refactoring plan for the Sara platform sp
 
 ---
 
-### Slice 4.3: Backend — Complete TODO Items
-**Priority**: MEDIUM | **Files**: ~5 | **Agent**: opus
-
-**Known TODOs**:
-- `app/webhooks/doctor_webhook.py:59`: Nice HTML page for UX
-- `app/notifications/sender.py:802`: Agent ID parameter passing
-- `app/payment/payment_routes.py:843`: Failed payment notification
-
-**Tasks**:
-1. Implement or remove each TODO
-2. Add tests for new functionality
-
----
-
-### Slice 4.4: Backend — Structured Logging
-**Priority**: MEDIUM | **Files**: ~10 | **Agent**: opus
-
-**Tasks**:
-1. Implement JSON log format for CloudWatch
-2. Add request ID propagation
-3. Standardize log levels across modules
-4. Create logging guidelines
-
----
-
-### Slice 4.5: Documentation Update
+### Slice 3.2: Documentation Update
 **Priority**: LOW | **Files**: ~5 | **Agent**: haiku
 
 **Tasks**:
@@ -503,7 +377,7 @@ This document outlines a comprehensive refactoring plan for the Sara platform sp
 
 ---
 
-### Slice 4.6: Performance Audit
+### Slice 3.3: Performance Audit
 **Priority**: LOW | **Files**: ~1 | **Agent**: haiku
 
 **Tasks**:
@@ -516,47 +390,30 @@ This document outlines a comprehensive refactoring plan for the Sara platform sp
 
 ## Execution Plan
 
-### Phase 1: Quick Wins (Stage 1)
-**Parallel Agents**: Up to 10
-**Est. Duration**: 2-4 hours
+### Phase 1: Foundation & Quick Wins (Stage 1) ✅ COMPLETE
+**Status**: Done (2024-12-14)
 
 ```
-[1.1 Normalizers] [1.2 Debug Logs] [1.3 Exception Handler]
-[1.4 Color Script] [1.5 Token Audit] [1.6 SVG Icons]
-[1.7 SVG Logos]   [1.8 Backend Tests] [1.9 Jest Setup]
-[1.10 Storybook]
+[1.4 Color Script] ✅  [1.5 Token Audit] ✅  [1.6 SVG Icons] ✅
+[1.7 SVG Logos] ✅     [1.9 Jest Setup] ✅   [1.10 Storybook] ✅
 ```
 
-### Phase 2: Backend Decomposition (Stage 2)
+### Phase 2: Mobile Features (Stage 2)
 **Parallel Agents**: Up to 8
-**Est. Duration**: 3-5 hours
-**Dependencies**: Stage 1 complete
+**Dependencies**: Stage 1 complete ✅
 
 ```
-[2.1 Booking Routes] [2.2 Mgmt Routes] [2.3 Proxy Routes]
-[2.4 EA Webhook]     [2.5 Sender]      [2.6 Customers]
-[2.7 Chatwoot]       [2.8 API Docs]
+[2.1 Theme Context] [2.2 Dark Tokens] [2.3 Components]
+[2.4 Screens]       [2.5 Routes]      [2.6 i18n]
+[2.7 Splash]        [2.8 App Icon]
 ```
 
-### Phase 3: Mobile Features (Stage 3)
-**Parallel Agents**: Up to 8
-**Est. Duration**: 3-5 hours
-**Dependencies**: Stage 1 color migration complete
+### Phase 3: Integration & Polish (Stage 3)
+**Parallel Agents**: Up to 3
+**Dependencies**: Stage 2 complete
 
 ```
-[3.1 Theme Context] [3.2 Dark Tokens] [3.3 Components]
-[3.4 Screens]       [3.5 Routes]      [3.6 i18n]
-[3.7 Splash]        [3.8 App Icon]
-```
-
-### Phase 4: Integration (Stage 4)
-**Parallel Agents**: Up to 6
-**Est. Duration**: 2-3 hours
-**Dependencies**: Stages 1-3 complete
-
-```
-[4.1 Integration Tests] [4.2 E2E Setup] [4.3 TODOs]
-[4.4 Logging]           [4.5 Docs]      [4.6 Perf]
+[3.1 E2E Setup] [3.2 Docs] [3.3 Perf]
 ```
 
 ---
@@ -564,9 +421,8 @@ This document outlines a comprehensive refactoring plan for the Sara platform sp
 ## Risk Mitigation
 
 ### High-Risk Slices
-1. **Slice 2.1-2.3 (Route Splitting)**: Test thoroughly, may break imports
-2. **Slice 3.1-3.2 (Dark Mode)**: Requires careful color token design
-3. **Slice 1.5 (Color Migration)**: High file count, visual regression risk
+1. **Slice 2.1-2.2 (Dark Mode)**: Requires careful color token design
+2. **Slice 2.3-2.4 (Component/Screen Updates)**: High file count, visual regression risk
 
 ### Mitigation Strategies
 1. Run full test suite after each Stage completion
@@ -578,43 +434,28 @@ This document outlines a comprehensive refactoring plan for the Sara platform sp
 
 ## Success Criteria
 
-- [ ] All hardcoded colors replaced with Sara tokens
-- [ ] No files over 500 lines in backend
+- [x] All hardcoded colors replaced with Sara tokens ✅
+- [x] Mobile unit tests exist ✅ (185 tests)
+- [x] SVG logo assets created ✅
+- [x] Storybook coverage expanded ✅
 - [ ] Dark mode toggle functional
-- [ ] Backend test coverage increased
-- [ ] Mobile unit tests exist
-- [ ] All TODOs addressed or documented
+- [ ] E2E tests configured
 - [ ] Documentation updated
 
 ---
 
 ## Appendix A: File Inventory
 
-### Backend Files to Modify
+### Mobile Files - Color Migration Status ✅ COMPLETE
 
-| File | Lines | Action |
-|------|-------|--------|
-| `app/scheduling/routes.py` | 2,846 | Split into 4 files |
-| `app/webhooks/easyappointments_webhook.py` | 1,680 | Split into 3 files |
-| `app/notifications/sender.py` | 1,362 | Split into 3 files |
-| `app/db/customers.py` | 1,425 | Split into 2 files |
-| `app/chatwoot/routes.py` | 990 | Split into 2 files |
-| `app/utils/identifiers.py` | ~200 | Consolidate normalizers |
-
-### Mobile Files with Hardcoded Colors (Top 10)
-
-| File | Color Count |
-|------|-------------|
-| `src/screens/appointments/AppointmentsScreen.tsx` | 46 |
-| `src/screens/settings/ServiceCatalogScreen.tsx` | 36 |
-| `src/screens/settings/FaqEditorScreen.tsx` | 25 |
-| `src/screens/settings/OfficeHoursScreen.tsx` | 24 |
-| `src/screens/contacts/ContactsScreen.tsx` | ~20 |
-| `src/screens/notifications/NotificationsScreen.tsx` | ~18 |
-| `src/navigation/tabs/BottomTabBar.tsx` | ~15 |
-| `src/screens/conversations/ConversationScreen.tsx` | ~15 |
-| `src/screens/settings/SettingsScreen.tsx` | ~12 |
-| `src/screens/auth/LoginScreen.tsx` | ~10 |
+| File | Status |
+|------|--------|
+| `src/screens/appointments/AppointmentsScreen.tsx` | ✅ Migrated |
+| `src/screens/settings/ServiceCatalogScreen.tsx` | ✅ Migrated |
+| `src/screens/settings/FaqEditorScreen.tsx` | ✅ Migrated |
+| `src/screens/settings/OfficeHoursScreen.tsx` | ✅ Migrated |
+| `src/screens/contacts/ContactsScreen.tsx` | ✅ Migrated |
+| `src/svg-icons/**/*.tsx` (50+ files) | ✅ Migrated |
 
 ---
 
