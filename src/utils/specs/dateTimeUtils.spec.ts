@@ -1,9 +1,182 @@
-import { formatTimeToShortForm, formatRelativeTime } from '@/utils/dateTimeUtils';
+import {
+  formatTimeToShortForm,
+  formatRelativeTime,
+  formatDate,
+  unixTimestampToReadableTime,
+  messageStamp,
+} from '@/utils/dateTimeUtils';
 
-describe('#dynamicTime', () => {
-  it('returns correct value', () => {
+// Mock i18n
+jest.mock('@/i18n', () => ({
+  __esModule: true,
+  default: {
+    t: (key: string) => {
+      const translations: Record<string, string> = {
+        'CONVERSATION.TODAY': 'Today',
+        'CONVERSATION.YESTERDAY': 'Yesterday',
+      };
+      return translations[key] || key;
+    },
+  },
+}));
+
+describe('#dynamicTime (formatRelativeTime)', () => {
+  it('returns correct value for a date about 2 years ago', () => {
     Date.now = jest.fn(() => new Date(Date.UTC(2023, 1, 14)).valueOf());
     expect(formatRelativeTime(1612971343)).toEqual('about 2 years ago');
+  });
+
+  it('returns correct relative time for recent timestamps', () => {
+    // Mock current date to 2023-02-14
+    const mockNow = new Date(Date.UTC(2023, 1, 14, 12, 0, 0)).valueOf();
+    Date.now = jest.fn(() => mockNow);
+
+    // Unix timestamp for ~1 hour ago
+    const oneHourAgo = Math.floor(mockNow / 1000) - 3600;
+    expect(formatRelativeTime(oneHourAgo)).toEqual('about 1 hour ago');
+  });
+});
+
+describe('formatDate', () => {
+  let RealDate: typeof Date;
+
+  beforeEach(() => {
+    RealDate = global.Date;
+  });
+
+  afterEach(() => {
+    global.Date = RealDate;
+  });
+
+  it('should return "Today" for today\'s date', () => {
+    // Create a fixed "now" date and mock Date to return it for new Date()
+    const mockDate = new RealDate(2023, 1, 14, 12, 0, 0); // Local time
+
+    // Mock the Date constructor
+    const MockDate = class extends RealDate {
+      constructor(...args: Parameters<typeof RealDate>) {
+        if (args.length === 0) {
+          super(mockDate.getTime());
+        } else {
+          // @ts-expect-error - spreading args to constructor
+          super(...args);
+        }
+      }
+    } as unknown as typeof Date;
+    MockDate.now = () => mockDate.getTime();
+    global.Date = MockDate;
+
+    // Unix timestamp for today in local time
+    const todayTimestamp = Math.floor(new RealDate(2023, 1, 14, 10, 0, 0).valueOf() / 1000);
+    expect(formatDate(todayTimestamp)).toEqual('Today');
+  });
+
+  it('should return "Yesterday" for yesterday\'s date', () => {
+    const mockDate = new RealDate(2023, 1, 14, 12, 0, 0);
+
+    const MockDate = class extends RealDate {
+      constructor(...args: Parameters<typeof RealDate>) {
+        if (args.length === 0) {
+          super(mockDate.getTime());
+        } else {
+          // @ts-expect-error - spreading args to constructor
+          super(...args);
+        }
+      }
+    } as unknown as typeof Date;
+    MockDate.now = () => mockDate.getTime();
+    global.Date = MockDate;
+
+    // Unix timestamp for yesterday in local time
+    const yesterdayTimestamp = Math.floor(new RealDate(2023, 1, 13, 10, 0, 0).valueOf() / 1000);
+    expect(formatDate(yesterdayTimestamp)).toEqual('Yesterday');
+  });
+
+  it('should return formatted date for older dates', () => {
+    const mockDate = new RealDate(2023, 1, 14, 12, 0, 0);
+
+    const MockDate = class extends RealDate {
+      constructor(...args: Parameters<typeof RealDate>) {
+        if (args.length === 0) {
+          super(mockDate.getTime());
+        } else {
+          // @ts-expect-error - spreading args to constructor
+          super(...args);
+        }
+      }
+    } as unknown as typeof Date;
+    MockDate.now = () => mockDate.getTime();
+    global.Date = MockDate;
+
+    // Unix timestamp for 2023-01-01
+    const oldTimestamp = Math.floor(new RealDate(2023, 0, 1, 10, 0, 0).valueOf() / 1000);
+    expect(formatDate(oldTimestamp)).toEqual('Jan 01, 2023');
+  });
+
+  it('should use custom date format when provided', () => {
+    const mockDate = new RealDate(2023, 1, 14, 12, 0, 0);
+
+    const MockDate = class extends RealDate {
+      constructor(...args: Parameters<typeof RealDate>) {
+        if (args.length === 0) {
+          super(mockDate.getTime());
+        } else {
+          // @ts-expect-error - spreading args to constructor
+          super(...args);
+        }
+      }
+    } as unknown as typeof Date;
+    MockDate.now = () => mockDate.getTime();
+    global.Date = MockDate;
+
+    const oldTimestamp = Math.floor(new RealDate(2023, 0, 15, 10, 0, 0).valueOf() / 1000);
+    expect(formatDate(oldTimestamp, 'yyyy-MM-dd')).toEqual('2023-01-15');
+  });
+});
+
+describe('unixTimestampToReadableTime', () => {
+  it('should convert morning timestamp to 12-hour format', () => {
+    // Use local time (not UTC) since the function converts to local time
+    const timestamp = Math.floor(new Date(2023, 1, 14, 9, 30, 0).valueOf() / 1000);
+    expect(unixTimestampToReadableTime(timestamp)).toEqual('09:30 AM');
+  });
+
+  it('should convert afternoon timestamp to 12-hour format', () => {
+    const timestamp = Math.floor(new Date(2023, 1, 14, 14, 45, 0).valueOf() / 1000);
+    expect(unixTimestampToReadableTime(timestamp)).toEqual('02:45 PM');
+  });
+
+  it('should handle midnight correctly', () => {
+    const timestamp = Math.floor(new Date(2023, 1, 14, 0, 0, 0).valueOf() / 1000);
+    expect(unixTimestampToReadableTime(timestamp)).toEqual('12:00 AM');
+  });
+
+  it('should handle noon correctly', () => {
+    const timestamp = Math.floor(new Date(2023, 1, 14, 12, 0, 0).valueOf() / 1000);
+    expect(unixTimestampToReadableTime(timestamp)).toEqual('12:00 PM');
+  });
+
+  it('should pad single digit minutes with zero', () => {
+    const timestamp = Math.floor(new Date(2023, 1, 14, 10, 5, 0).valueOf() / 1000);
+    expect(unixTimestampToReadableTime(timestamp)).toEqual('10:05 AM');
+  });
+});
+
+describe('messageStamp', () => {
+  it('should format timestamp with default format', () => {
+    // Use local time since messageStamp converts to local time
+    const timestamp = Math.floor(new Date(2023, 1, 14, 14, 30, 0).valueOf() / 1000);
+    expect(messageStamp({ time: timestamp })).toEqual('2:30 PM');
+  });
+
+  it('should use custom date format when provided', () => {
+    const timestamp = Math.floor(new Date(2023, 1, 14, 14, 30, 0).valueOf() / 1000);
+    expect(messageStamp({ time: timestamp, dateFormat: 'HH:mm' })).toEqual('14:30');
+  });
+
+  it('should format morning time correctly', () => {
+    const timestamp = Math.floor(new Date(2023, 1, 14, 9, 15, 0).valueOf() / 1000);
+    expect(messageStamp({ time: timestamp })).toEqual('9:15 AM');
   });
 });
 

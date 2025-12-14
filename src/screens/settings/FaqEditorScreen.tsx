@@ -18,6 +18,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 
 import i18n from 'i18n';
+import { tailwind } from '@/theme';
 import { Icon } from '@/components-next/common/icon';
 import { AddIcon, ChevronLeft, CloseIcon, WarningIcon } from '@/svg-icons';
 import { useAppDispatch, useAppSelector } from '@/hooks';
@@ -42,29 +43,24 @@ type FormErrors = {
   answer?: string;
 };
 
-const COLORS = {
-  background: '#F8F5F3',
-  headerBorder: '#E6E0D7',
-  backButton: '#E7E2DD',
-  textPrimary: '#16273D',
-  textSecondary: '#4B5D6E',
-  inputBackground: '#FFFFFF',
-  inputBorder: '#DDD5CA',
-  error: '#B54747',
-  chipBg: '#E7F4F2',
-  chipText: '#1E7068',
-  chipRemove: '#4B5D6E',
-  escalationBorder: '#E6E0D7',
-  escalationBackground: '#FFF8F0',
-  accent: '#0F9C9C',
-  accentPressed: '#0C7D7D',
-  saveButtonBg: '#12A594',
-  saveButtonPressed: '#0F8B8D',
-  disabled: '#C9C3BA',
-  deleteBackground: '#FDEBEB',
-  deleteBackgroundPressed: '#F8D7D7',
-  deleteBorder: '#F3B0B0',
-};
+// Resolve Sara theme colors from tailwind config
+const SARA_BACKGROUND = tailwind.color('sara-background') ?? '#F8F5F3';
+const SARA_BACKGROUND_LIGHT = tailwind.color('sara-background-light') ?? '#FFFFFF';
+const SARA_ACCENT = tailwind.color('sara-accent') ?? '#4CB6AC';
+const SARA_TEXT_PRIMARY = tailwind.color('sara-text-primary') ?? '#16273D';
+const SARA_TEXT_SECONDARY = tailwind.color('sara-text-secondary') ?? '#4B5D6E';
+const SARA_BORDER = tailwind.color('sara-border') ?? '#E6E2DD';
+const SARA_CHIP = tailwind.color('sara-chip') ?? '#F5F3F0';
+const SARA_ACCENT_LIGHT = tailwind.color('sara-accent-light') ?? '#E6F5F4';
+
+// Additional colors used in this screen (not in core Sara palette)
+const ERROR_COLOR = tailwind.color('red-800') ?? '#B54747';
+const ESCALATION_BG = tailwind.color('amber-50') ?? '#FFF8F0';
+const DISABLED_COLOR = tailwind.color('sand-600') ?? '#C9C3BA';
+const DELETE_BG = tailwind.color('red-50') ?? '#FDEBEB';
+const DELETE_BG_PRESSED = tailwind.color('red-100') ?? '#F8D7D7';
+const DELETE_BORDER = tailwind.color('red-300') ?? '#F3B0B0';
+const WHITE = tailwind.color('white') ?? '#FFFFFF';
 
 const buildFormState = (faq?: FaqEntry | null) => ({
   id: faq?.id ?? '',
@@ -298,7 +294,7 @@ export const FaqEditorScreen = (): JSX.Element => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
+      <StatusBar barStyle="dark-content" backgroundColor={SARA_BACKGROUND} />
       <View style={styles.header}>
         <Pressable
           onPress={handleGoBack}
@@ -343,7 +339,7 @@ export const FaqEditorScreen = (): JSX.Element => {
                 }
               }}
               placeholder={i18n.t('FAQ_EDITOR.QUESTION_PLACEHOLDER')}
-              placeholderTextColor={COLORS.textSecondary}
+              placeholderTextColor={SARA_TEXT_SECONDARY}
               style={[styles.input, errors.question && styles.inputError]}
               multiline
             />
@@ -361,7 +357,7 @@ export const FaqEditorScreen = (): JSX.Element => {
                 }
               }}
               placeholder={i18n.t('FAQ_EDITOR.ANSWER_PLACEHOLDER')}
-              placeholderTextColor={COLORS.textSecondary}
+              placeholderTextColor={SARA_TEXT_SECONDARY}
               style={[styles.input, styles.textarea, errors.answer && styles.inputError]}
               multiline
             />
@@ -384,7 +380,7 @@ export const FaqEditorScreen = (): JSX.Element => {
             <View style={styles.escalationHeader}>
               <View style={styles.escalationCopy}>
                 <View style={styles.warningIconWrapper}>
-                  <Icon icon={<WarningIcon stroke={COLORS.accent} />} size={20} />
+                  <Icon icon={<WarningIcon stroke={SARA_ACCENT} />} size={20} />
                 </View>
                 <View>
                   <Text style={styles.escalationTitle}>{i18n.t('FAQ_EDITOR.ESCALATION_TITLE')}</Text>
@@ -398,8 +394,8 @@ export const FaqEditorScreen = (): JSX.Element => {
                 onValueChange={value => {
                   setEscalationEnabled(value);
                 }}
-                trackColor={{ true: COLORS.accent, false: COLORS.disabled }}
-                thumbColor="#FFFFFF"
+                trackColor={{ true: SARA_ACCENT, false: DISABLED_COLOR }}
+                thumbColor={WHITE}
               />
             </View>
 
@@ -412,7 +408,7 @@ export const FaqEditorScreen = (): JSX.Element => {
                       value={newTrigger}
                       onChangeText={setNewTrigger}
                       placeholder={i18n.t('FAQ_EDITOR.TRIGGER_PLACEHOLDER')}
-                      placeholderTextColor={COLORS.textSecondary}
+                      placeholderTextColor={SARA_TEXT_SECONDARY}
                       style={[styles.input, styles.flex]}
                       onSubmitEditing={handleAddTrigger}
                       returnKeyType="done"
@@ -425,7 +421,7 @@ export const FaqEditorScreen = (): JSX.Element => {
                       ]}
                       accessibilityRole="button"
                       accessibilityLabel={i18n.t('FAQ_EDITOR.ADD_TRIGGER_BUTTON')}>
-                      <Icon icon={<AddIcon stroke="#FFFFFF" />} size={16} />
+                      <Icon icon={<AddIcon stroke={WHITE} />} size={16} />
                     </Pressable>
                   </View>
                   {triggerPhrases.length ? (
@@ -440,7 +436,7 @@ export const FaqEditorScreen = (): JSX.Element => {
                               phrase,
                             })}>
                             <View style={styles.triggerRemoveIcon}>
-                              <Icon icon={<CloseIcon stroke={COLORS.chipRemove} />} size={14} />
+                              <Icon icon={<CloseIcon stroke={SARA_TEXT_SECONDARY} />} size={14} />
                             </View>
                           </Pressable>
                         </View>
@@ -476,7 +472,7 @@ export const FaqEditorScreen = (): JSX.Element => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: SARA_BACKGROUND,
   },
   flex: {
     flex: 1,
@@ -487,13 +483,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.headerBorder,
+    borderBottomColor: SARA_BORDER,
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: COLORS.backButton,
+    backgroundColor: SARA_CHIP,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -505,25 +501,26 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 18,
     fontWeight: '600',
-    color: COLORS.textPrimary,
+    color: SARA_TEXT_PRIMARY,
   },
   saveButton: {
     minWidth: 72,
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 20,
-    backgroundColor: COLORS.saveButtonBg,
+    backgroundColor: SARA_ACCENT,
     alignItems: 'center',
     justifyContent: 'center',
   },
   saveButtonPressed: {
-    backgroundColor: COLORS.saveButtonPressed,
+    backgroundColor: SARA_ACCENT,
+    opacity: 0.85,
   },
   saveButtonDisabled: {
-    backgroundColor: COLORS.disabled,
+    backgroundColor: DISABLED_COLOR,
   },
   saveButtonText: {
-    color: '#FFFFFF',
+    color: WHITE,
     fontSize: 14,
     fontWeight: '600',
   },
@@ -537,20 +534,20 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: SARA_TEXT_SECONDARY,
   },
   input: {
-    backgroundColor: COLORS.inputBackground,
+    backgroundColor: SARA_BACKGROUND_LIGHT,
     borderWidth: 1,
-    borderColor: COLORS.inputBorder,
+    borderColor: SARA_BORDER,
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    color: COLORS.textPrimary,
+    color: SARA_TEXT_PRIMARY,
     fontSize: 14,
   },
   inputError: {
-    borderColor: COLORS.error,
+    borderColor: ERROR_COLOR,
   },
   textarea: {
     minHeight: 96,
@@ -558,36 +555,36 @@ const styles = StyleSheet.create({
   },
   helperText: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: SARA_TEXT_SECONDARY,
   },
   errorText: {
     fontSize: 12,
-    color: COLORS.error,
+    color: ERROR_COLOR,
   },
   previewBlock: {
     gap: 8,
   },
   previewLabel: {
     fontSize: 13,
-    color: COLORS.textSecondary,
+    color: SARA_TEXT_SECONDARY,
   },
   previewBubble: {
     borderWidth: 1,
-    borderColor: COLORS.inputBorder,
+    borderColor: SARA_BORDER,
     borderRadius: 16,
     padding: 14,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: SARA_BACKGROUND_LIGHT,
   },
   previewText: {
-    color: COLORS.textPrimary,
+    color: SARA_TEXT_PRIMARY,
     fontSize: 14,
     lineHeight: 20,
   },
   escalationContainer: {
     borderWidth: 1,
-    borderColor: COLORS.escalationBorder,
+    borderColor: SARA_BORDER,
     borderRadius: 16,
-    backgroundColor: COLORS.escalationBackground,
+    backgroundColor: ESCALATION_BG,
     padding: 16,
     gap: 12,
   },
@@ -609,11 +606,11 @@ const styles = StyleSheet.create({
   escalationTitle: {
     fontSize: 15,
     fontWeight: '600',
-    color: COLORS.textPrimary,
+    color: SARA_TEXT_PRIMARY,
   },
   escalationSubtitle: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: SARA_TEXT_SECONDARY,
   },
   escalationBody: {
     gap: 14,
@@ -623,18 +620,18 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: COLORS.deleteBorder,
-    backgroundColor: COLORS.deleteBackground,
+    borderColor: DELETE_BORDER,
+    backgroundColor: DELETE_BG,
     alignItems: 'center',
   },
   deleteButtonPressed: {
-    backgroundColor: COLORS.deleteBackgroundPressed,
+    backgroundColor: DELETE_BG_PRESSED,
   },
   deleteButtonDisabled: {
     opacity: 0.6,
   },
   deleteButtonText: {
-    color: COLORS.error,
+    color: ERROR_COLOR,
     fontSize: 15,
     fontWeight: '600',
   },
@@ -647,12 +644,13 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: COLORS.accent,
+    backgroundColor: SARA_ACCENT,
     alignItems: 'center',
     justifyContent: 'center',
   },
   addTriggerButtonPressed: {
-    backgroundColor: COLORS.accentPressed,
+    backgroundColor: SARA_ACCENT,
+    opacity: 0.85,
   },
   triggerChips: {
     flexDirection: 'row',
@@ -663,13 +661,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: COLORS.chipBg,
+    backgroundColor: SARA_ACCENT_LIGHT,
     borderRadius: 999,
     paddingHorizontal: 12,
     paddingVertical: 6,
   },
   triggerChipText: {
-    color: COLORS.chipText,
+    color: SARA_ACCENT,
     fontSize: 13,
   },
   triggerRemoveIcon: {

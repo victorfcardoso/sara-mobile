@@ -1,7 +1,5 @@
 import axios from 'axios';
 
-import { AuthService } from '@/store/auth/authService';
-import { apiService } from '@/services/APIService';
 import { mockUser, mockChatwootSession, mockSaraTokens } from './authMockData';
 
 jest.mock('axios');
@@ -14,6 +12,19 @@ jest.mock('@/services/APIService', () => ({
     delete: jest.fn(),
   },
 }));
+
+jest.mock('@/services/SaraAPIService', () => ({
+  saraAPIService: {
+    get: jest.fn(),
+    post: jest.fn(),
+    put: jest.fn(),
+    delete: jest.fn(),
+  },
+}));
+
+// Import after mocks are set up
+import { AuthService } from '@/store/auth/authService';
+import { apiService } from '@/services/APIService';
 
 describe('AuthService', () => {
   const mockedAxios = axios as jest.Mocked<typeof axios>;

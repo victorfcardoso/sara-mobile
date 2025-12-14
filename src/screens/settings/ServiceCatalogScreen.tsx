@@ -67,25 +67,34 @@ type FormErrors = Partial<
   Record<'label' | 'durationMin' | 'price' | 'currency' | 'depositAmount', string>
 >;
 
-const COLORS = {
-  background: '#F6F1EB',
-  card: '#FFFFFF',
-  border: '#E7DED3',
-  textPrimary: '#16273D',
-  textSecondary: '#4B5D6E',
-  accent: '#4CB6AC',
-  destructive: '#B54747',
-  warningBackground: '#FEF4E1',
-  warningText: '#8A5A2E',
-  badgeBackground: '#CCE6DE',
-  badgeText: '#16273D',
-  mutedBadgeBackground: '#E7E2DD',
-  mutedBadgeText: '#4B5D6E',
-  pressed: '#E9E2D9',
-  inputBackground: '#FDFBF9',
-  errorText: '#B54747',
-  icon: '#4B5D6E',
-};
+// Resolve Sara theme colors from tailwind config
+const SARA_BACKGROUND = tailwind.color('sara-background') ?? '#F8F5F3';
+const SARA_BACKGROUND_LIGHT = tailwind.color('sara-background-light') ?? '#FFFFFF';
+const SARA_ACCENT = tailwind.color('sara-accent') ?? '#4CB6AC';
+const SARA_TEXT_PRIMARY = tailwind.color('sara-text-primary') ?? '#16273D';
+const SARA_TEXT_SECONDARY = tailwind.color('sara-text-secondary') ?? '#4B5D6E';
+const SARA_BORDER = tailwind.color('sara-border') ?? '#E6E2DD';
+const SARA_CHIP = tailwind.color('sara-chip') ?? '#F5F3F0';
+
+// Additional colors used in this screen (not in core Sara palette)
+const DESTRUCTIVE_COLOR = tailwind.color('red-800') ?? '#B54747';
+const WARNING_BG = tailwind.color('amber-50') ?? '#FEF4E1';
+const WARNING_TEXT = tailwind.color('brown-700') ?? '#8A5A2E';
+const WARNING_BORDER = tailwind.color('amber-100') ?? '#F4DEBE';
+const ERROR_BG = tailwind.color('red-50') ?? '#FDEDEE';
+const BADGE_BG = tailwind.color('jade-200') ?? '#CCE6DE';
+const INPUT_BG = tailwind.color('sara-background') ?? '#FDFBF9';
+const ICON_BUTTON_BG = tailwind.color('stone-100') ?? '#EFE8E0';
+const ICON_BUTTON_PRESSED = tailwind.color('stone-200') ?? '#E3DCD2';
+const HEADER_ACTION_BG = tailwind.color('teal-50') ?? '#E3F2EF';
+const HEADER_ACTION_PRESSED = tailwind.color('teal-100') ?? '#D3E8E2';
+const SWITCH_IOS_BG = tailwind.color('stone-300') ?? '#D8D1C9';
+const ACTION_BUTTON_BG = tailwind.color('amber-50') ?? '#F7F3EB';
+const ACTION_BUTTON_PRESSED = tailwind.color('stone-200') ?? '#EDE5DA';
+const ACTION_BUTTON_DANGER_BG = tailwind.color('red-50') ?? '#FBEFF0';
+const ACTION_BUTTON_DANGER_PRESSED = tailwind.color('red-100') ?? '#F4E0E2';
+const CARD_DIVIDER = tailwind.color('stone-100') ?? '#EFE6DB';
+const PAYMENT_TEXT = tailwind.color('teal-700') ?? '#2F7A6D';
 
 const buildDraft = (service?: AgentService | null): ServiceFormDraft => {
   return {
@@ -392,7 +401,7 @@ export const ServiceCatalogScreen = (): JSX.Element => {
         : i18n.t('SERVICE_CATALOG_PAGE.CREATE_TITLE');
 
     return (
-      <SafeAreaView style={[tailwind.style('flex-1'), { backgroundColor: COLORS.background }]}>
+      <SafeAreaView style={[tailwind.style('flex-1'), { backgroundColor: SARA_BACKGROUND }]}>
         <StatusBar barStyle="dark-content" />
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -402,9 +411,9 @@ export const ServiceCatalogScreen = (): JSX.Element => {
               onPress={closeForm}
               style={({ pressed }) => [
                 styles.iconButton,
-                pressed ? { backgroundColor: COLORS.pressed } : null,
+                pressed ? { backgroundColor: SARA_CHIP } : null,
               ]}>
-              <Icon icon={<ChevronLeft stroke="#16273D" strokeWidth={1.5} />} size={24} />
+              <Icon icon={<ChevronLeft stroke={SARA_TEXT_PRIMARY} strokeWidth={1.5} />} size={24} />
             </Pressable>
             <Text style={styles.formHeaderTitle}>{formTitle}</Text>
             <View style={styles.iconButtonPlaceholder} />
@@ -421,7 +430,7 @@ export const ServiceCatalogScreen = (): JSX.Element => {
                 onChangeText={text => updateDraftField('label', text)}
                 placeholder={i18n.t('SERVICE_CATALOG_PAGE.FIELD_LABEL_PLACEHOLDER')}
                 style={styles.textInput}
-                placeholderTextColor={COLORS.textSecondary}
+                placeholderTextColor={SARA_TEXT_SECONDARY}
                 autoCapitalize="sentences"
               />
               {formErrors.label ? (
@@ -438,7 +447,7 @@ export const ServiceCatalogScreen = (): JSX.Element => {
                 onChangeText={text => updateDraftField('description', text)}
                 placeholder={i18n.t('SERVICE_CATALOG_PAGE.FIELD_DESCRIPTION_PLACEHOLDER')}
                 style={[styles.textInput, styles.multilineInput]}
-                placeholderTextColor={COLORS.textSecondary}
+                placeholderTextColor={SARA_TEXT_SECONDARY}
                 multiline
                 numberOfLines={4}
               />
@@ -484,8 +493,8 @@ export const ServiceCatalogScreen = (): JSX.Element => {
               <Switch
                 value={formDraft.requiresDeposit}
                 onValueChange={value => updateDraftField('requiresDeposit', value)}
-                trackColor={{ false: '#D8D1C9', true: COLORS.accent }}
-                ios_backgroundColor="#D8D1C9"
+                trackColor={{ false: SARA_BORDER, true: SARA_ACCENT }}
+                ios_backgroundColor={SWITCH_IOS_BG}
               />
             </View>
 
@@ -527,7 +536,7 @@ export const ServiceCatalogScreen = (): JSX.Element => {
             </View>
             {submitting ? (
               <View style={styles.submittingOverlay}>
-                <ActivityIndicator color={COLORS.accent} size="small" />
+                <ActivityIndicator color={SARA_ACCENT} size="small" />
               </View>
             ) : null}
           </ScrollView>
@@ -537,7 +546,7 @@ export const ServiceCatalogScreen = (): JSX.Element => {
   }
 
   return (
-    <SafeAreaView style={[tailwind.style('flex-1'), { backgroundColor: COLORS.background }]}>
+    <SafeAreaView style={[tailwind.style('flex-1'), { backgroundColor: SARA_BACKGROUND }]}>
       <StatusBar barStyle="dark-content" />
       <View style={styles.header}>
         <Pressable
@@ -546,7 +555,7 @@ export const ServiceCatalogScreen = (): JSX.Element => {
             styles.iconButton,
             pressed ? styles.iconButtonPressed : null,
           ]}>
-          <Icon icon={<ChevronLeft stroke="#16273D" strokeWidth={1.4} />} size={22} />
+          <Icon icon={<ChevronLeft stroke={SARA_TEXT_PRIMARY} strokeWidth={1.4} />} size={22} />
         </Pressable>
         <Text style={styles.headerTitle}>{i18n.t('SERVICE_CATALOG_PAGE.TITLE')}</Text>
         <Pressable
@@ -558,7 +567,7 @@ export const ServiceCatalogScreen = (): JSX.Element => {
             !easyAppointmentsConnected ? styles.headerActionDisabled : null,
             pressed && easyAppointmentsConnected ? styles.headerActionPressed : null,
           ]}>
-          <Icon icon={<AddIcon stroke="#16273D" strokeWidth={1.4} />} size={18} />
+          <Icon icon={<AddIcon stroke={SARA_TEXT_PRIMARY} strokeWidth={1.4} />} size={18} />
         </Pressable>
       </View>
       {!easyAppointmentsConnected ? (
@@ -584,16 +593,16 @@ export const ServiceCatalogScreen = (): JSX.Element => {
         style={tailwind.style('flex-1')}
         contentContainerStyle={styles.listContent}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={COLORS.accent} />
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={SARA_ACCENT} />
         }>
         {loadingAgentSettings && services.length === 0 ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator color={COLORS.accent} size="small" />
+            <ActivityIndicator color={SARA_ACCENT} size="small" />
           </View>
         ) : null}
         {!loadingAgentSettings && services.length === 0 ? (
           <View style={styles.emptyState}>
-            <Icon icon={<CreditCardIcon stroke={COLORS.textSecondary} strokeWidth={1.4} />} size={48} />
+            <Icon icon={<CreditCardIcon stroke={SARA_TEXT_SECONDARY} strokeWidth={1.4} />} size={48} />
             <Text style={styles.emptyTitle}>{i18n.t('SERVICE_CATALOG_PAGE.EMPTY_TITLE')}</Text>
             <Text style={styles.emptySubtitle}>
               {i18n.t('SERVICE_CATALOG_PAGE.EMPTY_SUBTITLE')}
@@ -636,7 +645,7 @@ export const ServiceCatalogScreen = (): JSX.Element => {
                       styles.actionButton,
                       pressed ? styles.actionButtonPressed : null,
                     ]}>
-                    <Icon icon={<PencilIcon stroke="#4B5D6E" strokeWidth={1.4} />} size={18} />
+                    <Icon icon={<PencilIcon stroke={SARA_TEXT_SECONDARY} strokeWidth={1.4} />} size={18} />
                   </Pressable>
                   <Pressable
                     onPress={() => confirmDelete(service)}
@@ -649,9 +658,9 @@ export const ServiceCatalogScreen = (): JSX.Element => {
                       pressed && !isDeleting ? styles.actionButtonDangerPressed : null,
                     ]}>
                     {isDeleting ? (
-                      <ActivityIndicator color={COLORS.destructive} size="small" />
+                      <ActivityIndicator color={DESTRUCTIVE_COLOR} size="small" />
                     ) : (
-                      <Icon icon={<TrashIcon stroke={COLORS.destructive} strokeWidth={1.5} />} size={18} />
+                      <Icon icon={<TrashIcon stroke={DESTRUCTIVE_COLOR} strokeWidth={1.5} />} size={18} />
                     )}
                   </Pressable>
                 </View>
@@ -661,7 +670,7 @@ export const ServiceCatalogScreen = (): JSX.Element => {
                 <View style={styles.detailGroup}>
                   <View style={styles.detailItem}>
                     <View style={styles.detailItemIcon}>
-                      <Icon icon={<ClockIcon stroke={COLORS.icon} strokeWidth={1.25} />} size={16} />
+                      <Icon icon={<ClockIcon stroke={SARA_TEXT_SECONDARY} strokeWidth={1.25} />} size={16} />
                     </View>
                     <Text style={styles.detailText}>
                       {service.durationMin
@@ -671,7 +680,7 @@ export const ServiceCatalogScreen = (): JSX.Element => {
                   </View>
                   <View style={styles.detailItem}>
                     <View style={styles.detailItemIcon}>
-                      <Icon icon={<CreditCardIcon stroke={COLORS.icon} strokeWidth={1.25} />} size={16} />
+                      <Icon icon={<CreditCardIcon stroke={SARA_TEXT_SECONDARY} strokeWidth={1.25} />} size={16} />
                     </View>
                     <Text style={styles.detailText}>
                       {service.price != null && Number.isFinite(service.price)
@@ -702,14 +711,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: COLORS.background,
+    backgroundColor: SARA_BACKGROUND,
   },
   headerTitle: {
     flex: 1,
     textAlign: 'center',
     fontSize: 20,
     fontFamily: 'Inter-SemiBold',
-    color: COLORS.textPrimary,
+    color: SARA_TEXT_PRIMARY,
   },
   iconButton: {
     width: 40,
@@ -717,10 +726,10 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#EFE8E0',
+    backgroundColor: ICON_BUTTON_BG,
   },
   iconButtonPressed: {
-    backgroundColor: '#E3DCD2',
+    backgroundColor: ICON_BUTTON_PRESSED,
   },
   iconButtonPlaceholder: {
     width: 40,
@@ -732,25 +741,25 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#E3F2EF',
+    backgroundColor: HEADER_ACTION_BG,
   },
   headerActionPressed: {
-    backgroundColor: '#D3E8E2',
+    backgroundColor: HEADER_ACTION_PRESSED,
   },
   headerActionDisabled: {
     opacity: 0.35,
   },
   noticeCard: {
-    backgroundColor: COLORS.warningBackground,
+    backgroundColor: WARNING_BG,
     marginHorizontal: 20,
     marginBottom: 12,
     borderRadius: 16,
     padding: 14,
     borderWidth: 1,
-    borderColor: '#F4DEBE',
+    borderColor: WARNING_BORDER,
   },
   noticeText: {
-    color: COLORS.warningText,
+    color: WARNING_TEXT,
     fontSize: 13,
     fontFamily: 'Inter-Regular',
   },
@@ -759,10 +768,10 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     padding: 12,
     borderRadius: 12,
-    backgroundColor: '#FDEDEE',
+    backgroundColor: ERROR_BG,
   },
   errorBannerText: {
-    color: COLORS.destructive,
+    color: DESTRUCTIVE_COLOR,
     fontSize: 13,
     fontFamily: 'Inter-Medium',
     textAlign: 'center',
@@ -788,22 +797,22 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 18,
     fontFamily: 'Inter-Medium',
-    color: COLORS.textPrimary,
+    color: SARA_TEXT_PRIMARY,
   },
   emptySubtitle: {
     fontSize: 14,
     fontFamily: 'Inter-Regular',
-    color: COLORS.textSecondary,
+    color: SARA_TEXT_SECONDARY,
     textAlign: 'center',
     paddingHorizontal: 32,
   },
   card: {
-    backgroundColor: COLORS.card,
+    backgroundColor: SARA_BACKGROUND_LIGHT,
     borderRadius: 22,
     padding: 18,
     borderWidth: 1,
-    borderColor: COLORS.border,
-    shadowColor: '#16273D',
+    borderColor: SARA_BORDER,
+    shadowColor: SARA_TEXT_PRIMARY,
     shadowOpacity: 0.05,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 6 },
@@ -827,16 +836,16 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 16,
     fontFamily: 'Inter-SemiBold',
-    color: COLORS.textPrimary,
+    color: SARA_TEXT_PRIMARY,
   },
   cardDescription: {
     marginTop: 4,
     fontSize: 13,
     fontFamily: 'Inter-Regular',
-    color: COLORS.textSecondary,
+    color: SARA_TEXT_SECONDARY,
   },
   badge: {
-    backgroundColor: COLORS.badgeBackground,
+    backgroundColor: BADGE_BG,
     borderRadius: 12,
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -844,7 +853,7 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: 11,
     fontFamily: 'Inter-Medium',
-    color: COLORS.badgeText,
+    color: SARA_TEXT_PRIMARY,
   },
   cardActions: {
     flexDirection: 'row',
@@ -857,23 +866,23 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F7F3EB',
+    backgroundColor: ACTION_BUTTON_BG,
   },
   actionButtonPressed: {
-    backgroundColor: '#EDE5DA',
+    backgroundColor: ACTION_BUTTON_PRESSED,
   },
   actionButtonDanger: {
-    backgroundColor: '#FBEFF0',
+    backgroundColor: ACTION_BUTTON_DANGER_BG,
   },
   actionButtonDangerPressed: {
-    backgroundColor: '#F4E0E2',
+    backgroundColor: ACTION_BUTTON_DANGER_PRESSED,
   },
   actionButtonDisabled: {
     opacity: 0.5,
   },
   cardDivider: {
     height: 1,
-    backgroundColor: '#EFE6DB',
+    backgroundColor: CARD_DIVIDER,
     marginTop: 14,
     marginBottom: 12,
   },
@@ -899,12 +908,12 @@ const styles = StyleSheet.create({
   detailText: {
     fontSize: 13,
     fontFamily: 'Inter-Medium',
-    color: COLORS.textPrimary,
+    color: SARA_TEXT_PRIMARY,
   },
   paymentText: {
     fontSize: 12,
     fontFamily: 'Inter-Medium',
-    color: '#2F7A6D',
+    color: PAYMENT_TEXT,
   },
   formHeader: {
     paddingHorizontal: 20,
@@ -919,7 +928,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 20,
     fontFamily: 'Inter-SemiBold',
-    color: COLORS.textPrimary,
+    color: SARA_TEXT_PRIMARY,
   },
   formContent: {
     paddingHorizontal: 20,
@@ -932,19 +941,19 @@ const styles = StyleSheet.create({
   fieldLabel: {
     fontSize: 13,
     fontFamily: 'Inter-Medium',
-    color: COLORS.textSecondary,
+    color: SARA_TEXT_SECONDARY,
     marginBottom: 6,
   },
   textInput: {
-    backgroundColor: COLORS.inputBackground,
+    backgroundColor: INPUT_BG,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: SARA_BORDER,
     paddingHorizontal: 14,
     paddingVertical: 10,
     fontSize: 15,
     fontFamily: 'Inter-Regular',
-    color: COLORS.textPrimary,
+    color: SARA_TEXT_PRIMARY,
   },
   multilineInput: {
     minHeight: 96,
@@ -976,7 +985,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
     fontSize: 12,
     fontFamily: 'Inter-Regular',
-    color: COLORS.errorText,
+    color: DESTRUCTIVE_COLOR,
   },
 });
 

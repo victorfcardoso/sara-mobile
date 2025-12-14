@@ -54,16 +54,19 @@ import {
   selectAppointmentsUiFlags,
 } from '@/store/appointments/appointmentsSelectors';
 import type { Appointment } from '@/store/appointments/appointmentsTypes';
+import { tailwind } from '@/theme';
 
 const DEFAULT_LIMIT = 25;
 
-const SARA_COLORS = {
-  background: '#F8F5F3',
-  textPrimary: '#16273D',
-  textSecondary: '#4B5D6E',
-  cardShadow: '#16273D',
-  accent: '#4CB6AC',
-};
+// Resolve Sara theme colors from tailwind config
+const SARA_BACKGROUND = tailwind.color('sara-background') ?? '#F8F5F3';
+const SARA_BACKGROUND_LIGHT = tailwind.color('sara-background-light') ?? '#FFFFFF';
+const SARA_ACCENT = tailwind.color('sara-accent') ?? '#4CB6AC';
+const SARA_TEXT_PRIMARY = tailwind.color('sara-text-primary') ?? '#16273D';
+const SARA_TEXT_SECONDARY = tailwind.color('sara-text-secondary') ?? '#4B5D6E';
+const SARA_TEXT_META = tailwind.color('sara-text-meta') ?? '#6C778A';
+const SARA_BORDER = tailwind.color('sara-border') ?? '#E6E2DD';
+const SARA_CHIP = tailwind.color('sara-chip') ?? '#F5F3F0';
 
 const STATUS_COLORS: Record<
   string,
@@ -83,7 +86,7 @@ const DEFAULT_STATUS_STYLE = { backgroundColor: '#E2E6EB', textColor: '#3D4A5C' 
 const DATE_KEY_FORMAT = 'yyyy-MM-dd';
 const TIMELINE_WEEK_OPTIONS = { weekStartsOn: 1 as const };
 const TIMELINE_DEFAULT_DURATION_MINUTES = 30;
-const TIMELINE_UNAVAILABLE_COLOR = '#F5EFEA';
+const TIMELINE_UNAVAILABLE_COLOR = SARA_CHIP;
 const MINUTES_PER_DAY = 24 * 60;
 const WEEKDAY_INDEX_LOOKUP = {
   monday: 1,
@@ -891,12 +894,12 @@ const AppointmentsScreen = () => {
       const isSelected = dateKey === selectedDate;
       markers[dateKey] = {
         marked: true,
-        dotColor: SARA_COLORS.accent,
+        dotColor: SARA_ACCENT,
         ...(isSelected
           ? {
               selected: true,
-              selectedColor: SARA_COLORS.accent,
-              selectedTextColor: '#FFFFFF',
+              selectedColor: SARA_ACCENT,
+              selectedTextColor: SARA_BACKGROUND_LIGHT,
             }
           : {}),
       };
@@ -905,15 +908,15 @@ const AppointmentsScreen = () => {
     if (!markers[selectedDate]) {
       markers[selectedDate] = {
         selected: true,
-        selectedColor: SARA_COLORS.accent,
-        selectedTextColor: '#FFFFFF',
+        selectedColor: SARA_ACCENT,
+        selectedTextColor: SARA_BACKGROUND_LIGHT,
       };
     } else if (!markers[selectedDate].selected) {
       markers[selectedDate] = {
         ...markers[selectedDate],
         selected: true,
-        selectedColor: SARA_COLORS.accent,
-        selectedTextColor: '#FFFFFF',
+        selectedColor: SARA_ACCENT,
+        selectedTextColor: SARA_BACKGROUND_LIGHT,
       };
     }
 
@@ -928,17 +931,17 @@ const AppointmentsScreen = () => {
   );
   const calendarTheme = useMemo(
     () => ({
-      backgroundColor: '#FFFFFF',
-      calendarBackground: '#FFFFFF',
-      textSectionTitleColor: SARA_COLORS.textSecondary,
-      dayTextColor: SARA_COLORS.textPrimary,
-      monthTextColor: SARA_COLORS.textPrimary,
-      todayTextColor: SARA_COLORS.accent,
-      selectedDayBackgroundColor: SARA_COLORS.accent,
-      selectedDayTextColor: '#FFFFFF',
-      arrowColor: SARA_COLORS.accent,
-      dotColor: SARA_COLORS.accent,
-      selectedDotColor: '#FFFFFF',
+      backgroundColor: SARA_BACKGROUND_LIGHT,
+      calendarBackground: SARA_BACKGROUND_LIGHT,
+      textSectionTitleColor: SARA_TEXT_SECONDARY,
+      dayTextColor: SARA_TEXT_PRIMARY,
+      monthTextColor: SARA_TEXT_PRIMARY,
+      todayTextColor: SARA_ACCENT,
+      selectedDayBackgroundColor: SARA_ACCENT,
+      selectedDayTextColor: SARA_BACKGROUND_LIGHT,
+      arrowColor: SARA_ACCENT,
+      dotColor: SARA_ACCENT,
+      selectedDotColor: SARA_BACKGROUND_LIGHT,
     }),
     [],
   );
@@ -1091,21 +1094,21 @@ const AppointmentsScreen = () => {
   const timelineTheme = useMemo(
     () => ({
       colors: {
-        primary: SARA_COLORS.accent,
-        onPrimary: '#FFFFFF',
-        background: '#FFFFFF',
-        onBackground: SARA_COLORS.textPrimary,
-        border: '#E1E4EA',
-        text: SARA_COLORS.textPrimary,
-        surface: '#F1ECE6',
-        onSurface: SARA_COLORS.textSecondary,
+        primary: SARA_ACCENT,
+        onPrimary: SARA_BACKGROUND_LIGHT,
+        background: SARA_BACKGROUND_LIGHT,
+        onBackground: SARA_TEXT_PRIMARY,
+        border: SARA_BORDER,
+        text: SARA_TEXT_PRIMARY,
+        surface: SARA_CHIP,
+        onSurface: SARA_TEXT_SECONDARY,
       },
       dayBarContainer: {
         borderRadius: 18,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: SARA_BACKGROUND_LIGHT,
         marginBottom: 4,
       },
-      unavailableHourBackgroundColor: '#F4EFE9',
+      unavailableHourBackgroundColor: SARA_CHIP,
     }),
     [],
   );
@@ -1314,14 +1317,14 @@ const AppointmentsScreen = () => {
   const listFooter =
     uiFlags.isLoadingMore && mergedAppointments.length > 0 ? (
       <View style={styles.footer}>
-        <ActivityIndicator color={SARA_COLORS.accent} />
+        <ActivityIndicator color={SARA_ACCENT} />
       </View>
     ) : null;
 
   const emptyComponent =
     uiFlags.isLoading || uiFlags.isRefreshing ? null : (
       <View style={styles.emptyState}>
-        <EmptyStateIcon stroke={SARA_COLORS.accent} />
+        <EmptyStateIcon stroke={SARA_ACCENT} />
         <Text style={styles.emptyTitle}>{I18n.t('APPOINTMENTS.EMPTY_TITLE')}</Text>
         <Text style={styles.emptySubtitle}>{I18n.t('APPOINTMENTS.EMPTY_SUBTITLE')}</Text>
       </View>
@@ -1365,9 +1368,9 @@ const AppointmentsScreen = () => {
   if (isInitialLoading) {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-        <StatusBar translucent backgroundColor={SARA_COLORS.background} barStyle="dark-content" />
+        <StatusBar translucent backgroundColor={SARA_BACKGROUND} barStyle="dark-content" />
         <View style={styles.loadingContainer}>
-          <ActivityIndicator color={SARA_COLORS.accent} />
+          <ActivityIndicator color={SARA_ACCENT} />
         </View>
       </SafeAreaView>
     );
@@ -1419,13 +1422,13 @@ const AppointmentsScreen = () => {
     <RefreshControl
       refreshing={uiFlags.isRefreshing}
       onRefresh={handleRefresh}
-      tintColor={SARA_COLORS.accent}
+      tintColor={SARA_ACCENT}
     />
   );
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-      <StatusBar translucent backgroundColor={SARA_COLORS.background} barStyle="dark-content" />
+      <StatusBar translucent backgroundColor={SARA_BACKGROUND} barStyle="dark-content" />
       {viewMode === 'list' ? (
         <FlatList
           data={mergedAppointments}
@@ -1663,11 +1666,11 @@ export default AppointmentsScreen;
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: SARA_COLORS.background,
+    backgroundColor: SARA_BACKGROUND,
   },
   list: {
     flex: 1,
-    backgroundColor: SARA_COLORS.background,
+    backgroundColor: SARA_BACKGROUND,
   },
   listContent: {
     paddingHorizontal: 24,
@@ -1692,29 +1695,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   viewToggleButtonActive: {
-    backgroundColor: '#FFFFFF',
-    shadowColor: SARA_COLORS.cardShadow,
+    backgroundColor: SARA_BACKGROUND_LIGHT,
+    shadowColor: SARA_TEXT_PRIMARY,
     shadowOpacity: 0.08,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
     elevation: 2,
   },
   viewToggleButtonText: {
-    color: SARA_COLORS.textSecondary,
+    color: SARA_TEXT_SECONDARY,
     fontSize: 14,
     fontWeight: '600',
   },
   viewToggleButtonTextActive: {
-    color: SARA_COLORS.textPrimary,
+    color: SARA_TEXT_PRIMARY,
   },
   title: {
-    color: SARA_COLORS.textPrimary,
+    color: SARA_TEXT_PRIMARY,
     fontSize: 28,
     fontWeight: '700',
     letterSpacing: -0.2,
   },
   updatedText: {
-    color: '#566273',
+    color: SARA_TEXT_META,
     fontSize: 13,
   },
   errorBanner: {
@@ -1739,12 +1742,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: SARA_BACKGROUND_LIGHT,
     borderRadius: 20,
     paddingHorizontal: 20,
     paddingVertical: 24,
     marginBottom: 16,
-    shadowColor: SARA_COLORS.cardShadow,
+    shadowColor: SARA_TEXT_PRIMARY,
     shadowOpacity: 0.08,
     shadowRadius: 24,
     shadowOffset: { width: 0, height: 8 },
@@ -1757,7 +1760,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   cardTime: {
-    color: SARA_COLORS.textPrimary,
+    color: SARA_TEXT_PRIMARY,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -1773,16 +1776,16 @@ const styles = StyleSheet.create({
     letterSpacing: 0.4,
   },
   cardTitle: {
-    color: SARA_COLORS.textPrimary,
+    color: SARA_TEXT_PRIMARY,
     fontSize: 18,
     fontWeight: '600',
   },
   cardSubtitle: {
-    color: SARA_COLORS.textSecondary,
+    color: SARA_TEXT_SECONDARY,
     fontSize: 15,
   },
   cardMeta: {
-    color: '#6F7A85',
+    color: SARA_TEXT_META,
     fontSize: 13,
   },
   emptyState: {
@@ -1791,13 +1794,13 @@ const styles = StyleSheet.create({
     paddingVertical: 40,
   },
   emptyTitle: {
-    color: SARA_COLORS.textPrimary,
+    color: SARA_TEXT_PRIMARY,
     fontSize: 18,
     fontWeight: '600',
     marginTop: 20,
   },
   emptySubtitle: {
-    color: SARA_COLORS.textSecondary,
+    color: SARA_TEXT_SECONDARY,
     fontSize: 15,
     textAlign: 'center',
     marginTop: 8,
@@ -1830,33 +1833,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   timelineModeButtonActive: {
-    backgroundColor: '#FFFFFF',
-    shadowColor: SARA_COLORS.cardShadow,
+    backgroundColor: SARA_BACKGROUND_LIGHT,
+    shadowColor: SARA_TEXT_PRIMARY,
     shadowOpacity: 0.08,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
   timelineModeButtonText: {
-    color: SARA_COLORS.textSecondary,
+    color: SARA_TEXT_SECONDARY,
     fontWeight: '600',
   },
   timelineModeButtonTextActive: {
-    color: SARA_COLORS.textPrimary,
+    color: SARA_TEXT_PRIMARY,
   },
   timelineTodayButton: {
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 999,
-    backgroundColor: '#FFFFFF',
-    shadowColor: SARA_COLORS.cardShadow,
+    backgroundColor: SARA_BACKGROUND_LIGHT,
+    shadowColor: SARA_TEXT_PRIMARY,
     shadowOpacity: 0.08,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
   timelineTodayText: {
-    color: SARA_COLORS.accent,
+    color: SARA_ACCENT,
     fontWeight: '600',
   },
   timelineRangeRow: {
@@ -1865,16 +1868,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   timelineRangeLabel: {
-    color: SARA_COLORS.textPrimary,
+    color: SARA_TEXT_PRIMARY,
     fontSize: 18,
     fontWeight: '600',
   },
   timelineCalendarCard: {
     flex: 1,
     borderRadius: 24,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: SARA_BACKGROUND_LIGHT,
     padding: 8,
-    shadowColor: SARA_COLORS.cardShadow,
+    shadowColor: SARA_TEXT_PRIMARY,
     shadowOpacity: 0.08,
     shadowRadius: 24,
     shadowOffset: { width: 0, height: 8 },
@@ -1885,7 +1888,7 @@ const styles = StyleSheet.create({
   },
   calendarScroll: {
     flex: 1,
-    backgroundColor: SARA_COLORS.background,
+    backgroundColor: SARA_BACKGROUND,
   },
   calendarScrollContent: {
     paddingHorizontal: 24,
@@ -1894,10 +1897,10 @@ const styles = StyleSheet.create({
     gap: 24,
   },
   calendarCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: SARA_BACKGROUND_LIGHT,
     borderRadius: 24,
     padding: 12,
-    shadowColor: SARA_COLORS.cardShadow,
+    shadowColor: SARA_TEXT_PRIMARY,
     shadowOpacity: 0.08,
     shadowRadius: 20,
     shadowOffset: { width: 0, height: 8 },
@@ -1911,29 +1914,29 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   calendarDayLabel: {
-    color: SARA_COLORS.textPrimary,
+    color: SARA_TEXT_PRIMARY,
     fontSize: 18,
     fontWeight: '600',
   },
   calendarEmptyState: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: SARA_BACKGROUND_LIGHT,
     borderRadius: 20,
     paddingHorizontal: 20,
     paddingVertical: 24,
     gap: 6,
-    shadowColor: SARA_COLORS.cardShadow,
+    shadowColor: SARA_TEXT_PRIMARY,
     shadowOpacity: 0.05,
     shadowRadius: 20,
     shadowOffset: { width: 0, height: 8 },
     elevation: 2,
   },
   calendarEmptyTitle: {
-    color: SARA_COLORS.textPrimary,
+    color: SARA_TEXT_PRIMARY,
     fontSize: 16,
     fontWeight: '600',
   },
   calendarEmptySubtitle: {
-    color: SARA_COLORS.textSecondary,
+    color: SARA_TEXT_SECONDARY,
     fontSize: 14,
   },
   footer: {
@@ -1945,11 +1948,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   sheetBackground: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: SARA_BACKGROUND_LIGHT,
     borderRadius: 28,
   },
   sheetHandle: {
-    backgroundColor: '#D2D9E3',
+    backgroundColor: SARA_BORDER,
     width: 48,
   },
   sheetContent: {
@@ -1971,13 +1974,13 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   sheetTitle: {
-    color: SARA_COLORS.textPrimary,
+    color: SARA_TEXT_PRIMARY,
     fontSize: 22,
     fontWeight: '700',
     letterSpacing: -0.2,
   },
   sheetSubtitle: {
-    color: SARA_COLORS.textSecondary,
+    color: SARA_TEXT_SECONDARY,
     fontSize: 16,
   },
   sheetCloseButton: {
@@ -1985,31 +1988,31 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   sheetCloseText: {
-    color: SARA_COLORS.accent,
+    color: SARA_ACCENT,
     fontSize: 14,
     fontWeight: '600',
   },
   sheetDivider: {
     height: 1,
-    backgroundColor: '#E2E6EB',
+    backgroundColor: SARA_BORDER,
   },
   sheetSection: {
     gap: 8,
   },
   sheetLabel: {
-    color: '#7D8895',
+    color: SARA_TEXT_META,
     fontSize: 12,
     fontWeight: '600',
     letterSpacing: 0.8,
     textTransform: 'uppercase',
   },
   sheetValue: {
-    color: SARA_COLORS.textPrimary,
+    color: SARA_TEXT_PRIMARY,
     fontSize: 16,
     lineHeight: 22,
   },
   sheetRelativeText: {
-    color: '#6F7A85',
+    color: SARA_TEXT_META,
     fontSize: 13,
   },
   sheetMetaRow: {
@@ -2026,14 +2029,14 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   sheetMetaLabel: {
-    color: '#9AA3B1',
+    color: SARA_TEXT_META,
     fontSize: 11,
     fontWeight: '600',
     letterSpacing: 0.6,
     textTransform: 'uppercase',
   },
   sheetMetaValue: {
-    color: SARA_COLORS.textPrimary,
+    color: SARA_TEXT_PRIMARY,
     fontSize: 15,
   },
   sheetChip: {
@@ -2042,10 +2045,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: '#F2F5F9',
+    backgroundColor: SARA_CHIP,
   },
   sheetChipText: {
-    color: SARA_COLORS.textPrimary,
+    color: SARA_TEXT_PRIMARY,
     fontSize: 13,
     fontWeight: '600',
     letterSpacing: 0.2,

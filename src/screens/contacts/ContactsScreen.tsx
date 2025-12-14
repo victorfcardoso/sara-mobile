@@ -31,6 +31,7 @@ import type { CrmCustomer } from '@/store/crm-customers/crmCustomersTypes';
 import { selectAppointmentsList } from '@/store/appointments/appointmentsSelectors';
 import type { Appointment } from '@/store/appointments/appointmentsTypes';
 import { ContactsStackParamList } from '@/navigation/stack/ContactsStack';
+import { tailwind } from '@/theme';
 import {
   CONTACT_COLORS as SARA_COLORS,
   buildAppointmentIndex,
@@ -41,6 +42,10 @@ import {
   normalizePhone,
   toDateOrNull,
 } from './contactUtils';
+
+// Resolve Sara theme colors from tailwind config
+const SARA_CHIP = tailwind.color('sara-chip') ?? '#F5F3F0';
+const SARA_BACKGROUND_LIGHT = tailwind.color('sara-background-light') ?? '#FFFFFF';
 
 type ContactFilter = 'all' | 'has-thread' | 'upcoming';
 
@@ -462,7 +467,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 18,
-    backgroundColor: '#E7E2DD',
+    backgroundColor: SARA_CHIP,
   },
   filterChipActive: {
     backgroundColor: SARA_COLORS.textPrimary,
@@ -476,7 +481,7 @@ const styles = StyleSheet.create({
     color: SARA_COLORS.textSecondary,
   },
   filterChipTextActive: {
-    color: '#FFFFFF',
+    color: SARA_BACKGROUND_LIGHT,
   },
   listContent: {
     paddingBottom: 24,
@@ -504,7 +509,7 @@ const styles = StyleSheet.create({
     borderBottomColor: SARA_COLORS.divider,
   },
   rowPressed: {
-    backgroundColor: '#F1EBE4',
+    backgroundColor: SARA_CHIP,
   },
   avatar: {
     marginRight: 16,

@@ -17,6 +17,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import i18n from 'i18n';
+import { tailwind } from '@/theme';
 import { Icon } from '@/components-next/common/icon';
 import { SettingsStackParamList } from '@/navigation/stack/SettingsStack';
 import { useAppDispatch, useAppSelector } from '@/hooks';
@@ -62,28 +63,33 @@ type DateException = {
   end: string;
 };
 
-const SARA_COLORS = {
-  background: '#F8F5F3',
-  card: '#FFFFFF',
-  border: '#E6E0D7',
-  textPrimary: '#16273D',
-  textSecondary: '#4B5D6E',
-  tagBackground: '#CCE6DE',
-  tagText: '#0F4D49',
-  pressed: '#EDEAE5',
-  accent: '#4CB6AC',
-  destructive: '#B54747',
-  inputBackground: '#FDFBF9',
-  inputBorder: '#E6E0D7',
-  switchTrackActive: '#4CB6AC',
-  switchTrackInactive: '#D8D1C9',
-  switchThumb: '#FFFFFF',
-  errorText: '#B54747',
-};
+// Resolve Sara theme colors from tailwind config
+const SARA_BACKGROUND = tailwind.color('sara-background') ?? '#F8F5F3';
+const SARA_BACKGROUND_LIGHT = tailwind.color('sara-background-light') ?? '#FFFFFF';
+const SARA_ACCENT = tailwind.color('sara-accent') ?? '#4CB6AC';
+const SARA_TEXT_PRIMARY = tailwind.color('sara-text-primary') ?? '#16273D';
+const SARA_TEXT_SECONDARY = tailwind.color('sara-text-secondary') ?? '#4B5D6E';
+const SARA_BORDER = tailwind.color('sara-border') ?? '#E6E2DD';
+const SARA_CHIP = tailwind.color('sara-chip') ?? '#F5F3F0';
+
+// Additional colors used in this screen (not in core Sara palette)
+const TAG_BG = tailwind.color('jade-200') ?? '#CCE6DE';
+const TAG_TEXT = tailwind.color('teal-900') ?? '#0F4D49';
+const DESTRUCTIVE_COLOR = tailwind.color('red-800') ?? '#B54747';
+const INPUT_BG = tailwind.color('sara-background') ?? '#FDFBF9';
+
+// Button state colors
+const DANGER_BUTTON_PRESSED_BG = tailwind.color('red-100') ?? '#F5D9D9';
+const DANGER_ICON_BG = tailwind.color('red-50') ?? '#F8E8E8';
+const DISABLED_DANGER_ICON_BG = tailwind.color('red-100') ?? '#F1D7D7';
+const WHITE = tailwind.color('white') ?? '#FFFFFF';
+const DISABLED_TEXT = tailwind.color('gray-400') ?? '#A8ABA9';
+const DISABLED_PRIMARY_BG = tailwind.color('teal-200') ?? '#C4DAD6';
+const DISABLED_PRIMARY_TEXT = tailwind.color('teal-700') ?? '#49605C';
 
 const SWITCH_TRACK_COLORS = {
-  true: SARA_COLORS.switchTrackActive,
-  false: SARA_COLORS.switchTrackInactive,
+  true: SARA_ACCENT,
+  false: SARA_BORDER,
 } as const;
 
 const dayOrder: Array<{ key: DayKey; label: string }> = [
@@ -211,7 +217,7 @@ const OutlineButton = ({
     style={({ pressed }) => [
       styles.outlineButton,
       disabled ? styles.disabledButton : null,
-      pressed && !disabled ? { backgroundColor: SARA_COLORS.pressed } : null,
+      pressed && !disabled ? { backgroundColor: SARA_CHIP } : null,
     ]}>
     <View style={styles.outlineButtonContent}>
       {icon}
@@ -250,7 +256,7 @@ const DangerIconButton = ({ onPress, disabled }: { onPress: () => void; disabled
     style={({ pressed }) => [
       styles.dangerIconButton,
       disabled ? styles.disabledDangerIcon : null,
-      pressed && !disabled ? { backgroundColor: '#F5D9D9' } : null,
+      pressed && !disabled ? { backgroundColor: DANGER_BUTTON_PRESSED_BG } : null,
     ]}>
     <Icon icon={<Trash />} size={20} />
   </Pressable>
@@ -570,7 +576,7 @@ const OfficeHoursScreen = () => {
               onValueChange={() => toggleDay(dayKey)}
               trackColor={SWITCH_TRACK_COLORS}
               ios_backgroundColor={SWITCH_TRACK_COLORS.false}
-              thumbColor={Platform.OS === 'android' ? SARA_COLORS.switchThumb : undefined}
+              thumbColor={Platform.OS === 'android' ? SARA_BACKGROUND_LIGHT : undefined}
               disabled={editingDisabled}
             />
           </View>
@@ -606,7 +612,7 @@ const OfficeHoursScreen = () => {
                   <View style={styles.breakHeader}>
                     <View style={styles.breakHeaderContent}>
                       <Icon
-                        icon={<ClockIcon stroke={SARA_COLORS.textSecondary} />}
+                        icon={<ClockIcon stroke={SARA_TEXT_SECONDARY} />}
                         size={18}
                         style={styles.breakIcon}
                       />
@@ -649,7 +655,7 @@ const OfficeHoursScreen = () => {
               <OutlineButton
                 label={i18n.t('SETTINGS.ADD_BREAK')}
                 onPress={() => addBreak(dayKey)}
-                icon={<Icon icon={<AddIcon stroke={SARA_COLORS.textSecondary} />} size={18} />}
+                icon={<Icon icon={<AddIcon stroke={SARA_TEXT_SECONDARY} />} size={18} />}
                 disabled={editingDisabled}
               />
             </View>
@@ -668,9 +674,9 @@ const OfficeHoursScreen = () => {
           onPress={handleBack}
           style={({ pressed }) => [
             styles.backButton,
-            pressed ? { backgroundColor: SARA_COLORS.pressed } : null,
+            pressed ? { backgroundColor: SARA_CHIP } : null,
           ]}>
-          <Icon icon={<ChevronLeft stroke={SARA_COLORS.textPrimary} />} size={24} />
+          <Icon icon={<ChevronLeft stroke={SARA_TEXT_PRIMARY} />} size={24} />
         </Pressable>
         <Text style={styles.headerTitle}>{i18n.t('SETTINGS.OFFICE_HOURS')}</Text>
         <View style={styles.headerRightPlaceholder} />
@@ -686,7 +692,7 @@ const OfficeHoursScreen = () => {
           <Text style={styles.cardSectionTitle}>{i18n.t('SETTINGS.WEEKLY_HOURS_TITLE')}</Text>
           {snapshotLoading ? (
             <View style={styles.loadingRow}>
-              <ActivityIndicator color={SARA_COLORS.accent} />
+              <ActivityIndicator color={SARA_ACCENT} />
               <Text style={styles.loadingText}>{i18n.t('COMMON.LOADING')}</Text>
             </View>
           ) : null}
@@ -760,7 +766,7 @@ const OfficeHoursScreen = () => {
             <OutlineButton
               label={i18n.t('SETTINGS.ADD_EXCEPTION')}
               onPress={addException}
-              icon={<Icon icon={<AddIcon stroke={SARA_COLORS.textSecondary} />} size={18} />}
+              icon={<Icon icon={<AddIcon stroke={SARA_TEXT_SECONDARY} />} size={18} />}
               disabled={editingDisabled}
             />
           </View>
@@ -830,7 +836,7 @@ const OfficeHoursScreen = () => {
             />
             {probeLoading ? (
               <View style={styles.loadingRow}>
-                <ActivityIndicator color={SARA_COLORS.accent} />
+                <ActivityIndicator color={SARA_ACCENT} />
                 <Text style={styles.loadingText}>{i18n.t('COMMON.LOADING')}</Text>
               </View>
             ) : probeResults.length > 0 ? (
@@ -857,12 +863,12 @@ export default OfficeHoursScreen;
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: SARA_COLORS.background,
+    backgroundColor: SARA_BACKGROUND,
   },
   header: {
-    backgroundColor: SARA_COLORS.card,
+    backgroundColor: SARA_BACKGROUND_LIGHT,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: SARA_COLORS.border,
+    borderBottomColor: SARA_BORDER,
     paddingHorizontal: 16,
     paddingVertical: 12,
     flexDirection: 'row',
@@ -881,7 +887,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 20,
     fontFamily: 'Inter-Medium',
-    color: SARA_COLORS.textPrimary,
+    color: SARA_TEXT_PRIMARY,
   },
   headerRightPlaceholder: {
     width: 36,
@@ -891,12 +897,12 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   card: {
-    backgroundColor: SARA_COLORS.card,
+    backgroundColor: SARA_BACKGROUND_LIGHT,
     borderRadius: 20,
     padding: 16,
     marginBottom: 16,
-    shadowColor: '#00000015',
-    shadowOpacity: 0.1,
+    shadowColor: SARA_TEXT_PRIMARY,
+    shadowOpacity: 0.05,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
@@ -908,24 +914,24 @@ const styles = StyleSheet.create({
   cardSectionTitle: {
     fontSize: 16,
     fontFamily: 'Inter-SemiBold',
-    color: SARA_COLORS.textPrimary,
+    color: SARA_TEXT_PRIMARY,
     marginBottom: 16,
   },
   tag: {
     alignSelf: 'flex-start',
-    backgroundColor: SARA_COLORS.tagBackground,
+    backgroundColor: TAG_BG,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 999,
   },
   tagText: {
     fontSize: 12,
-    color: SARA_COLORS.tagText,
+    color: TAG_TEXT,
     fontFamily: 'Inter-Medium',
   },
   outlineButton: {
     borderWidth: 1,
-    borderColor: SARA_COLORS.border,
+    borderColor: SARA_BORDER,
     borderRadius: 12,
     paddingVertical: 10,
     paddingHorizontal: 12,
@@ -939,19 +945,19 @@ const styles = StyleSheet.create({
   },
   outlineButtonText: {
     fontSize: 14,
-    color: SARA_COLORS.textSecondary,
+    color: SARA_TEXT_SECONDARY,
     fontFamily: 'Inter-Medium',
   },
   primaryButton: {
     marginTop: 16,
-    backgroundColor: SARA_COLORS.accent,
+    backgroundColor: SARA_ACCENT,
     borderRadius: 12,
     paddingVertical: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
   primaryButtonText: {
-    color: '#FFFFFF',
+    color: WHITE,
     fontSize: 15,
     fontFamily: 'Inter-SemiBold',
   },
@@ -961,7 +967,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F8E8E8',
+    backgroundColor: DANGER_ICON_BG,
   },
   dayCard: {
     paddingVertical: 12,
@@ -973,7 +979,7 @@ const styles = StyleSheet.create({
   },
   dayLabel: {
     fontSize: 15,
-    color: SARA_COLORS.textPrimary,
+    color: SARA_TEXT_PRIMARY,
     fontFamily: 'Inter-Medium',
   },
   dayDetails: {
@@ -990,22 +996,22 @@ const styles = StyleSheet.create({
   },
   fieldLabel: {
     fontSize: 12,
-    color: SARA_COLORS.textSecondary,
+    color: SARA_TEXT_SECONDARY,
     marginBottom: 6,
   },
   input: {
     borderWidth: 1,
-    borderColor: SARA_COLORS.inputBorder,
-    backgroundColor: SARA_COLORS.inputBackground,
+    borderColor: SARA_BORDER,
+    backgroundColor: INPUT_BG,
     borderRadius: 12,
     paddingVertical: 10,
     paddingHorizontal: 12,
     fontSize: 15,
-    color: SARA_COLORS.textPrimary,
+    color: SARA_TEXT_PRIMARY,
   },
   breakCard: {
     borderWidth: 1,
-    borderColor: SARA_COLORS.border,
+    borderColor: SARA_BORDER,
     borderRadius: 16,
     padding: 12,
     gap: 12,
@@ -1025,15 +1031,15 @@ const styles = StyleSheet.create({
   },
   breakTitle: {
     fontSize: 14,
-    color: SARA_COLORS.textSecondary,
+    color: SARA_TEXT_SECONDARY,
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: SARA_COLORS.border,
+    backgroundColor: SARA_BORDER,
   },
   exceptionCard: {
     borderWidth: 1,
-    borderColor: SARA_COLORS.border,
+    borderColor: SARA_BORDER,
     borderRadius: 16,
     padding: 12,
     gap: 12,
@@ -1045,7 +1051,7 @@ const styles = StyleSheet.create({
   },
   exceptionTitle: {
     fontSize: 14,
-    color: SARA_COLORS.textPrimary,
+    color: SARA_TEXT_PRIMARY,
     fontFamily: 'Inter-Medium',
   },
   probeResults: {
@@ -1054,7 +1060,7 @@ const styles = StyleSheet.create({
   },
   probeLabel: {
     fontSize: 13,
-    color: SARA_COLORS.textSecondary,
+    color: SARA_TEXT_SECONDARY,
   },
   probeTags: {
     flexDirection: 'row',
@@ -1068,20 +1074,20 @@ const styles = StyleSheet.create({
     opacity: 0.55,
   },
   disabledText: {
-    color: '#A8ABA9',
+    color: DISABLED_TEXT,
   },
   disabledPrimary: {
-    backgroundColor: '#C4DAD6',
+    backgroundColor: DISABLED_PRIMARY_BG,
   },
   disabledPrimaryText: {
-    color: '#49605C',
+    color: DISABLED_PRIMARY_TEXT,
   },
   disabledDangerIcon: {
-    backgroundColor: '#F1D7D7',
+    backgroundColor: DISABLED_DANGER_ICON_BG,
     opacity: 0.6,
   },
   errorText: {
-    color: SARA_COLORS.errorText,
+    color: DESTRUCTIVE_COLOR,
     fontSize: 14,
   },
   loadingRow: {
@@ -1091,6 +1097,6 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 13,
-    color: SARA_COLORS.textSecondary,
+    color: SARA_TEXT_SECONDARY,
   },
 });

@@ -33,6 +33,7 @@ describe('Auth Slice', () => {
     uiFlags: {
       isLoggingIn: false,
       isResettingPassword: false,
+      isSwitchingAgent: false,
     },
     error: null,
   };
