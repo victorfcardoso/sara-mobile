@@ -1,10 +1,10 @@
-import React, { useCallback, useRef } from 'react';
-import { ActivityIndicator, Linking, StyleSheet, View } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { Linking, StyleSheet, View } from 'react-native';
 import messaging from '@react-native-firebase/messaging';
-import { getStateFromPath } from '@react-navigation/native';
+import { getStateFromPath, LinkingOptions } from '@react-navigation/native';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { useFonts } from 'expo-font';
-import * as SplashScreen from 'expo-splash-screen';
+import * as ExpoSplashScreen from 'expo-splash-screen';
 
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { NavigationContainer } from '@react-navigation/native';
@@ -28,6 +28,7 @@ import Inter42020 from '@/assets/fonts/Inter-420-20.ttf';
 import Inter50024 from '@/assets/fonts/Inter-500-24.ttf';
 import Inter58024 from '@/assets/fonts/Inter-580-24.ttf';
 import Inter60020 from '@/assets/fonts/Inter-600-20.ttf';
+import { RootStackParamList } from './types';
 
 messaging().setBackgroundMessageHandler(async remoteMessage => {
   console.log('Message handled in the background!', remoteMessage);
@@ -48,16 +49,82 @@ export const AppNavigationContainer = () => {
   const installationUrl = useAppSelector(selectInstallationUrl);
   const locale = useAppSelector(selectLocale);
 
-  const linking = {
-    prefixes: [installationUrl, SSO_CALLBACK_URL],
+  // Deep link configuration for Sara Mobile
+  // Supports both Chatwoot URLs and Sara-specific deep links
+  // Sara scheme: sara:// (or env-configured EXPO_PUBLIC_URL_SCHEME)
+  //
+  // CRM-aligned routes:
+  // - sara://conversations -> Conversations tab
+  // - sara://conversation/:id -> Chat screen
+  // - sara://notifications -> Notifications tab
+  // - sara://notification/:id -> Notification detail
+  // - sara://appointments -> Appointments tab
+  // - sara://appointment/:id -> Appointment detail
+  // - sara://contacts -> Contacts tab
+  // - sara://contact/:id -> Contact detail
+  // - sara://settings -> Settings tab
+  // - sara://office-hours -> Office hours settings
+  // - sara://faq -> FAQ settings
+  // - sara://services -> Service catalog
+  const linking: LinkingOptions<RootStackParamList> = {
+    prefixes: [installationUrl, SSO_CALLBACK_URL, `${appConfig.scheme}://`],
     config: {
       screens: {
+        // Chat screen (from Chatwoot URL pattern)
         ChatScreen: {
           path: 'app/accounts/:accountId/conversations/:conversationId/:primaryActorId?/:primaryActorType?',
           parse: {
             conversationId: (conversationId: string) => parseInt(conversationId),
             primaryActorId: (primaryActorId: string) => parseInt(primaryActorId),
             primaryActorType: (primaryActorType: string) => decodeURIComponent(primaryActorType),
+          },
+        },
+        // Tab navigator routes
+        Tab: {
+          screens: {
+            // sara://conversations
+            Conversations: {
+              path: 'conversations',
+              screens: {
+                ConversationScreen: '',
+              },
+            },
+            // sara://notifications or sara://notification/:id
+            Notifications: {
+              path: 'notifications',
+              screens: {
+                NotificationsScreen: '',
+                NotificationDetail: 'notification/:notificationId',
+              },
+            },
+            // sara://appointments or sara://appointment/:id
+            Appointments: {
+              path: 'appointments',
+              screens: {
+                AppointmentsScreen: '',
+                AppointmentDetail: 'appointment/:appointmentId',
+              },
+            },
+            // sara://contacts or sara://contact/:id
+            Contacts: {
+              path: 'contacts',
+              screens: {
+                ContactsScreen: '',
+                ContactDetailsScreen: 'contact/:contactId',
+              },
+            },
+            // sara://settings and sub-routes
+            Settings: {
+              path: 'settings',
+              screens: {
+                SettingsScreen: '',
+                OfficeHoursScreen: 'office-hours',
+                AgentProfileScreen: 'profile',
+                ServiceCatalogScreen: 'services',
+                FaqScreen: 'faq',
+                FaqEditorScreen: 'faq/:faqId',
+              },
+            },
           },
         },
       },
@@ -177,33 +244,36 @@ export const AppNavigationContainer = () => {
 
   i18n.locale = locale;
 
-  const onLayoutRootView = useCallback(async () => {
+  // Hide splash when fonts are loaded
+  useEffect(() => {
     if (fontsLoaded) {
-      await SplashScreen.hideAsync();
+      ExpoSplashScreen.hideAsync();
     }
   }, [fontsLoaded]);
 
+  // Show nothing while fonts are loading (native splash still visible)
   if (!fontsLoaded) {
     return null;
   }
 
   return (
-    <NavigationContainer
-      linking={linking}
-      ref={navigationRef}
-      onReady={() => {
-        routeNameRef.current = navigationRef.current?.getCurrentRoute()?.name;
-      }}
-      onStateChange={async () => {
-        routeNameRef.current = navigationRef.current?.getCurrentRoute()?.name;
-      }}
-      fallback={<ActivityIndicator animating />}>
-      <BottomSheetModalProvider>
-        <View style={styles.navigationLayout} onLayout={onLayoutRootView}>
-          <AppTabs />
-        </View>
-      </BottomSheetModalProvider>
-    </NavigationContainer>
+    <View style={styles.navigationLayout}>
+      <NavigationContainer
+        linking={linking}
+        ref={navigationRef}
+        onReady={() => {
+          routeNameRef.current = navigationRef.current?.getCurrentRoute()?.name;
+        }}
+        onStateChange={async () => {
+          routeNameRef.current = navigationRef.current?.getCurrentRoute()?.name;
+        }}>
+        <BottomSheetModalProvider>
+          <View style={styles.navigationLayout}>
+            <AppTabs />
+          </View>
+        </BottomSheetModalProvider>
+      </NavigationContainer>
+    </View>
   );
 };
 export const AppNavigator = () => {
