@@ -25,6 +25,7 @@ import {
   isAnInstagramChannel,
 } from '@/utils';
 import { useAppDispatch, useAppSelector } from '@/hooks';
+import { useSaraColors } from '@/hooks/useSaraColors';
 import { MESSAGE_MAX_LENGTH, REPLY_EDITOR_MODES } from '@/constants';
 import { tailwind } from '@/theme';
 import {
@@ -72,10 +73,6 @@ const SHEET_APPEAR_SPRING_CONFIG = {
   stiffness: 120,
 };
 
-const SARA_COLORS = {
-  background: '#F8F5F3',
-};
-
 // TODO: Implement this
 // const globalConfig = {
 //   directUploadsEnabled: true,
@@ -87,6 +84,7 @@ const BottomSheetContent = () => {
   const dispatch = useAppDispatch();
   const { bottom } = useSafeAreaInsets();
   const { messageListRef } = useRefsContext();
+  const colors = useSaraColors();
 
   // Selectors
   const userId = useAppSelector(selectUserId);
@@ -159,9 +157,7 @@ const BottomSheetContent = () => {
     }
 
     // Remove the conversation contact's email from the BCC list if present
-    let bcc = (emailAttributes.bcc || []).filter(
-      (email: string) => email !== conversationContact,
-    );
+    let bcc = (emailAttributes.bcc || []).filter((email: string) => email !== conversationContact);
 
     // Ensure only unique email addresses are in the CC list
     bcc = [...new Set(bcc)];
@@ -378,7 +374,7 @@ const BottomSheetContent = () => {
 
   return (
     <AnimatedKeyboardStickyView
-      style={[{ backgroundColor: SARA_COLORS.background }, animatedInputWrapperStyle]}>
+      style={[{ backgroundColor: colors.background }, animatedInputWrapperStyle]}>
       {!canReply && inbox && conversation && (
         <Animated.View entering={FadeIn.duration(250)} exiting={FadeOut.duration(10)}>
           <ReplyWarning inbox={inbox} conversation={conversation} />

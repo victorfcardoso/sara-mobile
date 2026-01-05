@@ -46,6 +46,7 @@
     "SSO_AUTH_FAILED": "SSO authentication failed. Please check your credentials and try again.",
     "SSO_INVALID_RESPONSE": "Invalid SSO response. Please try again.",
     "SSO_UNEXPECTED_ERROR": "An unexpected error occurred during SSO login. Please try again.",
+    "REMEMBER_ME": "Remember me",
     "FORGOT_PASSWORD": "Forgot your password?",
     "RESET_HERE": "Reset here",
     "NO_ACCOUNT": "Don't have an account?",
@@ -53,7 +54,12 @@
     "SETTINGS": "Settings",
     "CHANGE_LANGUAGE": "Change language",
     "TERMS": "Terms & Conditions",
-    "CHANGE_URL": "Change URL"
+    "CHANGE_URL": "Change URL",
+    "ERRORS": {
+      "NEW_PASSWORD_REQUIRED": "You need to set a new password. Please contact your administrator.",
+      "MFA_REQUIRED": "Multi-factor authentication is required. Please contact your administrator to complete setup.",
+      "MFA_SETUP_REQUIRED": "MFA setup is required. Please contact your administrator to complete setup."
+    }
   },
   "FORGOT_PASSWORD": {
     "EMAIL": "Please enter your email",
@@ -306,6 +312,11 @@
     "LOGOUT": "Logout",
     "SUBMIT": "Submit",
     "SET_LANGUAGE": "Set Language",
+    "CHANGE_THEME": "Appearance",
+    "SET_THEME": "Choose appearance",
+    "THEME_LIGHT": "Light",
+    "THEME_DARK": "Dark",
+    "THEME_SYSTEM": "System",
     "DEBUG_ACTIONS": "Debug Actions",
     "AGENT_PROFILE": "Agent profile",
     "WORKFLOW": "Workflow",

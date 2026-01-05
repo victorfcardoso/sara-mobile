@@ -1,11 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { FlatList, ListRenderItem, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, ListRenderItem, Pressable, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { COLORS, TYPE_STYLES } from './constants';
+import { getNotificationColors, NotificationColors, TYPE_STYLES } from './constants';
 import { NotificationDetailView } from './NotificationDetailView';
 import { NotificationDetail, NotificationSummary } from './types';
 import { NotificationGlyph } from './NotificationGlyph';
+import { useIsDarkMode } from '@/hooks/useSaraColors';
 
 type DetailLookup = Record<string, NotificationDetail>;
 
@@ -197,11 +198,15 @@ const mockDetailedNotifications: DetailLookup = {
   },
 };
 
-const NotificationsHeader = () => {
+type NotificationsHeaderProps = {
+  colors: NotificationColors;
+};
+
+const NotificationsHeader = ({ colors }: NotificationsHeaderProps) => {
   return (
     <View style={styles.header}>
-      <Text style={styles.headerTitle}>Activity</Text>
-      <Text style={styles.headerSubtitle}>Items requiring attention</Text>
+      <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Activity</Text>
+      <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Items requiring attention</Text>
     </View>
   );
 };
@@ -209,27 +214,32 @@ const NotificationsHeader = () => {
 type NotificationCardProps = {
   notification: NotificationSummary;
   onSelect: (notificationId: string) => void;
+  colors: NotificationColors;
 };
 
-const NotificationCard = ({ notification, onSelect }: NotificationCardProps) => {
+const NotificationCard = ({ notification, onSelect, colors }: NotificationCardProps) => {
   const typeStyle = TYPE_STYLES[notification.type];
   const handlePress = () => onSelect(notification.id);
 
   return (
     <Pressable
       onPress={handlePress}
-      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+      style={({ pressed }) => [
+        styles.card,
+        { backgroundColor: colors.card, borderColor: colors.border },
+        pressed && styles.cardPressed,
+      ]}
       accessibilityRole="button">
       <View style={[styles.iconContainer, { backgroundColor: typeStyle.badgeBackground }]}>
         <NotificationGlyph type={notification.type} />
       </View>
       <View style={styles.cardContent}>
-        <Text style={styles.cardTitle}>{notification.title}</Text>
-        <Text style={styles.cardDescription}>{notification.description}</Text>
+        <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>{notification.title}</Text>
+        <Text style={[styles.cardDescription, { color: colors.textSecondary }]}>{notification.description}</Text>
         <View style={styles.metaRow}>
-          <Text style={styles.metaCustomer}>{notification.customerName}</Text>
-          <View style={styles.metaSeparator} />
-          <Text style={styles.metaTime}>{notification.time}</Text>
+          <Text style={[styles.metaCustomer, { color: colors.textPrimary }]}>{notification.customerName}</Text>
+          <View style={[styles.metaSeparator, { backgroundColor: colors.textSecondary }]} />
+          <Text style={[styles.metaTime, { color: colors.muted }]}>{notification.time}</Text>
         </View>
       </View>
     </Pressable>
@@ -238,6 +248,8 @@ const NotificationCard = ({ notification, onSelect }: NotificationCardProps) => 
 
 export const NotificationsScreen = () => {
   const insets = useSafeAreaInsets();
+  const isDark = useIsDarkMode();
+  const colors = getNotificationColors(isDark);
   const [selectedNotification, setSelectedNotification] = useState<NotificationDetail | null>(null);
 
   const detailLookup = useMemo(() => mockDetailedNotifications, []);
@@ -267,20 +279,21 @@ export const NotificationsScreen = () => {
   }
 
   const renderItem: ListRenderItem<NotificationSummary> = ({ item }) => (
-    <NotificationCard notification={item} onSelect={handleSelect} />
+    <NotificationCard notification={item} onSelect={handleSelect} colors={colors} />
   );
 
   return (
     <SafeAreaView
       edges={['top', 'left', 'right']}
-      style={[styles.safeArea, { paddingTop: Math.max(insets.top, 12) }]}>
+      style={[styles.safeArea, { paddingTop: Math.max(insets.top, 12), backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
       <FlatList
         data={mockNotifications}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.listContent}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         renderItem={renderItem}
-        ListHeaderComponent={<NotificationsHeader />}
+        ListHeaderComponent={<NotificationsHeader colors={colors} />}
         showsVerticalScrollIndicator={false}
         style={styles.list}
       />
@@ -291,7 +304,6 @@ export const NotificationsScreen = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   list: {
     flex: 1,
@@ -311,20 +323,16 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontFamily: 'inter-semibold-20',
     fontSize: 24,
-    color: COLORS.textPrimary,
     letterSpacing: -0.5,
   },
   headerSubtitle: {
     fontFamily: 'inter-420-20',
     fontSize: 15,
-    color: COLORS.textSecondary,
   },
   card: {
     flexDirection: 'row',
-    backgroundColor: COLORS.card,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: COLORS.border,
     padding: 16,
     gap: 16,
     shadowColor: '#000000',
@@ -350,12 +358,10 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontFamily: 'inter-semibold-20',
     fontSize: 17,
-    color: COLORS.textPrimary,
   },
   cardDescription: {
     fontFamily: 'inter-420-20',
     fontSize: 14,
-    color: COLORS.textSecondary,
     lineHeight: 20,
   },
   metaRow: {
@@ -366,18 +372,15 @@ const styles = StyleSheet.create({
   metaCustomer: {
     fontFamily: 'inter-medium-24',
     fontSize: 13,
-    color: COLORS.textPrimary,
   },
   metaSeparator: {
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: COLORS.textSecondary,
     opacity: 0.4,
   },
   metaTime: {
     fontFamily: 'inter-420-20',
     fontSize: 13,
-    color: COLORS.muted,
   },
 });

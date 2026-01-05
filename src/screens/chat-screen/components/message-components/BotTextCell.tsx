@@ -8,11 +8,7 @@ import { unixTimestampToReadableTime } from '@/utils';
 import { MarkdownDisplay } from './MarkdownDisplay';
 import { TEXT_MAX_WIDTH } from '@/constants';
 import { DeliveryStatus } from './DeliveryStatus';
-
-const SARA_COLORS = {
-  bubble: '#E5F3F0',
-  timestamp: '#566273',
-};
+import { useSaraColors } from '@/hooks/useSaraColors';
 
 type BotTextCellProps = {
   text: string;
@@ -37,6 +33,7 @@ export const BotTextCell = (props: BotTextCellProps) => {
     isPrivate,
     errorMessage,
   } = props;
+  const colors = useSaraColors();
 
   // const [singleLineLongText, setSingleLineLongText] = useState(false);
   // const [singleLineShortText, setSingleLineShortText] = useState(false);
@@ -77,7 +74,7 @@ export const BotTextCell = (props: BotTextCellProps) => {
           `max-w-[${TEXT_MAX_WIDTH}px]`,
           isAvatarRendered ? 'rounded-br-none' : '',
         ),
-        { backgroundColor: SARA_COLORS.bubble },
+        { backgroundColor: colors.accentLight },
       ]}>
       {/* <Text
         // onTextLayout={handleTextLayout}
@@ -99,7 +96,7 @@ export const BotTextCell = (props: BotTextCellProps) => {
         <Text
           style={[
             tailwind.style('text-xs font-inter-420-20 tracking-[0.32px] pr-1'),
-            { color: SARA_COLORS.timestamp },
+            { color: colors.textMeta },
           ]}>
           {unixTimestampToReadableTime(timeStamp)}
         </Text>

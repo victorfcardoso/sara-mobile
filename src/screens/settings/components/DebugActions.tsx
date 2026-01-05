@@ -12,6 +12,7 @@ import {
   selectPushToken,
   selectWebSocketUrl,
 } from '@/store/settings/settingsSelectors';
+import { useSaraColors } from '@/hooks/useSaraColors';
 
 type DebugActionCellProps = {
   item: DebugAction;
@@ -53,6 +54,7 @@ const DebugActionCell = ({ item, index, isLastItem }: DebugActionCellProps) => {
   const webSocketUrl = useAppSelector(selectWebSocketUrl);
   const version = useAppSelector(selectChatwootVersion);
   const pushToken = useAppSelector(selectPushToken);
+  const colors = useSaraColors();
 
   const hapticSelection = useHaptic();
 
@@ -84,22 +86,24 @@ const DebugActionCell = ({ item, index, isLastItem }: DebugActionCellProps) => {
     <Pressable onPress={() => handlePress(item)}>
       <Animated.View style={tailwind.style('flex flex-row items-center')}>
         <Animated.View
-          style={tailwind.style(
-            'flex-1 ml-3 flex-row justify-between py-[11px] pr-3',
-            !isLastItem && 'border-b-[1px] border-blackA-A3',
-          )}>
+          style={[
+            tailwind.style('flex-1 ml-3 flex-row justify-between py-[11px] pr-3'),
+            !isLastItem && { borderBottomWidth: 1, borderBottomColor: colors.border },
+          ]}>
           <View>
             <Text
-              style={tailwind.style(
-                'text-base  text-gray-950 font-inter-420-20 leading-[21px] tracking-[0.16px]',
-              )}>
+              style={[
+                tailwind.style('text-base font-inter-420-20 leading-[21px] tracking-[0.16px]'),
+                { color: colors.textPrimary },
+              ]}>
               {item.label}
             </Text>
             <Text
               numberOfLines={2}
-              style={tailwind.style(
-                'text-sm text-gray-900 font-inter-420-20 leading-[18px] tracking-[0.16px] italic',
-              )}>
+              style={[
+                tailwind.style('text-sm font-inter-420-20 leading-[18px] tracking-[0.16px] italic'),
+                { color: colors.textSecondary },
+              ]}>
               {debugValue(item.key)}
             </Text>
           </View>

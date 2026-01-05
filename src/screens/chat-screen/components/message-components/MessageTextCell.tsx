@@ -9,16 +9,7 @@ import { MarkdownDisplay } from './MarkdownDisplay';
 import { MESSAGE_STATUS, INBOX_TYPES, TEXT_MAX_WIDTH } from '@/constants';
 import { DeliveryStatus } from './DeliveryStatus';
 import { EmailMeta } from './EmailMeta';
-
-const SARA_COLORS = {
-  incomingBubble: '#FFFFFF',
-  incomingBorder: '#CCE6DE',
-  incomingText: '#16273D',
-  incomingTimestamp: '#566273',
-  outgoingBubble: '#4CB6AC',
-  outgoingText: '#FFFFFF',
-  outgoingTimestamp: '#F2FFFB',
-};
+import { useSaraColors } from '@/hooks/useSaraColors';
 
 type MessageTextCellProps = {
   text: string;
@@ -53,6 +44,7 @@ export const MessageTextCell = (props: MessageTextCellProps) => {
     sender,
     contentAttributes,
   } = props;
+  const colors = useSaraColors();
 
   // const [singleLineLongText, setSingleLineLongText] = useState(false);
   // const [singleLineShortText, setSingleLineShortText] = useState(false);
@@ -111,23 +103,20 @@ export const MessageTextCell = (props: MessageTextCellProps) => {
         !isMessageFailed &&
           (isIncoming
             ? {
-                backgroundColor: SARA_COLORS.incomingBubble,
+                backgroundColor: colors.backgroundLight,
                 borderWidth: 1,
-                borderColor: SARA_COLORS.incomingBorder,
+                borderColor: colors.border,
               }
             : null),
         !isMessageFailed &&
           (isOutgoing
             ? {
-                backgroundColor: SARA_COLORS.outgoingBubble,
+                backgroundColor: colors.accent,
               }
             : null),
       ]}>
       {contentAttributes && <EmailMeta {...{ contentAttributes, sender }} />}
-      <MarkdownDisplay
-        {...{ isIncoming, isOutgoing, isMessageFailed }}
-        messageContent={text}
-      />
+      <MarkdownDisplay {...{ isIncoming, isOutgoing, isMessageFailed }} messageContent={text} />
       {/* <Text
         // onTextLayout={handleTextLayout}
         style={tailwind.style(
@@ -150,12 +139,8 @@ export const MessageTextCell = (props: MessageTextCellProps) => {
         <Text
           style={[
             tailwind.style('text-xs font-inter-420-20 tracking-[0.32px] pr-1'),
-            isIncoming && !isMessageFailed
-              ? { color: SARA_COLORS.incomingTimestamp }
-              : undefined,
-            isOutgoing && !isMessageFailed
-              ? { color: SARA_COLORS.outgoingTimestamp }
-              : undefined,
+            isIncoming && !isMessageFailed ? { color: colors.textMeta } : undefined,
+            isOutgoing && !isMessageFailed ? { color: 'rgba(255, 255, 255, 0.85)' } : undefined,
             isMessageFailed ? { color: tailwind.color('text-whiteA-A11') } : undefined,
           ]}>
           {unixTimestampToReadableTime(timeStamp)}

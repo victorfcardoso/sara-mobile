@@ -61,6 +61,14 @@ class APIService {
           ...(session?.apiAccessToken ? { api_access_token: session.apiAccessToken } : {}),
         };
 
+        if (__DEV__) {
+          console.log('[APIService] Request', {
+            url: resolvedUrl,
+            baseURL: config.baseURL,
+            hasApiAccessToken: Boolean(session?.apiAccessToken),
+          });
+        }
+
         return {
           ...config,
           headers: mergedHeaders,
@@ -77,6 +85,12 @@ class APIService {
           store.dispatch({ type: 'auth/logout' });
         } else {
           showToast({ message: I18n.t('ERRORS.COMMON_ERROR') });
+        }
+        if (__DEV__) {
+          console.log('[APIService] Response error', {
+            status: error.response?.status,
+            data: error.response?.data,
+          });
         }
         return Promise.reject(error);
       },

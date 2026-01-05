@@ -246,10 +246,7 @@ describe('filterDuplicateSourceMessages', () => {
   });
 
   it('should keep first occurrence of duplicate sourceId', () => {
-    const messages = [
-      createMessage(1, 'source-1'),
-      createMessage(2, 'source-1'),
-    ];
+    const messages = [createMessage(1, 'source-1'), createMessage(2, 'source-1')];
     const result = filterDuplicateSourceMessages(messages);
     expect(result).toHaveLength(1);
     expect(result[0].id).toBe(1);
@@ -279,11 +276,7 @@ describe('getReadMessages', () => {
   });
 
   it('should return messages created before or at agentLastSeenAt', () => {
-    const messages = [
-      createMessage(1, 1000),
-      createMessage(2, 2000),
-      createMessage(3, 3000),
-    ];
+    const messages = [createMessage(1, 1000), createMessage(2, 2000), createMessage(3, 3000)];
     const result = getReadMessages(messages, 2000);
     expect(result).toHaveLength(2);
     expect(result.map(m => m.id)).toEqual([1, 2]);
@@ -325,11 +318,7 @@ describe('getUnreadMessages', () => {
   });
 
   it('should return messages created after agentLastSeenAt', () => {
-    const messages = [
-      createMessage(1, 1000),
-      createMessage(2, 2000),
-      createMessage(3, 3000),
-    ];
+    const messages = [createMessage(1, 1000), createMessage(2, 2000), createMessage(3, 3000)];
     const result = getUnreadMessages(messages, 2000);
     expect(result).toHaveLength(1);
     expect(result[0].id).toBe(3);
@@ -361,9 +350,7 @@ describe('findPendingMessageIndex', () => {
   it('should find message by echoId', () => {
     const testConversation = {
       ...conversation,
-      messages: [
-        { ...conversation.messages[0], id: 'temp-123' as unknown as number },
-      ],
+      messages: [{ ...conversation.messages[0], id: 'temp-123' as unknown as number }],
     };
     const message = { id: 999, echoId: 'temp-123' } as unknown as Message;
     expect(findPendingMessageIndex(testConversation, message)).toBe(0);
@@ -381,7 +368,9 @@ describe('findPendingMessageIndex', () => {
 
 describe('extractConversationIdFromUrl', () => {
   it('should extract conversation ID from valid URL', () => {
-    expect(extractConversationIdFromUrl({ url: 'https://example.com/conversations/123' })).toBe(123);
+    expect(extractConversationIdFromUrl({ url: 'https://example.com/conversations/123' })).toBe(
+      123,
+    );
   });
 
   it('should extract conversation ID from URL with additional path', () => {
@@ -399,8 +388,8 @@ describe('extractConversationIdFromUrl', () => {
   });
 
   it('should handle URL with large conversation ID', () => {
-    expect(
-      extractConversationIdFromUrl({ url: 'https://example.com/conversations/9999999' }),
-    ).toBe(9999999);
+    expect(extractConversationIdFromUrl({ url: 'https://example.com/conversations/9999999' })).toBe(
+      9999999,
+    );
   });
 });

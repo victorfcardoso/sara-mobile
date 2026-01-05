@@ -347,8 +347,12 @@ function generateReport(result: ScanResult): string {
   lines.push('');
   lines.push(`- **Total .tsx files scanned:** ${result.totalFiles}`);
   lines.push(`- **Total hardcoded colors found:** ${result.totalOccurrences}`);
-  lines.push(`- **Colors with token mapping:** ${result.mappedOccurrences} (${((result.mappedOccurrences / result.totalOccurrences) * 100).toFixed(1)}%)`);
-  lines.push(`- **Colors needing manual review:** ${result.unmappedOccurrences} (${((result.unmappedOccurrences / result.totalOccurrences) * 100).toFixed(1)}%)`);
+  lines.push(
+    `- **Colors with token mapping:** ${result.mappedOccurrences} (${((result.mappedOccurrences / result.totalOccurrences) * 100).toFixed(1)}%)`,
+  );
+  lines.push(
+    `- **Colors needing manual review:** ${result.unmappedOccurrences} (${((result.unmappedOccurrences / result.totalOccurrences) * 100).toFixed(1)}%)`,
+  );
   lines.push(`- **Unique colors found:** ${result.colorFrequency.size}`);
   lines.push('');
 
@@ -377,7 +381,7 @@ function generateReport(result: ScanResult): string {
     lines.push('');
 
     const unmappedWithFreq = Array.from(result.unmappedColors)
-      .map((color) => ({ color, count: result.colorFrequency.get(color) || 0 }))
+      .map(color => ({ color, count: result.colorFrequency.get(color) || 0 }))
       .sort((a, b) => b.count - a.count);
 
     for (const { color, count } of unmappedWithFreq) {
@@ -397,8 +401,7 @@ function generateReport(result: ScanResult): string {
     byFile.set(occ.file, list);
   }
 
-  const sortedFiles = Array.from(byFile.entries())
-    .sort((a, b) => b[1].length - a[1].length);
+  const sortedFiles = Array.from(byFile.entries()).sort((a, b) => b[1].length - a[1].length);
 
   for (const [file, occs] of sortedFiles.slice(0, 50)) {
     const relPath = file.replace(process.cwd() + '/', '');
@@ -475,7 +478,9 @@ function generateSedScript(result: ScanResult): string {
     // Match both upper and lowercase
     lines.push(`find src -name "*.tsx" -exec sed -i '' 's/bg-\\[${color}\\]/bg-${token}/g' {} +`);
     if (colorLower !== color) {
-      lines.push(`find src -name "*.tsx" -exec sed -i '' 's/bg-\\[${colorLower}\\]/bg-${token}/g' {} +`);
+      lines.push(
+        `find src -name "*.tsx" -exec sed -i '' 's/bg-\\[${colorLower}\\]/bg-${token}/g' {} +`,
+      );
     }
   }
   lines.push('');
@@ -484,9 +489,13 @@ function generateSedScript(result: ScanResult): string {
   lines.push('echo "Replacing text-[#hex] patterns..."');
   for (const [color, token] of textPatterns) {
     const colorLower = color.toLowerCase();
-    lines.push(`find src -name "*.tsx" -exec sed -i '' 's/text-\\[${color}\\]/text-${token}/g' {} +`);
+    lines.push(
+      `find src -name "*.tsx" -exec sed -i '' 's/text-\\[${color}\\]/text-${token}/g' {} +`,
+    );
     if (colorLower !== color) {
-      lines.push(`find src -name "*.tsx" -exec sed -i '' 's/text-\\[${colorLower}\\]/text-${token}/g' {} +`);
+      lines.push(
+        `find src -name "*.tsx" -exec sed -i '' 's/text-\\[${colorLower}\\]/text-${token}/g' {} +`,
+      );
     }
   }
   lines.push('');
@@ -495,15 +504,21 @@ function generateSedScript(result: ScanResult): string {
   lines.push('echo "Replacing border-[#hex] patterns..."');
   for (const [color, token] of borderPatterns) {
     const colorLower = color.toLowerCase();
-    lines.push(`find src -name "*.tsx" -exec sed -i '' 's/border-\\[${color}\\]/border-${token}/g' {} +`);
+    lines.push(
+      `find src -name "*.tsx" -exec sed -i '' 's/border-\\[${color}\\]/border-${token}/g' {} +`,
+    );
     if (colorLower !== color) {
-      lines.push(`find src -name "*.tsx" -exec sed -i '' 's/border-\\[${colorLower}\\]/border-${token}/g' {} +`);
+      lines.push(
+        `find src -name "*.tsx" -exec sed -i '' 's/border-\\[${colorLower}\\]/border-${token}/g' {} +`,
+      );
     }
   }
   lines.push('');
 
   lines.push('echo "Color migration complete!"');
-  lines.push('echo "NOTE: SVG stroke/fill and inline color props need manual migration using tailwind.color()"');
+  lines.push(
+    'echo "NOTE: SVG stroke/fill and inline color props need manual migration using tailwind.color()"',
+  );
 
   return lines.join('\n');
 }
@@ -548,15 +563,15 @@ function generateCodemodScript(result: ScanResult): string {
   lines.push('');
   lines.push('// 2. SVG stroke/fill prop:');
   lines.push('//    BEFORE: <Icon stroke="#4CB6AC" />');
-  lines.push('//    AFTER:  <Icon stroke={tailwind.color(\'sara-accent\')} />');
+  lines.push("//    AFTER:  <Icon stroke={tailwind.color('sara-accent')} />");
   lines.push('');
   lines.push('// 3. Style object:');
-  lines.push('//    BEFORE: { color: \'#16273D\' }');
-  lines.push('//    AFTER:  { color: tailwind.color(\'sara-text-primary\') }');
+  lines.push("//    BEFORE: { color: '#16273D' }");
+  lines.push("//    AFTER:  { color: tailwind.color('sara-text-primary') }");
   lines.push('');
   lines.push('// 4. ActivityIndicator/StatusBar color:');
   lines.push('//    BEFORE: <ActivityIndicator color="#4CB6AC" />');
-  lines.push('//    AFTER:  <ActivityIndicator color={tailwind.color(\'sara-accent\')} />');
+  lines.push("//    AFTER:  <ActivityIndicator color={tailwind.color('sara-accent')} />");
   lines.push('');
 
   lines.push('export { TOKEN_MAP, getToken };');
@@ -601,14 +616,16 @@ function main() {
   console.log('=== Summary ===');
   console.log(`Total files scanned: ${result.totalFiles}`);
   console.log(`Total hardcoded colors: ${result.totalOccurrences}`);
-  console.log(`Mapped to tokens: ${result.mappedOccurrences} (${((result.mappedOccurrences / result.totalOccurrences) * 100).toFixed(1)}%)`);
+  console.log(
+    `Mapped to tokens: ${result.mappedOccurrences} (${((result.mappedOccurrences / result.totalOccurrences) * 100).toFixed(1)}%)`,
+  );
   console.log(`Needs manual review: ${result.unmappedOccurrences}`);
   console.log('');
 
   if (result.unmappedColors.size > 0) {
     console.log('Unmapped colors (top 10):');
     const unmapped = Array.from(result.unmappedColors)
-      .map((c) => ({ color: c, count: result.colorFrequency.get(c) || 0 }))
+      .map(c => ({ color: c, count: result.colorFrequency.get(c) || 0 }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
 

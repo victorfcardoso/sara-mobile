@@ -11,6 +11,8 @@ jest.mock('expo-constants', () => ({
       extra: {
         defaultInstallationUrl: 'https://app.chatwoot.com',
         saraApiBaseUrl: 'https://api-dev.sara-ai.com.br',
+        cognitoUserPoolId: 'us-east-1_example',
+        cognitoClientId: 'exampleclientid',
       },
     },
   },

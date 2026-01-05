@@ -1,6 +1,5 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 
-import I18n from '@/i18n';
 import { applyChatwootSession } from '@/store/settings/settingsSlice';
 import type { User } from '@/types/User';
 
@@ -60,7 +59,7 @@ export const authActions = {
         );
         return result;
       } catch (error) {
-        return rejectWithValue(handleApiError(error, I18n.t('ERRORS.AUTH')));
+        return rejectWithValue(handleApiError(error));
       }
     },
   ),
@@ -101,7 +100,7 @@ export const authActions = {
       );
       return result;
     } catch (error) {
-      return rejectWithValue(handleApiError(error, I18n.t('ERRORS.AUTH')));
+      return rejectWithValue(handleApiError(error));
     }
   }),
 };

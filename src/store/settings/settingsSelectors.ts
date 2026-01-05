@@ -39,3 +39,5 @@ export const selectIsChatwootCloud = createSelector(selectSettings, settings =>
 export const selectChatwootVersion = createSelector(selectSettings, settings => settings.version);
 
 export const selectPushToken = createSelector(selectSettings, settings => settings.pushToken);
+
+export const selectRememberMe = createSelector(selectSettings, settings => settings.rememberMe);

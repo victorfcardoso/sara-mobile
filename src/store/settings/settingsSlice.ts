@@ -19,6 +19,7 @@ interface SettingsState {
   theme: Theme;
   version: string;
   pushToken: string;
+  rememberMe: boolean;
 }
 const initialState: SettingsState = {
   baseUrl: chatwootConfig.baseUrl,
@@ -42,6 +43,7 @@ const initialState: SettingsState = {
   theme: 'system',
   version: '',
   pushToken: '',
+  rememberMe: false,
 };
 export const settingsSlice = createSlice({
   name: 'settings',
@@ -65,6 +67,12 @@ export const settingsSlice = createSlice({
     setLocale: (state, action) => {
       state.localeValue = action.payload;
       state.uiFlags.isLocaleSet = true;
+    },
+    setTheme: (state, action: PayloadAction<Theme>) => {
+      state.theme = action.payload;
+    },
+    setRememberMe: (state, action: PayloadAction<boolean>) => {
+      state.rememberMe = action.payload;
     },
     applyChatwootSession: (
       state,
@@ -122,6 +130,12 @@ export const settingsSlice = createSlice({
       });
   },
 });
-export const { ensureInstallationDefaults, resetSettings, setLocale, applyChatwootSession } =
-  settingsSlice.actions;
+export const {
+  ensureInstallationDefaults,
+  resetSettings,
+  setLocale,
+  setTheme,
+  setRememberMe,
+  applyChatwootSession,
+} = settingsSlice.actions;
 export default settingsSlice.reducer;

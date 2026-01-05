@@ -7,6 +7,7 @@ import { SlaMissedIcon } from '@/svg-icons';
 import { SLA, SLAStatus } from '@/types/common/SLA';
 import { evaluateSLAStatus } from '@chatwoot/utils';
 import i18n from '@/i18n';
+import { useSaraColors } from '@/hooks/useSaraColors';
 
 const REFRESH_INTERVAL = 60000;
 
@@ -26,6 +27,7 @@ export const SLAIndicator = ({
   onSLAStatusChange: (hasThreshold: boolean) => void;
 }) => {
   const [slaStatus, setSlaStatus] = useState<SLAStatus | null>(null);
+  const colors = useSaraColors();
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -81,12 +83,12 @@ export const SLAIndicator = ({
 
   return (
     <NativeView style={tailwind.style('flex flex-row justify-center items-center')}>
-      <SlaMissedIcon color={slaStatus?.isSlaMissed ? '#E13D45' : '#BBBBBB'} />
+      <SlaMissedIcon color={slaStatus?.isSlaMissed ? '#E13D45' : colors.textMeta} />
       <Text
-        style={tailwind.style(
-          'pl-1 text-sm leading-[20px] text-center',
-          slaStatus?.isSlaMissed ? 'text-ruby-800' : 'text-[#566273]',
-        )}>
+        style={[
+          tailwind.style('pl-1 text-sm leading-[20px] text-center'),
+          { color: slaStatus?.isSlaMissed ? '#E13D45' : colors.textMeta },
+        ]}>
         {`${sLAStatusText()}: ${slaStatus?.threshold}`}
       </Text>
     </NativeView>

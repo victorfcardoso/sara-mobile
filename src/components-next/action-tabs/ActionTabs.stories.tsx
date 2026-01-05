@@ -57,9 +57,7 @@ export const WithDescription: Story = {
           These tabs appear at the bottom of the screen when conversations are in Select mode.
         </Text>
         <Text style={{ fontSize: 14, color: '#666', marginBottom: 8 }}>Available actions:</Text>
-        <Text style={{ fontSize: 14, color: '#666', marginLeft: 16 }}>
-          • Set Labels (tag icon)
-        </Text>
+        <Text style={{ fontSize: 14, color: '#666', marginLeft: 16 }}>• Set Labels (tag icon)</Text>
         <Text style={{ fontSize: 14, color: '#666', marginLeft: 16 }}>
           • Assign Agent (user icon)
         </Text>
@@ -93,7 +91,9 @@ export const InConversationContext: Story = {
                 borderColor: '#4CB6AC',
               }}>
               <Text style={{ fontWeight: 'bold' }}>Conversation {i}</Text>
-              <Text style={{ color: '#666', fontSize: 12, marginTop: 4 }}>Selected for bulk action</Text>
+              <Text style={{ color: '#666', fontSize: 12, marginTop: 4 }}>
+                Selected for bulk action
+              </Text>
             </View>
           ))}
         </View>

@@ -1,15 +1,61 @@
 import { appConfig } from '@/config/appConfig';
 
+/**
+ * Screen name constants for navigation
+ * Aligned with CRM routes where applicable
+ *
+ * @deprecated Use SCREEN_NAMES from '@/navigation/types' for new code
+ */
 export const SCREENS = {
+  // Auth screens
   LOGIN: 'Login',
   CONFIG_URL: 'ConfigureURL',
+  RESET_PASSWORD: 'ResetPassword',
+  MFA: 'MFAScreen',
+
+  // Tab screens
+  CONVERSATIONS_TAB: 'Conversations',
+  NOTIFICATIONS_TAB: 'Notifications',
+  APPOINTMENTS_TAB: 'Appointments',
+  CONTACTS_TAB: 'Contacts',
+  SETTINGS_TAB: 'Settings',
+
+  // Conversation stack
   CONVERSATION: 'ConversationScreen',
-  // Deprecated
-  NOTIFICATION: 'NotificationScreen',
-  SETTINGS: 'SettingsScreen',
-  DETAIL: 'Detail',
   CHAT: 'ChatScreen',
+
+  // Notifications stack
+  NOTIFICATIONS: 'NotificationsScreen',
+  NOTIFICATION_DETAIL: 'NotificationDetail',
+
+  // Appointments stack
+  APPOINTMENTS: 'AppointmentsScreen',
+  APPOINTMENT_DETAIL: 'AppointmentDetail',
+
+  // Contacts stack
+  CONTACTS: 'ContactsScreen',
+  CONTACT_DETAILS: 'ContactDetailsScreen',
+  CONTACT_FROM_CHAT: 'ContactDetails', // Contact details opened from chat
+
+  // Settings stack
+  SETTINGS: 'SettingsScreen',
+  OFFICE_HOURS: 'OfficeHoursScreen',
+  AGENT_PROFILE: 'AgentProfileScreen',
+  SERVICE_CATALOG: 'ServiceCatalogScreen',
+  FAQ: 'FaqScreen',
+  FAQ_EDITOR: 'FaqEditorScreen',
+
+  // Root stack
+  TAB: 'Tab',
+  DASHBOARD: 'Dashboard',
+
+  // Legacy/deprecated
+  /** @deprecated Use NOTIFICATIONS instead */
+  NOTIFICATION: 'NotificationScreen',
+  /** @deprecated Use NOTIFICATIONS instead */
   INBOX: 'InboxScreen',
+  /** @deprecated */
+  DETAIL: 'Detail',
 };
 
 export const TAB_BAR_HEIGHT = 83;

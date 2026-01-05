@@ -30,7 +30,11 @@
     "start:storybook": "cross-env EXPO_STORYBOOK_ENABLED='true' expo start",
     "storybook:ios": "cross-env EXPO_STORYBOOK_ENABLED='true' pnpm run:ios",
     "storybook:android": "cross-env EXPO_STORYBOOK_ENABLED='true' expo android",
-    "adb:connect": "adb reverse tcp:9090 tcp:9090"
+    "adb:connect": "adb reverse tcp:9090 tcp:9090",
+    "e2e": "maestro test .maestro/flows/",
+    "e2e:smoke": "maestro test .maestro/flows/login-smoke.yaml",
+    "e2e:launch": "maestro test .maestro/flows/app-launch.yaml",
+    "e2e:record": "maestro record"
   },
   "dependencies": {
     "@alantoa/lightbox": "^0.3.1",
@@ -56,7 +60,9 @@
     "@sentry/react-native": "^6.10.0",
     "@shopify/flash-list": "^1.7.3",
     "@types/lodash": "^4.17.9",
+    "amazon-cognito-identity-js": "^6.3.16",
     "axios": "^1.6.4",
+    "buffer": "^6.0.3",
     "camelcase": "^8.0.0",
     "camelcase-keys": "^7.0.2",
     "cross-env": "^7.0.3",
@@ -72,6 +78,7 @@
     "expo-font": "~13.0.4",
     "expo-haptics": "~14.0.1",
     "expo-image": "~2.0.7",
+    "expo-random": "^14.0.1",
     "expo-splash-screen": "~0.29.24",
     "expo-status-bar": "~2.0.1",
     "expo-system-ui": "~4.0.9",
@@ -90,6 +97,7 @@
     "react-native-file-viewer": "^2.1.5",
     "react-native-fs": "^2.20.0",
     "react-native-gesture-handler": "^2.20.2",
+    "react-native-get-random-values": "^1.11.0",
     "react-native-image-picker": "^7.1.2",
     "react-native-ios-context-menu": "^3.1.0",
     "react-native-ios-utilities": "^5.1.1",

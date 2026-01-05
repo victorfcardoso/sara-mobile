@@ -79,10 +79,7 @@ const buildServiceKey = (agentId: string, serviceId: string) => {
 };
 
 export class ServiceCatalogService {
-  static async create(params: {
-    agentId: string;
-    payload: ServiceCatalogPayload;
-  }): Promise<void> {
+  static async create(params: { agentId: string; payload: ServiceCatalogPayload }): Promise<void> {
     const { agentId, payload } = params;
     try {
       await saraApiService.post(

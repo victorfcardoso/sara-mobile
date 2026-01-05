@@ -90,10 +90,9 @@ export class CrmCustomersService {
       params.filter = JSON.stringify({ q: search.trim() });
     }
 
-    const response: AxiosResponse<RawCrmCustomer[]> = await saraApiService.get(
-      '/crm/customers',
-      { params },
-    );
+    const response: AxiosResponse<RawCrmCustomer[]> = await saraApiService.get('/crm/customers', {
+      params,
+    });
 
     const range = parseContentRange((response.headers?.['content-range'] ?? null) as string | null);
 

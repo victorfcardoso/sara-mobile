@@ -14,6 +14,7 @@ import { useAppDispatch } from '@/hooks';
 import { conversationActions } from '@/store/conversation/conversationActions';
 
 import { LabelCell, LabelItem } from '@/components-next/label-section';
+import { useSaraColors } from '@/hooks/useSaraColors';
 
 type LabelStackProps = {
   filteredLabels: Label[];
@@ -50,6 +51,7 @@ export const ConversationLabelActions = (props: LabelSectionProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const { conversationId } = useChatWindowContext();
   const dispatch = useAppDispatch();
+  const colors = useSaraColors();
 
   const [selectedLabels, setSelectedLabels] = useState(labels);
 
@@ -104,9 +106,10 @@ export const ConversationLabelActions = (props: LabelSectionProps) => {
     <Animated.View>
       <Animated.View style={tailwind.style('pl-4')}>
         <Animated.Text
-          style={tailwind.style(
-            'text-sm font-inter-medium-24 leading-[16px] tracking-[0.32px] text-gray-700',
-          )}>
+          style={[
+            tailwind.style('text-sm font-inter-medium-24 leading-[16px] tracking-[0.32px]'),
+            { color: colors.textSecondary },
+          ]}>
           Labels
         </Animated.Text>
       </Animated.View>
@@ -119,15 +122,17 @@ export const ConversationLabelActions = (props: LabelSectionProps) => {
           style={({ pressed }) => [
             styles.labelShadow,
             tailwind.style(
-              'flex flex-row items-center bg-white px-3 py-[7px] rounded-lg mr-2 mt-3',
-              pressed ? 'bg-blue-100' : '',
+              'flex flex-row items-center px-3 py-[7px] rounded-lg mr-2 mt-3',
+              pressed ? 'opacity-70' : '',
             ),
+            { backgroundColor: colors.backgroundLight },
           ]}>
           <Icon icon={<LabelTag />} size={16} />
           <Animated.Text
-            style={tailwind.style(
-              'text-md font-inter-medium-24 leading-[17px] tracking-[0.24px] pl-1.5 text-blue-800',
-            )}>
+            style={[
+              tailwind.style('text-md font-inter-medium-24 leading-[17px] tracking-[0.24px] pl-1.5'),
+              { color: colors.accent },
+            ]}>
             Add
           </Animated.Text>
         </Pressable>
@@ -177,7 +182,7 @@ const styles = StyleSheet.create({
       },
       android: {
         elevation: 4,
-        backgroundColor: 'white',
+        // backgroundColor is now set dynamically via colors.backgroundLight
       },
     }) || {}, // Add fallback empty object
 });

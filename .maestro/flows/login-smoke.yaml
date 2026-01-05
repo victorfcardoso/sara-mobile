@@ -1,0 +1,68 @@
+# Login Screen Smoke Test
+# Verifies the login UI loads correctly with all expected elements
+#
+# This is a smoke test - it does NOT perform actual authentication.
+# It only verifies that the login screen renders properly.
+
+appId: com.chatwoot.app
+
+---
+
+# Launch the app with clean state
+- launchApp:
+    clearState: true
+    clearKeychain: true
+
+# Wait for splash screen to complete and login screen to appear
+- extendedWaitUntil:
+    visible: "Email"
+    timeout: 15000
+
+# Verify the login screen elements are visible
+
+# 1. Brand headline (English or Portuguese)
+- assertVisible:
+    text: ".*WhatsApp.*"
+    optional: false
+
+# 2. Email input label and field
+- assertVisible:
+    text: "Email"
+    optional: false
+
+# 3. Password input label
+- assertVisible:
+    text: ".*[Pp]assword.*|.*[Ss]enha.*"
+    optional: false
+
+# 4. Forgot Password link
+- assertVisible:
+    text: ".*[Ff]orgot.*[Pp]assword.*|.*[Ee]squeceu.*[Ss]enha.*"
+    optional: false
+
+# 5. Login button
+- assertVisible:
+    text: ".*[Ll]ogin.*|.*[Ee]ntrar.*"
+    optional: false
+
+# 6. Change Language option
+- assertVisible:
+    text: ".*[Ll]anguage.*|.*[Ii]dioma.*"
+    optional: false
+
+# Take a screenshot of the verified login screen
+- takeScreenshot: screenshots/login_screen_verified
+
+# Test email input interaction
+- tapOn:
+    text: "Email"
+
+- inputText: "test@example.com"
+
+# Verify email was entered
+- assertVisible:
+    text: "test@example.com"
+    optional: false
+
+# Take final screenshot showing form interaction works
+- takeScreenshot: screenshots/login_email_entered

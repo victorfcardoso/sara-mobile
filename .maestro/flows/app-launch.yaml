@@ -1,0 +1,27 @@
+# App Launch Test
+# Verifies the app launches successfully and shows the login screen
+#
+# This is the most basic E2E test - just checks the app starts.
+
+appId: com.chatwoot.app
+
+---
+
+# Launch the app with clean state
+- launchApp:
+    clearState: true
+    clearKeychain: true
+
+# Wait for the app to load (splash screen completes)
+# The login screen should appear with the Email field visible
+- extendedWaitUntil:
+    visible: "Email"
+    timeout: 20000
+
+# Take a screenshot to document successful launch
+- takeScreenshot: screenshots/app_launched
+
+# Basic assertion - we reached the login screen
+- assertVisible:
+    text: "Email"
+    optional: false

@@ -13,6 +13,7 @@ import { selectAllInboxes } from '@/store/inbox/inboxSelectors';
 import { getChannelIcon } from '@/utils';
 import { Channel } from '@/types';
 import i18n from '@/i18n';
+import { useSaraColors } from '@/hooks/useSaraColors';
 
 type InboxCellProps = {
   value: { id: number; name: string; channelType: Channel; medium: string };
@@ -23,6 +24,7 @@ const InboxCell = (props: InboxCellProps) => {
   const { filtersModalSheetRef } = useRefsContext();
   const dispatch = useAppDispatch();
   const { value, isLastItem } = props;
+  const colors = useSaraColors();
 
   const filters = useAppSelector(selectFilters);
   const hapticSelection = useHaptic();
@@ -38,10 +40,13 @@ const InboxCell = (props: InboxCellProps) => {
       onPress={handlePreferredAssigneeTypePress}
       style={tailwind.style('flex flex-row items-center')}>
       <Animated.View
-        style={tailwind.style(
-          'flex-1 ml-3 flex-row justify-between py-[11px] pr-3',
-          !isLastItem ? 'border-b-[1px] border-[#E6E0D7]' : '',
-        )}>
+        style={[
+          tailwind.style(
+            'flex-1 ml-3 flex-row justify-between py-[11px] pr-3',
+            !isLastItem ? 'border-b-[1px]' : '',
+          ),
+          !isLastItem ? { borderBottomColor: colors.border } : {},
+        ]}>
         <Animated.View style={tailwind.style('flex-row items-center')}>
           <Icon
             icon={getChannelIcon(value.channelType, value.medium, '')}
@@ -50,9 +55,10 @@ const InboxCell = (props: InboxCellProps) => {
           />
 
           <Animated.Text
-            style={tailwind.style(
-              'text-base text-[#16273D] font-inter-420-20 leading-[21px] tracking-[0.16px] capitalize ml-2',
-            )}>
+            style={[
+              tailwind.style('text-base font-inter-420-20 leading-[21px] tracking-[0.16px] capitalize ml-2'),
+              { color: colors.textPrimary },
+            ]}>
             {value.name}
           </Animated.Text>
         </Animated.View>

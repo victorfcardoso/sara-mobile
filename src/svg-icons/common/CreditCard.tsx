@@ -17,7 +17,13 @@ export const CreditCardIcon = ({ stroke = '#858585', strokeWidth = 1.5 }: IconPr
       />
       <Path d="M3.75 10.25H20.25" stroke={stroke} strokeWidth={strokeWidth} strokeLinecap="round" />
       <Path d="M7.25 14.75H10.25" stroke={stroke} strokeWidth={strokeWidth} strokeLinecap="round" />
-      <Path d="M14.75 14.75H16.25" stroke={stroke} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+      <Path
+        d="M14.75 14.75H16.25"
+        stroke={stroke}
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </Svg>
   );
 };

@@ -18,6 +18,7 @@ import {
   selectConversationError,
 } from '@/store/conversation/conversationSelectors';
 import { useAppDispatch, useAppSelector } from '@/hooks';
+import { useSaraColors, useIsDarkMode } from '@/hooks/useSaraColors';
 
 import { notificationActions } from '@/store/notification/notificationAction';
 import { MarkAsReadPayload } from '@/store/notification/notificationTypes';
@@ -28,17 +29,12 @@ import { conversationActions } from '@/store/conversation/conversationActions';
 import { TAB_BAR_HEIGHT } from '@/constants';
 import { ErrorIcon } from '@/svg-icons';
 import { Button } from '@/components-next';
-import { ActivityIndicator, Pressable } from 'react-native';
+import { ActivityIndicator, Pressable, StatusBar } from 'react-native';
 import i18n from '@/i18n';
 import { StackActions, useNavigation } from '@react-navigation/native';
 import { MacrosList } from './components/macros/MacrosList';
 import { macroActions } from '@/store/macro/macroActions';
 import { LightBoxProvider } from '@alantoa/lightbox';
-
-const SARA_COLORS = {
-  background: '#F8F5F3',
-  accent: '#4CB6AC',
-};
 
 export const ChatWindow = (props: ChatScreenProps) => {
   return (
@@ -100,6 +96,8 @@ const ChatScreen = (props: ChatScreenProps) => {
   const navigation = useNavigation();
   const { conversationId, primaryActorId, primaryActorType } = props.route.params;
   const dispatch = useAppDispatch();
+  const colors = useSaraColors();
+  const isDark = useIsDarkMode();
 
   const conversationFetching = useAppSelector(state => selectConversationFetching(state));
   const conversationError = useAppSelector(state => selectConversationError(state));
@@ -145,7 +143,8 @@ const ChatScreen = (props: ChatScreenProps) => {
     return (
       <SafeAreaView
         edges={['top']}
-        style={[tailwind.style('flex-1'), { backgroundColor: SARA_COLORS.background }]}>
+        style={[tailwind.style('flex-1'), { backgroundColor: colors.background }]}>
+        <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
         <LightBoxProvider>
           <ChatWindowProvider conversationId={conversationId}>
             <ChatScreenWrapper {...props} />
@@ -161,9 +160,10 @@ const ChatScreen = (props: ChatScreenProps) => {
       <Animated.View
         style={[
           tailwind.style('flex-1 items-center justify-center', `pb-[${TAB_BAR_HEIGHT}px]`),
-          { backgroundColor: SARA_COLORS.background },
+          { backgroundColor: colors.background },
         ]}>
-        <ActivityIndicator color={SARA_COLORS.accent} />
+        <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+        <ActivityIndicator color={colors.accent} />
       </Animated.View>
     );
   }
@@ -172,7 +172,8 @@ const ChatScreen = (props: ChatScreenProps) => {
     return (
       <SafeAreaView
         edges={['top']}
-        style={[tailwind.style('flex-1'), { backgroundColor: SARA_COLORS.background }]}>
+        style={[tailwind.style('flex-1'), { backgroundColor: colors.background }]}>
+        <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
         <Animated.View
           style={tailwind.style(
             'flex-1 items-center justify-center gap-8 px-4',
@@ -181,15 +182,17 @@ const ChatScreen = (props: ChatScreenProps) => {
           <ErrorIcon />
           <Animated.View style={tailwind.style('flex items-center justify-center gap-4')}>
             <Animated.Text
-              style={tailwind.style(
-                'text-2xl font-inter-420-20 text-gray-950 font-inter-semibold-20',
-              )}>
+              style={[
+                tailwind.style('text-2xl font-inter-420-20 font-inter-semibold-20'),
+                { color: colors.textPrimary },
+              ]}>
               {conversationError || i18n.t('CONVERSATION.NOT_FOUND.TITLE')}
             </Animated.Text>
             <Animated.Text
-              style={tailwind.style(
-                'font-inter-normal-20 font-base leading-[18px] tracking-[0.32px] text-gray-950 text-center',
-              )}>
+              style={[
+                tailwind.style('font-inter-normal-20 font-base leading-[18px] tracking-[0.32px] text-center'),
+                { color: colors.textPrimary },
+              ]}>
               {i18n.t('CONVERSATION.NOT_FOUND.DESCRIPTION')}
             </Animated.Text>
           </Animated.View>
@@ -202,7 +205,11 @@ const ChatScreen = (props: ChatScreenProps) => {
             <Pressable
               style={tailwind.style('flex-row justify-center items-center')}
               onPress={handleBackPress}>
-              <Animated.Text style={tailwind.style('text-base font-inter-medium-24 text-gray-900')}>
+              <Animated.Text
+                style={[
+                  tailwind.style('text-base font-inter-medium-24'),
+                  { color: colors.textSecondary },
+                ]}>
                 {i18n.t('CONVERSATION.NOT_FOUND.BACK_TO_HOME')}
               </Animated.Text>
             </Pressable>

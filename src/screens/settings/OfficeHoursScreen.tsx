@@ -17,25 +17,19 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import i18n from 'i18n';
-import { tailwind } from '@/theme';
 import { Icon } from '@/components-next/common/icon';
 import { SettingsStackParamList } from '@/navigation/stack/SettingsStack';
 import { useAppDispatch, useAppSelector } from '@/hooks';
 import { agentSettingsActions } from '@/store/agent-settings/agentSettingsActions';
-import {
-  selectAgentSettingsData,
-  selectAgentSettingsIsFetching,
-} from '@/store/agent-settings';
+import { selectAgentSettingsData, selectAgentSettingsIsFetching } from '@/store/agent-settings';
 import { showToast } from '@/utils/toastUtils';
 import { AddIcon, ChevronLeft, ClockIcon, Trash } from '@/svg-icons';
 import { OfficeHoursService } from '@/services/OfficeHoursService';
+import { useSaraColors, useIsDarkMode, type SaraColors } from '@/hooks/useSaraColors';
 
 import type { WorkingPlanBlock } from '@/services/OfficeHoursService';
 
-type OfficeHoursNavigation = NativeStackNavigationProp<
-  SettingsStackParamList,
-  'OfficeHoursScreen'
->;
+type OfficeHoursNavigation = NativeStackNavigationProp<SettingsStackParamList, 'OfficeHoursScreen'>;
 
 type BreakWindow = { start: string; end: string };
 
@@ -48,14 +42,7 @@ type DayHours = {
 
 type WeeklyHours = Record<DayKey, DayHours>;
 
-type DayKey =
-  | 'monday'
-  | 'tuesday'
-  | 'wednesday'
-  | 'thursday'
-  | 'friday'
-  | 'saturday'
-  | 'sunday';
+type DayKey = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
 
 type DateException = {
   date: string;
@@ -63,36 +50,23 @@ type DateException = {
   end: string;
 };
 
-// Resolve Sara theme colors from tailwind config
-const SARA_BACKGROUND = tailwind.color('sara-background') ?? '#F8F5F3';
-const SARA_BACKGROUND_LIGHT = tailwind.color('sara-background-light') ?? '#FFFFFF';
-const SARA_ACCENT = tailwind.color('sara-accent') ?? '#4CB6AC';
-const SARA_TEXT_PRIMARY = tailwind.color('sara-text-primary') ?? '#16273D';
-const SARA_TEXT_SECONDARY = tailwind.color('sara-text-secondary') ?? '#4B5D6E';
-const SARA_BORDER = tailwind.color('sara-border') ?? '#E6E2DD';
-const SARA_CHIP = tailwind.color('sara-chip') ?? '#F5F3F0';
+// Static colors that don't change between themes (semantic colors for warnings, errors, etc.)
+const DESTRUCTIVE_COLOR = '#B54747';
+const WHITE = '#FFFFFF';
 
-// Additional colors used in this screen (not in core Sara palette)
-const TAG_BG = tailwind.color('jade-200') ?? '#CCE6DE';
-const TAG_TEXT = tailwind.color('teal-900') ?? '#0F4D49';
-const DESTRUCTIVE_COLOR = tailwind.color('red-800') ?? '#B54747';
-const INPUT_BG = tailwind.color('sara-background') ?? '#FDFBF9';
+// Theme-aware UI colors helper
+const getUiColors = (isDark: boolean, colors: SaraColors) => ({
+  tagBg: isDark ? '#1E3A2E' : '#CCE6DE',
+  tagText: isDark ? '#6BC4B8' : '#0F4D49',
+  dangerIconBg: isDark ? '#3D2020' : '#F8E8E8',
+  dangerIconPressedBg: isDark ? '#4D2828' : '#F5D9D9',
+  disabledDangerIconBg: isDark ? '#2D1A1A' : '#F1D7D7',
+  disabledText: isDark ? '#666666' : '#A8ABA9',
+  disabledPrimaryBg: isDark ? '#1E3A38' : '#C4DAD6',
+  disabledPrimaryText: isDark ? '#4CB6AC' : '#49605C',
+});
 
-// Button state colors
-const DANGER_BUTTON_PRESSED_BG = tailwind.color('red-100') ?? '#F5D9D9';
-const DANGER_ICON_BG = tailwind.color('red-50') ?? '#F8E8E8';
-const DISABLED_DANGER_ICON_BG = tailwind.color('red-100') ?? '#F1D7D7';
-const WHITE = tailwind.color('white') ?? '#FFFFFF';
-const DISABLED_TEXT = tailwind.color('gray-400') ?? '#A8ABA9';
-const DISABLED_PRIMARY_BG = tailwind.color('teal-200') ?? '#C4DAD6';
-const DISABLED_PRIMARY_TEXT = tailwind.color('teal-700') ?? '#49605C';
-
-const SWITCH_TRACK_COLORS = {
-  true: SARA_ACCENT,
-  false: SARA_BORDER,
-} as const;
-
-const dayOrder: Array<{ key: DayKey; label: string }> = [
+const dayOrder: { key: DayKey; label: string }[] = [
   { key: 'monday', label: i18n.t('COMMON.DAY.MONDAY') || 'Monday' },
   { key: 'tuesday', label: i18n.t('COMMON.DAY.TUESDAY') || 'Tuesday' },
   { key: 'wednesday', label: i18n.t('COMMON.DAY.WEDNESDAY') || 'Wednesday' },
@@ -131,7 +105,9 @@ const normalizeTime = (value: string | null | undefined): string => {
   return value;
 };
 
-const hydratePlan = (plan: Record<string, WorkingPlanBlock | null> | null | undefined): WeeklyHours => {
+const hydratePlan = (
+  plan: Record<string, WorkingPlanBlock | null> | null | undefined,
+): WeeklyHours => {
   const base = buildEmptyWeeklyHours();
   if (!plan) {
     return base;
@@ -194,80 +170,130 @@ const toApiDateTime = (value: string): string => {
 const getErrorMessage = (error: unknown, fallback: string) =>
   error instanceof Error ? error.message : fallback;
 
-const Tag = ({ label }: { label: string }) => (
-  <View style={styles.tag}>
-    <Text style={styles.tagText}>{label}</Text>
-  </View>
-);
+type TagProps = {
+  label: string;
+  colors: SaraColors;
+  isDark: boolean;
+};
 
-const OutlineButton = ({
-  label,
-  onPress,
-  icon,
-  disabled,
-}: {
+const Tag = ({ label, colors, isDark }: TagProps) => {
+  const uiColors = getUiColors(isDark, colors);
+  return (
+    <View style={[styles.tag, { backgroundColor: uiColors.tagBg }]}>
+      <Text style={[styles.tagText, { color: uiColors.tagText }]}>{label}</Text>
+    </View>
+  );
+};
+
+type OutlineButtonProps = {
   label: string;
   onPress: () => void;
   icon?: React.ReactNode;
   disabled?: boolean;
-}) => (
-  <Pressable
-    onPress={onPress}
-    disabled={disabled}
-    style={({ pressed }) => [
-      styles.outlineButton,
-      disabled ? styles.disabledButton : null,
-      pressed && !disabled ? { backgroundColor: SARA_CHIP } : null,
-    ]}>
-    <View style={styles.outlineButtonContent}>
-      {icon}
-      <Text style={[styles.outlineButtonText, disabled ? styles.disabledText : null]}>{label}</Text>
-    </View>
-  </Pressable>
-);
+  colors: SaraColors;
+  isDark: boolean;
+};
 
-const PrimaryButton = ({
-  label,
-  onPress,
-  disabled,
-}: {
+const OutlineButton = ({ label, onPress, icon, disabled, colors, isDark }: OutlineButtonProps) => {
+  const uiColors = getUiColors(isDark, colors);
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      style={({ pressed }) => [
+        styles.outlineButton,
+        { borderColor: colors.border },
+        disabled ? styles.disabledButton : null,
+        pressed && !disabled ? { backgroundColor: colors.chip } : null,
+      ]}>
+      <View style={styles.outlineButtonContent}>
+        {icon}
+        <Text
+          style={[
+            styles.outlineButtonText,
+            { color: colors.textSecondary },
+            disabled ? { color: uiColors.disabledText } : null,
+          ]}>
+          {label}
+        </Text>
+      </View>
+    </Pressable>
+  );
+};
+
+type PrimaryButtonProps = {
   label: string;
   onPress: () => void;
   disabled?: boolean;
-}) => (
-  <Pressable
-    onPress={onPress}
-    disabled={disabled}
-    style={({ pressed }) => [
-      styles.primaryButton,
-      disabled ? styles.disabledPrimary : null,
-      pressed && !disabled ? { opacity: 0.92 } : null,
-    ]}>
-    <Text style={[styles.primaryButtonText, disabled ? styles.disabledPrimaryText : null]}>
-      {label}
-    </Text>
-  </Pressable>
-);
+  colors: SaraColors;
+  isDark: boolean;
+};
 
-const DangerIconButton = ({ onPress, disabled }: { onPress: () => void; disabled?: boolean }) => (
-  <Pressable
-    onPress={onPress}
-    disabled={disabled}
-    style={({ pressed }) => [
-      styles.dangerIconButton,
-      disabled ? styles.disabledDangerIcon : null,
-      pressed && !disabled ? { backgroundColor: DANGER_BUTTON_PRESSED_BG } : null,
-    ]}>
-    <Icon icon={<Trash />} size={20} />
-  </Pressable>
-);
+const PrimaryButton = ({ label, onPress, disabled, colors, isDark }: PrimaryButtonProps) => {
+  const uiColors = getUiColors(isDark, colors);
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      style={({ pressed }) => [
+        styles.primaryButton,
+        { backgroundColor: colors.accent },
+        disabled ? { backgroundColor: uiColors.disabledPrimaryBg } : null,
+        pressed && !disabled ? { opacity: 0.92 } : null,
+      ]}>
+      <Text
+        style={[
+          styles.primaryButtonText,
+          disabled ? { color: uiColors.disabledPrimaryText } : null,
+        ]}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+};
+
+type DangerIconButtonProps = {
+  onPress: () => void;
+  disabled?: boolean;
+  colors: SaraColors;
+  isDark: boolean;
+};
+
+const DangerIconButton = ({ onPress, disabled, colors, isDark }: DangerIconButtonProps) => {
+  const uiColors = getUiColors(isDark, colors);
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      style={({ pressed }) => [
+        styles.dangerIconButton,
+        { backgroundColor: uiColors.dangerIconBg },
+        disabled ? { backgroundColor: uiColors.disabledDangerIconBg, opacity: 0.6 } : null,
+        pressed && !disabled ? { backgroundColor: uiColors.dangerIconPressedBg } : null,
+      ]}>
+      <Icon icon={<Trash />} size={20} />
+    </Pressable>
+  );
+};
 
 const OfficeHoursScreen = () => {
   const navigation = useNavigation<OfficeHoursNavigation>();
   const dispatch = useAppDispatch();
+  const colors = useSaraColors();
+  const isDark = useIsDarkMode();
+
   const agentId = useAppSelector(state => state.auth.chatwootSession?.agentId ?? null);
   const agentSettings = useAppSelector(selectAgentSettingsData);
   const agentSettingsLoading = useAppSelector(selectAgentSettingsIsFetching);
+
+  // Memoize switch track colors based on theme
+  const switchTrackColors = useMemo(
+    () => ({
+      true: colors.accent,
+      false: colors.border,
+    }),
+    [colors.accent, colors.border],
+  );
 
   const easyAppointments = agentSettings?.integrations.easyAppointments ?? null;
   const providerId = easyAppointments?.providerId ? String(easyAppointments.providerId) : null;
@@ -391,7 +417,9 @@ const OfficeHoursScreen = () => {
         ...prev,
         [day]: {
           ...prev[day],
-          breaks: prev[day].breaks.map((item, i) => (i === index ? { ...item, [field]: value } : item)),
+          breaks: prev[day].breaks.map((item, i) =>
+            i === index ? { ...item, [field]: value } : item,
+          ),
         },
       }));
     },
@@ -406,11 +434,14 @@ const OfficeHoursScreen = () => {
     setDateExceptions(prev => prev.filter((_, i) => i !== index));
   }, []);
 
-  const updateException = useCallback((index: number, field: keyof DateException, value: string) => {
-    setDateExceptions(prev =>
-      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item)),
-    );
-  }, []);
+  const updateException = useCallback(
+    (index: number, field: keyof DateException, value: string) => {
+      setDateExceptions(prev =>
+        prev.map((item, i) => (i === index ? { ...item, [field]: value } : item)),
+      );
+    },
+    [],
+  );
 
   const handleSaveWeeklyHours = useCallback(async () => {
     if (!providerId) {
@@ -419,7 +450,9 @@ const OfficeHoursScreen = () => {
     }
 
     const invalidDays = dayOrder
-      .filter(({ key }) => weeklyHours[key].enabled && (!weeklyHours[key].start || !weeklyHours[key].end))
+      .filter(
+        ({ key }) => weeklyHours[key].enabled && (!weeklyHours[key].start || !weeklyHours[key].end),
+      )
       .map(({ label }) => label);
 
     if (invalidDays.length > 0) {
@@ -570,13 +603,13 @@ const OfficeHoursScreen = () => {
       return (
         <View style={styles.dayCard}>
           <View style={styles.dayRow}>
-            <Text style={styles.dayLabel}>{label}</Text>
+            <Text style={[styles.dayLabel, { color: colors.textPrimary }]}>{label}</Text>
             <Switch
               value={hours.enabled}
               onValueChange={() => toggleDay(dayKey)}
-              trackColor={SWITCH_TRACK_COLORS}
-              ios_backgroundColor={SWITCH_TRACK_COLORS.false}
-              thumbColor={Platform.OS === 'android' ? SARA_BACKGROUND_LIGHT : undefined}
+              trackColor={switchTrackColors}
+              ios_backgroundColor={switchTrackColors.false}
+              thumbColor={Platform.OS === 'android' ? colors.backgroundLight : undefined}
               disabled={editingDisabled}
             />
           </View>
@@ -584,23 +617,43 @@ const OfficeHoursScreen = () => {
             <View style={styles.dayDetails}>
               <View style={styles.doubleFieldRow}>
                 <View style={styles.field}>
-                  <Text style={styles.fieldLabel}>{i18n.t('SETTINGS.START_LABEL')}</Text>
+                  <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
+                    {i18n.t('SETTINGS.START_LABEL')}
+                  </Text>
                   <TextInput
                     value={hours.start}
                     onChangeText={value => updateDayTime(dayKey, 'start', value)}
-                    style={styles.input}
+                    style={[
+                      styles.input,
+                      {
+                        borderColor: colors.border,
+                        backgroundColor: colors.background,
+                        color: colors.textPrimary,
+                      },
+                    ]}
                     placeholder="09:00"
+                    placeholderTextColor={colors.textMeta}
                     keyboardType="numbers-and-punctuation"
                     editable={!editingDisabled}
                   />
                 </View>
                 <View style={styles.field}>
-                  <Text style={styles.fieldLabel}>{i18n.t('SETTINGS.END_LABEL')}</Text>
+                  <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
+                    {i18n.t('SETTINGS.END_LABEL')}
+                  </Text>
                   <TextInput
                     value={hours.end}
                     onChangeText={value => updateDayTime(dayKey, 'end', value)}
-                    style={styles.input}
+                    style={[
+                      styles.input,
+                      {
+                        borderColor: colors.border,
+                        backgroundColor: colors.background,
+                        color: colors.textPrimary,
+                      },
+                    ]}
                     placeholder="18:00"
+                    placeholderTextColor={colors.textMeta}
                     keyboardType="numbers-and-punctuation"
                     editable={!editingDisabled}
                   />
@@ -608,42 +661,66 @@ const OfficeHoursScreen = () => {
               </View>
 
               {hours.breaks.map((breakWindow, index) => (
-                <View key={`${dayKey}-break-${index}`} style={styles.breakCard}>
+                <View
+                  key={`${dayKey}-break-${index}`}
+                  style={[styles.breakCard, { borderColor: colors.border }]}>
                   <View style={styles.breakHeader}>
                     <View style={styles.breakHeaderContent}>
                       <Icon
-                        icon={<ClockIcon stroke={SARA_TEXT_SECONDARY} />}
+                        icon={<ClockIcon stroke={colors.textSecondary} />}
                         size={18}
                         style={styles.breakIcon}
                       />
-                      <Text style={styles.breakTitle}>
+                      <Text style={[styles.breakTitle, { color: colors.textSecondary }]}>
                         {i18n.t('SETTINGS.BREAK_LABEL')} {index + 1}
                       </Text>
                     </View>
                     <DangerIconButton
                       onPress={() => removeBreak(dayKey, index)}
                       disabled={editingDisabled}
+                      colors={colors}
+                      isDark={isDark}
                     />
                   </View>
                   <View style={styles.doubleFieldRow}>
                     <View style={styles.field}>
-                      <Text style={styles.fieldLabel}>{i18n.t('SETTINGS.START_LABEL')}</Text>
+                      <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
+                        {i18n.t('SETTINGS.START_LABEL')}
+                      </Text>
                       <TextInput
                         value={breakWindow.start}
                         onChangeText={value => updateBreak(dayKey, index, 'start', value)}
-                        style={styles.input}
+                        style={[
+                          styles.input,
+                          {
+                            borderColor: colors.border,
+                            backgroundColor: colors.background,
+                            color: colors.textPrimary,
+                          },
+                        ]}
                         placeholder="12:00"
+                        placeholderTextColor={colors.textMeta}
                         keyboardType="numbers-and-punctuation"
                         editable={!editingDisabled}
                       />
                     </View>
                     <View style={styles.field}>
-                      <Text style={styles.fieldLabel}>{i18n.t('SETTINGS.END_LABEL')}</Text>
+                      <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
+                        {i18n.t('SETTINGS.END_LABEL')}
+                      </Text>
                       <TextInput
                         value={breakWindow.end}
                         onChangeText={value => updateBreak(dayKey, index, 'end', value)}
-                        style={styles.input}
+                        style={[
+                          styles.input,
+                          {
+                            borderColor: colors.border,
+                            backgroundColor: colors.background,
+                            color: colors.textPrimary,
+                          },
+                        ]}
                         placeholder="13:00"
+                        placeholderTextColor={colors.textMeta}
                         keyboardType="numbers-and-punctuation"
                         editable={!editingDisabled}
                       />
@@ -655,45 +732,88 @@ const OfficeHoursScreen = () => {
               <OutlineButton
                 label={i18n.t('SETTINGS.ADD_BREAK')}
                 onPress={() => addBreak(dayKey)}
-                icon={<Icon icon={<AddIcon stroke={SARA_TEXT_SECONDARY} />} size={18} />}
+                icon={<Icon icon={<AddIcon stroke={colors.textSecondary} />} size={18} />}
                 disabled={editingDisabled}
+                colors={colors}
+                isDark={isDark}
               />
             </View>
           ) : null}
         </View>
       );
     },
-    [addBreak, editingDisabled, removeBreak, toggleDay, updateBreak, updateDayTime, weeklyHours],
+    [
+      addBreak,
+      colors,
+      editingDisabled,
+      isDark,
+      removeBreak,
+      switchTrackColors,
+      toggleDay,
+      updateBreak,
+      updateDayTime,
+      weeklyHours,
+    ],
   );
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <StatusBar barStyle="dark-content" />
-      <View style={styles.header}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
+      <StatusBar
+        barStyle={isDark ? 'light-content' : 'dark-content'}
+        backgroundColor={colors.background}
+      />
+      <View
+        style={[
+          styles.header,
+          {
+            backgroundColor: colors.backgroundLight,
+            borderBottomColor: colors.border,
+          },
+        ]}>
         <Pressable
           onPress={handleBack}
           style={({ pressed }) => [
             styles.backButton,
-            pressed ? { backgroundColor: SARA_CHIP } : null,
+            pressed ? { backgroundColor: colors.chip } : null,
           ]}>
-          <Icon icon={<ChevronLeft stroke={SARA_TEXT_PRIMARY} />} size={24} />
+          <Icon icon={<ChevronLeft stroke={colors.textPrimary} />} size={24} />
         </Pressable>
-        <Text style={styles.headerTitle}>{i18n.t('SETTINGS.OFFICE_HOURS')}</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
+          {i18n.t('SETTINGS.OFFICE_HOURS')}
+        </Text>
         <View style={styles.headerRightPlaceholder} />
       </View>
 
       <ScrollView
         contentContainerStyle={styles.contentContainer}
         refreshControl={
-          <RefreshControl refreshing={snapshotLoading} onRefresh={() => { void loadSnapshot(); }} />
+          <RefreshControl
+            refreshing={snapshotLoading}
+            onRefresh={() => {
+              void loadSnapshot();
+            }}
+            tintColor={colors.accent}
+            colors={[colors.accent]}
+          />
         }
         showsVerticalScrollIndicator={false}>
-        <View style={styles.card}>
-          <Text style={styles.cardSectionTitle}>{i18n.t('SETTINGS.WEEKLY_HOURS_TITLE')}</Text>
+        <View
+          style={[
+            styles.card,
+            {
+              backgroundColor: colors.backgroundLight,
+              shadowColor: colors.textPrimary,
+            },
+          ]}>
+          <Text style={[styles.cardSectionTitle, { color: colors.textPrimary }]}>
+            {i18n.t('SETTINGS.WEEKLY_HOURS_TITLE')}
+          </Text>
           {snapshotLoading ? (
             <View style={styles.loadingRow}>
-              <ActivityIndicator color={SARA_ACCENT} />
-              <Text style={styles.loadingText}>{i18n.t('COMMON.LOADING')}</Text>
+              <ActivityIndicator color={colors.accent} />
+              <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
+                {i18n.t('COMMON.LOADING')}
+              </Text>
             </View>
           ) : null}
           {snapshotError ? <Text style={styles.errorText}>{snapshotError}</Text> : null}
@@ -701,7 +821,9 @@ const OfficeHoursScreen = () => {
             {dayOrder.map(({ key, label }, index) => (
               <View key={key}>
                 <DayEditor dayKey={key} label={label} />
-                {index !== dayOrder.length - 1 ? <View style={styles.divider} /> : null}
+                {index !== dayOrder.length - 1 ? (
+                  <View style={[styles.divider, { backgroundColor: colors.border }]} />
+                ) : null}
               </View>
             ))}
           </View>
@@ -709,53 +831,98 @@ const OfficeHoursScreen = () => {
             label={i18n.t('SETTINGS.SAVE_WEEKLY_HOURS')}
             onPress={handleSaveWeeklyHours}
             disabled={editingDisabled || isSaving}
+            colors={colors}
+            isDark={isDark}
           />
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.cardSectionTitle}>{i18n.t('SETTINGS.DATE_EXCEPTIONS')}</Text>
+        <View
+          style={[
+            styles.card,
+            {
+              backgroundColor: colors.backgroundLight,
+              shadowColor: colors.textPrimary,
+            },
+          ]}>
+          <Text style={[styles.cardSectionTitle, { color: colors.textPrimary }]}>
+            {i18n.t('SETTINGS.DATE_EXCEPTIONS')}
+          </Text>
           <View style={styles.cardBody}>
             {dateExceptions.map((item, index) => (
-              <View key={`exception-${index}`} style={styles.exceptionCard}>
+              <View
+                key={`exception-${index}`}
+                style={[styles.exceptionCard, { borderColor: colors.border }]}>
                 <View style={styles.exceptionHeader}>
-                  <Text style={styles.exceptionTitle}>
+                  <Text style={[styles.exceptionTitle, { color: colors.textPrimary }]}>
                     {i18n.t('SETTINGS.EXCEPTION_LABEL')} {index + 1}
                   </Text>
                   <DangerIconButton
                     onPress={() => removeException(index)}
                     disabled={editingDisabled}
+                    colors={colors}
+                    isDark={isDark}
                   />
                 </View>
                 <View style={styles.field}>
-                  <Text style={styles.fieldLabel}>{i18n.t('SETTINGS.DATE_LABEL')}</Text>
+                  <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
+                    {i18n.t('SETTINGS.DATE_LABEL')}
+                  </Text>
                   <TextInput
                     value={item.date}
                     onChangeText={value => updateException(index, 'date', value)}
-                    style={styles.input}
+                    style={[
+                      styles.input,
+                      {
+                        borderColor: colors.border,
+                        backgroundColor: colors.background,
+                        color: colors.textPrimary,
+                      },
+                    ]}
                     placeholder="2024-12-25"
+                    placeholderTextColor={colors.textMeta}
                     keyboardType="numbers-and-punctuation"
                     editable={!editingDisabled}
                   />
                 </View>
                 <View style={styles.doubleFieldRow}>
                   <View style={styles.field}>
-                    <Text style={styles.fieldLabel}>{i18n.t('SETTINGS.START_LABEL')}</Text>
+                    <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
+                      {i18n.t('SETTINGS.START_LABEL')}
+                    </Text>
                     <TextInput
                       value={item.start}
                       onChangeText={value => updateException(index, 'start', value)}
-                      style={styles.input}
+                      style={[
+                        styles.input,
+                        {
+                          borderColor: colors.border,
+                          backgroundColor: colors.background,
+                          color: colors.textPrimary,
+                        },
+                      ]}
                       placeholder="09:00"
+                      placeholderTextColor={colors.textMeta}
                       keyboardType="numbers-and-punctuation"
                       editable={!editingDisabled}
                     />
                   </View>
                   <View style={styles.field}>
-                    <Text style={styles.fieldLabel}>{i18n.t('SETTINGS.END_LABEL')}</Text>
+                    <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
+                      {i18n.t('SETTINGS.END_LABEL')}
+                    </Text>
                     <TextInput
                       value={item.end}
                       onChangeText={value => updateException(index, 'end', value)}
-                      style={styles.input}
+                      style={[
+                        styles.input,
+                        {
+                          borderColor: colors.border,
+                          backgroundColor: colors.background,
+                          color: colors.textPrimary,
+                        },
+                      ]}
                       placeholder="12:00"
+                      placeholderTextColor={colors.textMeta}
                       keyboardType="numbers-and-punctuation"
                       editable={!editingDisabled}
                     />
@@ -766,44 +933,85 @@ const OfficeHoursScreen = () => {
             <OutlineButton
               label={i18n.t('SETTINGS.ADD_EXCEPTION')}
               onPress={addException}
-              icon={<Icon icon={<AddIcon stroke={SARA_TEXT_SECONDARY} />} size={18} />}
+              icon={<Icon icon={<AddIcon stroke={colors.textSecondary} />} size={18} />}
               disabled={editingDisabled}
+              colors={colors}
+              isDark={isDark}
             />
           </View>
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.cardSectionTitle}>{i18n.t('SETTINGS.UNAVAILABILITY_BLOCK')}</Text>
+        <View
+          style={[
+            styles.card,
+            {
+              backgroundColor: colors.backgroundLight,
+              shadowColor: colors.textPrimary,
+            },
+          ]}>
+          <Text style={[styles.cardSectionTitle, { color: colors.textPrimary }]}>
+            {i18n.t('SETTINGS.UNAVAILABILITY_BLOCK')}
+          </Text>
           <View style={styles.cardBody}>
             <View style={styles.field}>
-              <Text style={styles.fieldLabel}>{i18n.t('SETTINGS.START_LABEL')}</Text>
+              <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
+                {i18n.t('SETTINGS.START_LABEL')}
+              </Text>
               <TextInput
                 value={closureStart}
                 onChangeText={setClosureStart}
-                style={styles.input}
+                style={[
+                  styles.input,
+                  {
+                    borderColor: colors.border,
+                    backgroundColor: colors.background,
+                    color: colors.textPrimary,
+                  },
+                ]}
                 placeholder="2024-12-31 09:00"
+                placeholderTextColor={colors.textMeta}
                 keyboardType="numbers-and-punctuation"
                 editable={!blockLoading && Boolean(providerId)}
               />
             </View>
             <View style={styles.field}>
-              <Text style={styles.fieldLabel}>{i18n.t('SETTINGS.END_LABEL')}</Text>
+              <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
+                {i18n.t('SETTINGS.END_LABEL')}
+              </Text>
               <TextInput
                 value={closureEnd}
                 onChangeText={setClosureEnd}
-                style={styles.input}
+                style={[
+                  styles.input,
+                  {
+                    borderColor: colors.border,
+                    backgroundColor: colors.background,
+                    color: colors.textPrimary,
+                  },
+                ]}
                 placeholder="2024-12-31 17:00"
+                placeholderTextColor={colors.textMeta}
                 keyboardType="numbers-and-punctuation"
                 editable={!blockLoading && Boolean(providerId)}
               />
             </View>
             <View style={styles.field}>
-              <Text style={styles.fieldLabel}>{i18n.t('SETTINGS.NOTES_OPTIONAL_LABEL')}</Text>
+              <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
+                {i18n.t('SETTINGS.NOTES_OPTIONAL_LABEL')}
+              </Text>
               <TextInput
                 value={closureNotes}
                 onChangeText={setClosureNotes}
-                style={styles.input}
+                style={[
+                  styles.input,
+                  {
+                    borderColor: colors.border,
+                    backgroundColor: colors.background,
+                    color: colors.textPrimary,
+                  },
+                ]}
                 placeholder="Holiday"
+                placeholderTextColor={colors.textMeta}
                 editable={!blockLoading && Boolean(providerId)}
               />
             </View>
@@ -811,20 +1019,41 @@ const OfficeHoursScreen = () => {
               label={i18n.t('SETTINGS.CREATE_CLOSURE')}
               onPress={handleCreateClosure}
               disabled={blockLoading || !providerId}
+              colors={colors}
+              isDark={isDark}
             />
           </View>
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.cardSectionTitle}>{i18n.t('SETTINGS.PROBE_CUSTOMER_VIEW')}</Text>
+        <View
+          style={[
+            styles.card,
+            {
+              backgroundColor: colors.backgroundLight,
+              shadowColor: colors.textPrimary,
+            },
+          ]}>
+          <Text style={[styles.cardSectionTitle, { color: colors.textPrimary }]}>
+            {i18n.t('SETTINGS.PROBE_CUSTOMER_VIEW')}
+          </Text>
           <View style={styles.cardBody}>
             <View style={styles.field}>
-              <Text style={styles.fieldLabel}>{i18n.t('SETTINGS.DATE_LABEL')}</Text>
+              <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
+                {i18n.t('SETTINGS.DATE_LABEL')}
+              </Text>
               <TextInput
                 value={probeDate}
                 onChangeText={setProbeDate}
-                style={styles.input}
+                style={[
+                  styles.input,
+                  {
+                    borderColor: colors.border,
+                    backgroundColor: colors.background,
+                    color: colors.textPrimary,
+                  },
+                ]}
                 placeholder="2024-12-20"
+                placeholderTextColor={colors.textMeta}
                 keyboardType="numbers-and-punctuation"
                 editable={!probeLoading && Boolean(providerId)}
               />
@@ -833,18 +1062,24 @@ const OfficeHoursScreen = () => {
               label={i18n.t('SETTINGS.CHECK_AVAILABILITY')}
               onPress={handleProbeAvailability}
               disabled={probeLoading || !providerId}
+              colors={colors}
+              isDark={isDark}
             />
             {probeLoading ? (
               <View style={styles.loadingRow}>
-                <ActivityIndicator color={SARA_ACCENT} />
-                <Text style={styles.loadingText}>{i18n.t('COMMON.LOADING')}</Text>
+                <ActivityIndicator color={colors.accent} />
+                <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
+                  {i18n.t('COMMON.LOADING')}
+                </Text>
               </View>
             ) : probeResults.length > 0 ? (
               <View style={styles.probeResults}>
-                <Text style={styles.probeLabel}>{i18n.t('SETTINGS.AVAILABLE_SLOTS')}</Text>
+                <Text style={[styles.probeLabel, { color: colors.textSecondary }]}>
+                  {i18n.t('SETTINGS.AVAILABLE_SLOTS')}
+                </Text>
                 <View style={styles.probeTags}>
                   {probeResults.map(slot => (
-                    <Tag key={slot} label={slot} />
+                    <Tag key={slot} label={slot} colors={colors} isDark={isDark} />
                   ))}
                 </View>
               </View>
@@ -863,12 +1098,9 @@ export default OfficeHoursScreen;
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: SARA_BACKGROUND,
   },
   header: {
-    backgroundColor: SARA_BACKGROUND_LIGHT,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: SARA_BORDER,
     paddingHorizontal: 16,
     paddingVertical: 12,
     flexDirection: 'row',
@@ -887,7 +1119,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 20,
     fontFamily: 'Inter-Medium',
-    color: SARA_TEXT_PRIMARY,
   },
   headerRightPlaceholder: {
     width: 36,
@@ -897,11 +1128,9 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   card: {
-    backgroundColor: SARA_BACKGROUND_LIGHT,
     borderRadius: 20,
     padding: 16,
     marginBottom: 16,
-    shadowColor: SARA_TEXT_PRIMARY,
     shadowOpacity: 0.05,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
@@ -914,24 +1143,20 @@ const styles = StyleSheet.create({
   cardSectionTitle: {
     fontSize: 16,
     fontFamily: 'Inter-SemiBold',
-    color: SARA_TEXT_PRIMARY,
     marginBottom: 16,
   },
   tag: {
     alignSelf: 'flex-start',
-    backgroundColor: TAG_BG,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 999,
   },
   tagText: {
     fontSize: 12,
-    color: TAG_TEXT,
     fontFamily: 'Inter-Medium',
   },
   outlineButton: {
     borderWidth: 1,
-    borderColor: SARA_BORDER,
     borderRadius: 12,
     paddingVertical: 10,
     paddingHorizontal: 12,
@@ -945,12 +1170,10 @@ const styles = StyleSheet.create({
   },
   outlineButtonText: {
     fontSize: 14,
-    color: SARA_TEXT_SECONDARY,
     fontFamily: 'Inter-Medium',
   },
   primaryButton: {
     marginTop: 16,
-    backgroundColor: SARA_ACCENT,
     borderRadius: 12,
     paddingVertical: 12,
     alignItems: 'center',
@@ -967,7 +1190,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: DANGER_ICON_BG,
   },
   dayCard: {
     paddingVertical: 12,
@@ -979,7 +1201,6 @@ const styles = StyleSheet.create({
   },
   dayLabel: {
     fontSize: 15,
-    color: SARA_TEXT_PRIMARY,
     fontFamily: 'Inter-Medium',
   },
   dayDetails: {
@@ -996,22 +1217,17 @@ const styles = StyleSheet.create({
   },
   fieldLabel: {
     fontSize: 12,
-    color: SARA_TEXT_SECONDARY,
     marginBottom: 6,
   },
   input: {
     borderWidth: 1,
-    borderColor: SARA_BORDER,
-    backgroundColor: INPUT_BG,
     borderRadius: 12,
     paddingVertical: 10,
     paddingHorizontal: 12,
     fontSize: 15,
-    color: SARA_TEXT_PRIMARY,
   },
   breakCard: {
     borderWidth: 1,
-    borderColor: SARA_BORDER,
     borderRadius: 16,
     padding: 12,
     gap: 12,
@@ -1031,15 +1247,12 @@ const styles = StyleSheet.create({
   },
   breakTitle: {
     fontSize: 14,
-    color: SARA_TEXT_SECONDARY,
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: SARA_BORDER,
   },
   exceptionCard: {
     borderWidth: 1,
-    borderColor: SARA_BORDER,
     borderRadius: 16,
     padding: 12,
     gap: 12,
@@ -1051,7 +1264,6 @@ const styles = StyleSheet.create({
   },
   exceptionTitle: {
     fontSize: 14,
-    color: SARA_TEXT_PRIMARY,
     fontFamily: 'Inter-Medium',
   },
   probeResults: {
@@ -1060,7 +1272,6 @@ const styles = StyleSheet.create({
   },
   probeLabel: {
     fontSize: 13,
-    color: SARA_TEXT_SECONDARY,
   },
   probeTags: {
     flexDirection: 'row',
@@ -1073,19 +1284,6 @@ const styles = StyleSheet.create({
   disabledButton: {
     opacity: 0.55,
   },
-  disabledText: {
-    color: DISABLED_TEXT,
-  },
-  disabledPrimary: {
-    backgroundColor: DISABLED_PRIMARY_BG,
-  },
-  disabledPrimaryText: {
-    color: DISABLED_PRIMARY_TEXT,
-  },
-  disabledDangerIcon: {
-    backgroundColor: DISABLED_DANGER_ICON_BG,
-    opacity: 0.6,
-  },
   errorText: {
     color: DESTRUCTIVE_COLOR,
     fontSize: 14,
@@ -1097,6 +1295,5 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 13,
-    color: SARA_TEXT_SECONDARY,
   },
 });

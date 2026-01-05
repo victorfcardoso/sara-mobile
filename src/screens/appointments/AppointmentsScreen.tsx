@@ -42,7 +42,7 @@ import I18n from '@/i18n';
 import { useAppDispatch, useAppSelector } from '@/hooks';
 import { OfficeHoursService } from '@/services/OfficeHoursService';
 import type { WorkingPlanBlock } from '@/services/OfficeHoursService';
-import { EmptyStateIcon } from '@/svg-icons';
+import Svg, { Path, Circle } from 'react-native-svg';
 import { agentSettingsActions } from '@/store/agent-settings/agentSettingsActions';
 import { selectAgentSettingsIntegrations } from '@/store/agent-settings';
 import { appointmentsActions } from '@/store/appointments/appointmentsActions';
@@ -55,18 +55,9 @@ import {
 } from '@/store/appointments/appointmentsSelectors';
 import type { Appointment } from '@/store/appointments/appointmentsTypes';
 import { tailwind } from '@/theme';
+import { useSaraColors, useIsDarkMode, type SaraColors } from '@/hooks/useSaraColors';
 
 const DEFAULT_LIMIT = 25;
-
-// Resolve Sara theme colors from tailwind config
-const SARA_BACKGROUND = tailwind.color('sara-background') ?? '#F8F5F3';
-const SARA_BACKGROUND_LIGHT = tailwind.color('sara-background-light') ?? '#FFFFFF';
-const SARA_ACCENT = tailwind.color('sara-accent') ?? '#4CB6AC';
-const SARA_TEXT_PRIMARY = tailwind.color('sara-text-primary') ?? '#16273D';
-const SARA_TEXT_SECONDARY = tailwind.color('sara-text-secondary') ?? '#4B5D6E';
-const SARA_TEXT_META = tailwind.color('sara-text-meta') ?? '#6C778A';
-const SARA_BORDER = tailwind.color('sara-border') ?? '#E6E2DD';
-const SARA_CHIP = tailwind.color('sara-chip') ?? '#F5F3F0';
 
 const STATUS_COLORS: Record<
   string,
@@ -86,7 +77,6 @@ const DEFAULT_STATUS_STYLE = { backgroundColor: '#E2E6EB', textColor: '#3D4A5C' 
 const DATE_KEY_FORMAT = 'yyyy-MM-dd';
 const TIMELINE_WEEK_OPTIONS = { weekStartsOn: 1 as const };
 const TIMELINE_DEFAULT_DURATION_MINUTES = 30;
-const TIMELINE_UNAVAILABLE_COLOR = SARA_CHIP;
 const MINUTES_PER_DAY = 24 * 60;
 const WEEKDAY_INDEX_LOOKUP = {
   monday: 1,
@@ -98,9 +88,11 @@ const WEEKDAY_INDEX_LOOKUP = {
   sunday: 7,
 } as const;
 type WeekdayKey = keyof typeof WEEKDAY_INDEX_LOOKUP;
-const DEFAULT_UNAVAILABLE_HOURS: UnavailableHourProps[] = [
-  { start: 0, end: 6 * 60, backgroundColor: TIMELINE_UNAVAILABLE_COLOR },
-  { start: 21 * 60, end: 24 * 60, backgroundColor: TIMELINE_UNAVAILABLE_COLOR },
+
+// Helper to create unavailable hours with dynamic chip color
+const createDefaultUnavailableHours = (chipColor: string): UnavailableHourProps[] => [
+  { start: 0, end: 6 * 60, backgroundColor: chipColor },
+  { start: 21 * 60, end: 24 * 60, backgroundColor: chipColor },
 ];
 
 type ViewMode = 'list' | 'month' | 'timeline';
@@ -189,10 +181,14 @@ const parseTimeToMinutes = (value?: string | null): number | null => {
   return clampMinutes(hours * 60 + minutes);
 };
 
-const buildUnavailableSegment = (start: number, end: number): UnavailableHourProps => ({
+const buildUnavailableSegment = (
+  start: number,
+  end: number,
+  chipColor: string = '#F5F3F0',
+): UnavailableHourProps => ({
   start,
   end,
-  backgroundColor: TIMELINE_UNAVAILABLE_COLOR,
+  backgroundColor: chipColor,
 });
 
 const mergeUnavailableSegments = (segments: UnavailableHourProps[]): UnavailableHourProps[] => {
@@ -701,9 +697,11 @@ const getTimelinePriority = (status?: string | null): number => {
 const AppointmentCard = ({
   appointment,
   onPress,
+  colors,
 }: {
   appointment: Appointment;
   onPress?: (appointment: Appointment) => void;
+  colors: SaraColors;
 }) => {
   const statusKey = (appointment.status || '').toUpperCase();
   const badgeStyle = STATUS_COLORS[statusKey] ?? DEFAULT_STATUS_STYLE;
@@ -713,12 +711,12 @@ const AppointmentCard = ({
 
   return (
     <TouchableOpacity
-      style={styles.card}
+      style={[styles.card, { backgroundColor: colors.backgroundLight }]}
       activeOpacity={0.92}
       onPress={() => onPress?.(appointment)}
       disabled={!onPress}>
       <View style={styles.cardHeader}>
-        <Text style={styles.cardTime}>{formatAppointmentTime(appointment)}</Text>
+        <Text style={[styles.cardTime, { color: colors.textPrimary }]}>{formatAppointmentTime(appointment)}</Text>
         <View style={[styles.statusPill, { backgroundColor: badgeStyle.backgroundColor }]}>
           <Text style={[styles.statusPillText, { color: badgeStyle.textColor }]}>
             {getStatusLabel(statusKey)}
@@ -726,14 +724,14 @@ const AppointmentCard = ({
         </View>
       </View>
 
-      <Text style={styles.cardTitle}>{displayService}</Text>
-      <Text style={styles.cardSubtitle}>{displayName}</Text>
+      <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>{displayService}</Text>
+      <Text style={[styles.cardSubtitle, { color: colors.textSecondary }]}>{displayName}</Text>
 
       {appointment.customerPhone ? (
-        <Text style={styles.cardMeta}>{appointment.customerPhone}</Text>
+        <Text style={[styles.cardMeta, { color: colors.textMeta }]}>{appointment.customerPhone}</Text>
       ) : null}
 
-      {appointment.location ? <Text style={styles.cardMeta}>{appointment.location}</Text> : null}
+      {appointment.location ? <Text style={[styles.cardMeta, { color: colors.textMeta }]}>{appointment.location}</Text> : null}
 
       {/* Payment badge removed – the status pill now reflects payment state */}
     </TouchableOpacity>
@@ -742,6 +740,8 @@ const AppointmentCard = ({
 
 const AppointmentsScreen = () => {
   const dispatch = useAppDispatch();
+  const colors = useSaraColors();
+  const isDark = useIsDarkMode();
   const detailSheetRef = useRef<BottomSheetModal>(null);
   const timelineRef = useRef<CalendarKitHandle>(null);
   const timelineSelectionSourceRef = useRef<'timeline' | null>(null);
@@ -757,9 +757,16 @@ const AppointmentsScreen = () => {
   const [timelineOverrides, setTimelineOverrides] = useState<
     Record<string, { startAt: string; endAt?: string | null }>
   >({});
+
+  // Create default unavailable hours with current theme color
+  const defaultUnavailableHours = useMemo(
+    () => createDefaultUnavailableHours(colors.chip),
+    [colors.chip],
+  );
+
   const [timelineUnavailableHours, setTimelineUnavailableHours] = useState<
     Record<string, UnavailableHourProps[]> | UnavailableHourProps[]
-  >(DEFAULT_UNAVAILABLE_HOURS);
+  >(() => createDefaultUnavailableHours(colors.chip));
   const renderDetailBackdrop = useCallback(
     (props: BottomSheetBackdropProps) => (
       <BottomSheetBackdrop
@@ -794,16 +801,16 @@ const AppointmentsScreen = () => {
 
   useEffect(() => {
     if (!sessionAgentId) {
-      setTimelineUnavailableHours(DEFAULT_UNAVAILABLE_HOURS);
+      setTimelineUnavailableHours(defaultUnavailableHours);
       return;
     }
     if (!easyAppointmentsConnected || !providerKey) {
-      setTimelineUnavailableHours(DEFAULT_UNAVAILABLE_HOURS);
+      setTimelineUnavailableHours(defaultUnavailableHours);
       return;
     }
 
     let isCancelled = false;
-    setTimelineUnavailableHours(DEFAULT_UNAVAILABLE_HOURS);
+    setTimelineUnavailableHours(defaultUnavailableHours);
 
     const syncOfficeHours = async () => {
       try {
@@ -819,7 +826,7 @@ const AppointmentsScreen = () => {
           snapshot.workingPlanExceptions && Object.keys(snapshot.workingPlanExceptions).length > 0,
         );
         if (!planHasDefinitions && !hasExceptions) {
-          setTimelineUnavailableHours(DEFAULT_UNAVAILABLE_HOURS);
+          setTimelineUnavailableHours(defaultUnavailableHours);
           return;
         }
         const unavailableLookup = buildUnavailableHoursLookup(
@@ -836,7 +843,7 @@ const AppointmentsScreen = () => {
           return;
         }
         console.warn('Failed to sync office hours for timeline view', err);
-        setTimelineUnavailableHours(DEFAULT_UNAVAILABLE_HOURS);
+        setTimelineUnavailableHours(defaultUnavailableHours);
       }
     };
 
@@ -894,12 +901,12 @@ const AppointmentsScreen = () => {
       const isSelected = dateKey === selectedDate;
       markers[dateKey] = {
         marked: true,
-        dotColor: SARA_ACCENT,
+        dotColor: colors.accent,
         ...(isSelected
           ? {
               selected: true,
-              selectedColor: SARA_ACCENT,
-              selectedTextColor: SARA_BACKGROUND_LIGHT,
+              selectedColor: colors.accent,
+              selectedTextColor: colors.backgroundLight,
             }
           : {}),
       };
@@ -908,20 +915,20 @@ const AppointmentsScreen = () => {
     if (!markers[selectedDate]) {
       markers[selectedDate] = {
         selected: true,
-        selectedColor: SARA_ACCENT,
-        selectedTextColor: SARA_BACKGROUND_LIGHT,
+        selectedColor: colors.accent,
+        selectedTextColor: colors.backgroundLight,
       };
     } else if (!markers[selectedDate].selected) {
       markers[selectedDate] = {
         ...markers[selectedDate],
         selected: true,
-        selectedColor: SARA_ACCENT,
-        selectedTextColor: SARA_BACKGROUND_LIGHT,
+        selectedColor: colors.accent,
+        selectedTextColor: colors.backgroundLight,
       };
     }
 
     return markers;
-  }, [appointmentsByDate, selectedDate]);
+  }, [appointmentsByDate, selectedDate, colors.accent, colors.backgroundLight]);
 
   const selectedDateAppointments = appointmentsByDate[selectedDate] ?? [];
   const selectedDateLabel = useMemo(() => formatCalendarDayLabel(selectedDate), [selectedDate]);
@@ -931,19 +938,19 @@ const AppointmentsScreen = () => {
   );
   const calendarTheme = useMemo(
     () => ({
-      backgroundColor: SARA_BACKGROUND_LIGHT,
-      calendarBackground: SARA_BACKGROUND_LIGHT,
-      textSectionTitleColor: SARA_TEXT_SECONDARY,
-      dayTextColor: SARA_TEXT_PRIMARY,
-      monthTextColor: SARA_TEXT_PRIMARY,
-      todayTextColor: SARA_ACCENT,
-      selectedDayBackgroundColor: SARA_ACCENT,
-      selectedDayTextColor: SARA_BACKGROUND_LIGHT,
-      arrowColor: SARA_ACCENT,
-      dotColor: SARA_ACCENT,
-      selectedDotColor: SARA_BACKGROUND_LIGHT,
+      backgroundColor: colors.backgroundLight,
+      calendarBackground: colors.backgroundLight,
+      textSectionTitleColor: colors.textSecondary,
+      dayTextColor: colors.textPrimary,
+      monthTextColor: colors.textPrimary,
+      todayTextColor: colors.accent,
+      selectedDayBackgroundColor: colors.accent,
+      selectedDayTextColor: colors.backgroundLight,
+      arrowColor: colors.accent,
+      dotColor: colors.accent,
+      selectedDotColor: colors.backgroundLight,
     }),
-    [],
+    [colors],
   );
 
   const selectedAppointment = useMemo(
@@ -1094,23 +1101,23 @@ const AppointmentsScreen = () => {
   const timelineTheme = useMemo(
     () => ({
       colors: {
-        primary: SARA_ACCENT,
-        onPrimary: SARA_BACKGROUND_LIGHT,
-        background: SARA_BACKGROUND_LIGHT,
-        onBackground: SARA_TEXT_PRIMARY,
-        border: SARA_BORDER,
-        text: SARA_TEXT_PRIMARY,
-        surface: SARA_CHIP,
-        onSurface: SARA_TEXT_SECONDARY,
+        primary: colors.accent,
+        onPrimary: colors.backgroundLight,
+        background: colors.backgroundLight,
+        onBackground: colors.textPrimary,
+        border: colors.border,
+        text: colors.textPrimary,
+        surface: colors.chip,
+        onSurface: colors.textSecondary,
       },
       dayBarContainer: {
         borderRadius: 18,
-        backgroundColor: SARA_BACKGROUND_LIGHT,
+        backgroundColor: colors.backgroundLight,
         marginBottom: 4,
       },
-      unavailableHourBackgroundColor: SARA_CHIP,
+      unavailableHourBackgroundColor: colors.chip,
     }),
-    [],
+    [colors],
   );
 
   useEffect(() => {
@@ -1307,9 +1314,9 @@ const AppointmentsScreen = () => {
 
   const renderItem = useCallback(
     ({ item }: { item: Appointment }) => (
-      <AppointmentCard appointment={item} onPress={handleAppointmentPress} />
+      <AppointmentCard appointment={item} onPress={handleAppointmentPress} colors={colors} />
     ),
-    [handleAppointmentPress],
+    [handleAppointmentPress, colors],
   );
 
   const keyExtractor = useCallback((item: Appointment) => item.id, []);
@@ -1317,16 +1324,29 @@ const AppointmentsScreen = () => {
   const listFooter =
     uiFlags.isLoadingMore && mergedAppointments.length > 0 ? (
       <View style={styles.footer}>
-        <ActivityIndicator color={SARA_ACCENT} />
+        <ActivityIndicator color={colors.accent} />
       </View>
     ) : null;
 
   const emptyComponent =
     uiFlags.isLoading || uiFlags.isRefreshing ? null : (
       <View style={styles.emptyState}>
-        <EmptyStateIcon stroke={SARA_ACCENT} />
-        <Text style={styles.emptyTitle}>{I18n.t('APPOINTMENTS.EMPTY_TITLE')}</Text>
-        <Text style={styles.emptySubtitle}>{I18n.t('APPOINTMENTS.EMPTY_SUBTITLE')}</Text>
+        <View style={[styles.emptyIconContainer, { backgroundColor: colors.accentLight }]}>
+          <Svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+            <Path
+              d="M26 6H6C4.89543 6 4 6.89543 4 8V26C4 27.1046 4.89543 28 6 28H26C27.1046 28 28 27.1046 28 26V8C28 6.89543 27.1046 6 26 6Z"
+              stroke={colors.accent}
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <Path d="M22 4V8" stroke={colors.accent} strokeWidth="2.5" strokeLinecap="round" />
+            <Path d="M10 4V8" stroke={colors.accent} strokeWidth="2.5" strokeLinecap="round" />
+            <Path d="M4 12H28" stroke={colors.accent} strokeWidth="2.5" strokeLinecap="round" />
+          </Svg>
+        </View>
+        <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>{I18n.t('APPOINTMENTS.EMPTY_TITLE')}</Text>
+        <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>{I18n.t('APPOINTMENTS.EMPTY_SUBTITLE')}</Text>
       </View>
     );
 
@@ -1367,10 +1387,10 @@ const AppointmentsScreen = () => {
 
   if (isInitialLoading) {
     return (
-      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-        <StatusBar translucent backgroundColor={SARA_BACKGROUND} barStyle="dark-content" />
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
+        <StatusBar translucent backgroundColor={colors.background} barStyle={isDark ? 'light-content' : 'dark-content'} />
         <View style={styles.loadingContainer}>
-          <ActivityIndicator color={SARA_ACCENT} />
+          <ActivityIndicator color={colors.accent} />
         </View>
       </SafeAreaView>
     );
@@ -1383,19 +1403,25 @@ const AppointmentsScreen = () => {
   ];
 
   const viewToggle = (
-    <View style={styles.viewToggleGroup}>
+    <View style={[styles.viewToggleGroup, { backgroundColor: colors.chip }]}>
       {viewOptions.map(({ mode, label }) => {
         const isActive = viewMode === mode;
         return (
           <TouchableOpacity
             key={mode}
-            style={[styles.viewToggleButton, isActive && styles.viewToggleButtonActive]}
+            style={[
+              styles.viewToggleButton,
+              isActive && [styles.viewToggleButtonActive, { backgroundColor: colors.backgroundLight }],
+            ]}
             onPress={() => handleViewModeChange(mode)}
             activeOpacity={0.9}
             accessibilityRole="button"
             accessibilityState={{ selected: isActive }}>
             <Text
-              style={[styles.viewToggleButtonText, isActive && styles.viewToggleButtonTextActive]}>
+              style={[
+                styles.viewToggleButtonText,
+                { color: isActive ? colors.textPrimary : colors.textMeta },
+              ]}>
               {label}
             </Text>
           </TouchableOpacity>
@@ -1406,7 +1432,7 @@ const AppointmentsScreen = () => {
 
   const header = (
     <View style={styles.hero}>
-      <Text style={styles.title}>{I18n.t('APPOINTMENTS.TITLE')}</Text>
+      <Text style={[styles.title, { color: colors.textPrimary }]}>{I18n.t('APPOINTMENTS.TITLE')}</Text>
       {error ? (
         <View style={styles.errorBanner}>
           <Text style={styles.errorText}>{error || I18n.t('APPOINTMENTS.ERROR')}</Text>
@@ -1422,13 +1448,13 @@ const AppointmentsScreen = () => {
     <RefreshControl
       refreshing={uiFlags.isRefreshing}
       onRefresh={handleRefresh}
-      tintColor={SARA_ACCENT}
+      tintColor={colors.accent}
     />
   );
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-      <StatusBar translucent backgroundColor={SARA_BACKGROUND} barStyle="dark-content" />
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
+      <StatusBar translucent backgroundColor={colors.background} barStyle={isDark ? 'light-content' : 'dark-content'} />
       {viewMode === 'list' ? (
         <FlatList
           data={mergedAppointments}
@@ -1452,7 +1478,7 @@ const AppointmentsScreen = () => {
           refreshControl={calendarRefreshControl}
           showsVerticalScrollIndicator={false}>
           {header}
-          <View style={styles.calendarCard}>
+          <View style={[styles.calendarCard, { backgroundColor: colors.backgroundLight }]}>
             <Calendar
               current={selectedDate}
               markedDates={calendarMarkedDates}
@@ -1463,13 +1489,13 @@ const AppointmentsScreen = () => {
             />
           </View>
           <View style={styles.calendarDaySection}>
-            <Text style={styles.calendarDayLabel}>{selectedDateLabel ?? selectedDate}</Text>
+            <Text style={[styles.calendarDayLabel, { color: colors.textPrimary }]}>{selectedDateLabel ?? selectedDate}</Text>
             {selectedDateAppointments.length === 0 ? (
-              <View style={styles.calendarEmptyState}>
-                <Text style={styles.calendarEmptyTitle}>
+              <View style={[styles.calendarEmptyState, { backgroundColor: colors.backgroundLight }]}>
+                <Text style={[styles.calendarEmptyTitle, { color: colors.textPrimary }]}>
                   {I18n.t('APPOINTMENTS.CALENDAR_EMPTY_TITLE')}
                 </Text>
-                <Text style={styles.calendarEmptySubtitle}>
+                <Text style={[styles.calendarEmptySubtitle, { color: colors.textSecondary }]}>
                   {I18n.t('APPOINTMENTS.CALENDAR_EMPTY_SUBTITLE')}
                 </Text>
               </View>
@@ -1479,6 +1505,7 @@ const AppointmentsScreen = () => {
                   key={appointment.id}
                   appointment={appointment}
                   onPress={handleAppointmentPress}
+                  colors={colors}
                 />
               ))
             )}
@@ -1488,19 +1515,22 @@ const AppointmentsScreen = () => {
         <View style={styles.timelineContainer}>
           {header}
           <View style={styles.timelineControls}>
-            <View style={styles.timelineModeGroup}>
+            <View style={[styles.timelineModeGroup, { backgroundColor: colors.chip }]}>
               {(['week', 'day'] as const).map(mode => {
                 const isActive = timelineViewMode === mode;
                 return (
                   <TouchableOpacity
                     key={mode}
-                    style={[styles.timelineModeButton, isActive && styles.timelineModeButtonActive]}
+                    style={[
+                      styles.timelineModeButton,
+                      isActive && [styles.timelineModeButtonActive, { backgroundColor: colors.backgroundLight }],
+                    ]}
                     onPress={() => handleTimelineViewModeChange(mode)}
                     accessibilityState={{ selected: isActive }}>
                     <Text
                       style={[
                         styles.timelineModeButtonText,
-                        isActive && styles.timelineModeButtonTextActive,
+                        { color: isActive ? colors.textPrimary : colors.textMeta },
                       ]}>
                       {mode === 'week'
                         ? I18n.t('APPOINTMENTS.TIMELINE_MODE_WEEK')
@@ -1511,18 +1541,18 @@ const AppointmentsScreen = () => {
               })}
             </View>
             <TouchableOpacity
-              style={styles.timelineTodayButton}
+              style={[styles.timelineTodayButton, { backgroundColor: colors.backgroundLight }]}
               onPress={handleTimelineTodayPress}
               accessibilityRole="button">
-              <Text style={styles.timelineTodayText}>{I18n.t('APPOINTMENTS.TIMELINE_TODAY')}</Text>
+              <Text style={[styles.timelineTodayText, { color: colors.accent }]}>{I18n.t('APPOINTMENTS.TIMELINE_TODAY')}</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.timelineRangeRow}>
-            <Text style={styles.timelineRangeLabel}>
+            <Text style={[styles.timelineRangeLabel, { color: colors.textPrimary }]}>
               {timelineRangeLabel ?? timelineVisibleLabel ?? selectedDateLabel ?? selectedDate}
             </Text>
           </View>
-          <View style={styles.timelineCalendarCard}>
+          <View style={[styles.timelineCalendarCard, { backgroundColor: colors.backgroundLight }]}>
             <CalendarKit
               ref={timelineRef}
               events={timelineEvents}
@@ -1555,8 +1585,8 @@ const AppointmentsScreen = () => {
         ref={detailSheetRef}
         onDismiss={handleDetailDismiss}
         backdropComponent={renderDetailBackdrop}
-        handleIndicatorStyle={styles.sheetHandle}
-        backgroundStyle={styles.sheetBackground}
+        handleIndicatorStyle={[styles.sheetHandle, { backgroundColor: colors.border }]}
+        backgroundStyle={[styles.sheetBackground, { backgroundColor: colors.backgroundLight }]}
         enableDynamicSizing
         enablePanDownToClose>
         <BottomSheetView style={styles.sheetContent}>
@@ -1564,11 +1594,11 @@ const AppointmentsScreen = () => {
             <View style={styles.sheetInner}>
               <View style={styles.sheetTitleRow}>
                 <View style={styles.sheetTitleGroup}>
-                  <Text style={styles.sheetTitle}>{detailDisplayService}</Text>
-                  <Text style={styles.sheetSubtitle}>{detailDisplayName}</Text>
+                  <Text style={[styles.sheetTitle, { color: colors.textPrimary }]}>{detailDisplayService}</Text>
+                  <Text style={[styles.sheetSubtitle, { color: colors.textSecondary }]}>{detailDisplayName}</Text>
                 </View>
                 <TouchableOpacity onPress={handleDetailClosePress} style={styles.sheetCloseButton}>
-                  <Text style={styles.sheetCloseText}>{I18n.t('APPOINTMENTS.DETAIL.CLOSE')}</Text>
+                  <Text style={[styles.sheetCloseText, { color: colors.accent }]}>{I18n.t('APPOINTMENTS.DETAIL.CLOSE')}</Text>
                 </TouchableOpacity>
               </View>
               <View style={[styles.statusPill, detailStatusPillStyle]}>
@@ -1576,80 +1606,80 @@ const AppointmentsScreen = () => {
                   {getStatusLabel(detailStatusKey ?? '')}
                 </Text>
               </View>
-              <View style={styles.sheetDivider} />
+              <View style={[styles.sheetDivider, { backgroundColor: colors.border }]} />
               <View style={styles.sheetSection}>
-                <Text style={styles.sheetLabel}>{I18n.t('APPOINTMENTS.DETAIL.SCHEDULE')}</Text>
-                {detailSchedule ? <Text style={styles.sheetValue}>{detailSchedule}</Text> : null}
+                <Text style={[styles.sheetLabel, { color: colors.textMeta }]}>{I18n.t('APPOINTMENTS.DETAIL.SCHEDULE')}</Text>
+                {detailSchedule ? <Text style={[styles.sheetValue, { color: colors.textPrimary }]}>{detailSchedule}</Text> : null}
                 {detailRelativeTime ? (
-                  <Text style={styles.sheetRelativeText}>{detailRelativeTime}</Text>
+                  <Text style={[styles.sheetRelativeText, { color: colors.textMeta }]}>{detailRelativeTime}</Text>
                 ) : null}
                 {detailProvider || detailDuration ? (
                   <View style={styles.sheetMetaRow}>
                     {detailProvider ? (
                       <View style={styles.sheetMiniSection}>
-                        <Text style={styles.sheetMetaLabel}>
+                        <Text style={[styles.sheetMetaLabel, { color: colors.textMeta }]}>
                           {I18n.t('APPOINTMENTS.DETAIL.PROVIDER')}
                         </Text>
-                        <Text style={styles.sheetMetaValue}>{detailProvider}</Text>
+                        <Text style={[styles.sheetMetaValue, { color: colors.textPrimary }]}>{detailProvider}</Text>
                       </View>
                     ) : null}
                     {detailDuration ? (
                       <View style={styles.sheetMiniSection}>
-                        <Text style={styles.sheetMetaLabel}>
+                        <Text style={[styles.sheetMetaLabel, { color: colors.textMeta }]}>
                           {I18n.t('APPOINTMENTS.DETAIL.DURATION')}
                         </Text>
-                        <View style={styles.sheetChip}>
-                          <Text style={styles.sheetChipText}>{detailDuration}</Text>
+                        <View style={[styles.sheetChip, { backgroundColor: colors.chip }]}>
+                          <Text style={[styles.sheetChipText, { color: colors.textPrimary }]}>{detailDuration}</Text>
                         </View>
                       </View>
                     ) : null}
                   </View>
                 ) : null}
               </View>
-              <View style={styles.sheetDivider} />
+              <View style={[styles.sheetDivider, { backgroundColor: colors.border }]} />
               <View style={styles.sheetSection}>
-                <Text style={styles.sheetLabel}>{I18n.t('APPOINTMENTS.DETAIL.CUSTOMER')}</Text>
-                <Text style={styles.sheetValue}>{detailDisplayName}</Text>
+                <Text style={[styles.sheetLabel, { color: colors.textMeta }]}>{I18n.t('APPOINTMENTS.DETAIL.CUSTOMER')}</Text>
+                <Text style={[styles.sheetValue, { color: colors.textPrimary }]}>{detailDisplayName}</Text>
                 <View style={styles.sheetMetaBlock}>
-                  <Text style={styles.sheetMetaLabel}>{I18n.t('APPOINTMENTS.DETAIL.PHONE')}</Text>
-                  <Text style={styles.sheetMetaValue}>
+                  <Text style={[styles.sheetMetaLabel, { color: colors.textMeta }]}>{I18n.t('APPOINTMENTS.DETAIL.PHONE')}</Text>
+                  <Text style={[styles.sheetMetaValue, { color: colors.textPrimary }]}>
                     {detailPhone ?? I18n.t('CONTACTS.DETAIL.VALUE_UNAVAILABLE')}
                   </Text>
                 </View>
               </View>
               {detailLocation ? (
                 <>
-                  <View style={styles.sheetDivider} />
+                  <View style={[styles.sheetDivider, { backgroundColor: colors.border }]} />
                   <View style={styles.sheetSection}>
-                    <Text style={styles.sheetLabel}>{I18n.t('APPOINTMENTS.DETAIL.LOCATION')}</Text>
-                    <Text style={styles.sheetValue}>{detailLocation}</Text>
+                    <Text style={[styles.sheetLabel, { color: colors.textMeta }]}>{I18n.t('APPOINTMENTS.DETAIL.LOCATION')}</Text>
+                    <Text style={[styles.sheetValue, { color: colors.textPrimary }]}>{detailLocation}</Text>
                   </View>
                 </>
               ) : null}
               {detailNotes ? (
                 <>
-                  <View style={styles.sheetDivider} />
+                  <View style={[styles.sheetDivider, { backgroundColor: colors.border }]} />
                   <View style={styles.sheetSection}>
-                    <Text style={styles.sheetLabel}>{I18n.t('APPOINTMENTS.DETAIL.NOTES')}</Text>
-                    <Text style={styles.sheetValue}>{detailNotes}</Text>
+                    <Text style={[styles.sheetLabel, { color: colors.textMeta }]}>{I18n.t('APPOINTMENTS.DETAIL.NOTES')}</Text>
+                    <Text style={[styles.sheetValue, { color: colors.textPrimary }]}>{detailNotes}</Text>
                   </View>
                 </>
               ) : null}
               {detailPaymentSummary ? (
                 <>
-                  <View style={styles.sheetDivider} />
+                  <View style={[styles.sheetDivider, { backgroundColor: colors.border }]} />
                   <View style={styles.sheetSection}>
-                    <Text style={styles.sheetLabel}>{I18n.t('APPOINTMENTS.DETAIL.PAYMENT')}</Text>
-                    <Text style={styles.sheetValue}>{detailPaymentSummary}</Text>
+                    <Text style={[styles.sheetLabel, { color: colors.textMeta }]}>{I18n.t('APPOINTMENTS.DETAIL.PAYMENT')}</Text>
+                    <Text style={[styles.sheetValue, { color: colors.textPrimary }]}>{detailPaymentSummary}</Text>
                   </View>
                 </>
               ) : null}
               {detailSource ? (
                 <>
-                  <View style={styles.sheetDivider} />
+                  <View style={[styles.sheetDivider, { backgroundColor: colors.border }]} />
                   <View style={styles.sheetSection}>
-                    <Text style={styles.sheetLabel}>{I18n.t('APPOINTMENTS.DETAIL.SOURCE')}</Text>
-                    <Text style={styles.sheetValue}>{detailSource}</Text>
+                    <Text style={[styles.sheetLabel, { color: colors.textMeta }]}>{I18n.t('APPOINTMENTS.DETAIL.SOURCE')}</Text>
+                    <Text style={[styles.sheetValue, { color: colors.textPrimary }]}>{detailSource}</Text>
                   </View>
                 </>
               ) : null}
@@ -1666,11 +1696,9 @@ export default AppointmentsScreen;
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: SARA_BACKGROUND,
   },
   list: {
     flex: 1,
-    backgroundColor: SARA_BACKGROUND,
   },
   listContent: {
     paddingHorizontal: 24,
@@ -1683,7 +1711,6 @@ const styles = StyleSheet.create({
   },
   viewToggleGroup: {
     flexDirection: 'row',
-    backgroundColor: '#ECE7E1',
     borderRadius: 16,
     padding: 4,
     gap: 4,
@@ -1695,29 +1722,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   viewToggleButtonActive: {
-    backgroundColor: SARA_BACKGROUND_LIGHT,
-    shadowColor: SARA_TEXT_PRIMARY,
     shadowOpacity: 0.08,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
     elevation: 2,
   },
   viewToggleButtonText: {
-    color: SARA_TEXT_SECONDARY,
     fontSize: 14,
     fontWeight: '600',
   },
-  viewToggleButtonTextActive: {
-    color: SARA_TEXT_PRIMARY,
-  },
+  viewToggleButtonTextActive: {},
   title: {
-    color: SARA_TEXT_PRIMARY,
     fontSize: 28,
     fontWeight: '700',
     letterSpacing: -0.2,
   },
   updatedText: {
-    color: SARA_TEXT_META,
     fontSize: 13,
   },
   errorBanner: {
@@ -1742,12 +1762,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   card: {
-    backgroundColor: SARA_BACKGROUND_LIGHT,
     borderRadius: 20,
     paddingHorizontal: 20,
     paddingVertical: 24,
     marginBottom: 16,
-    shadowColor: SARA_TEXT_PRIMARY,
     shadowOpacity: 0.08,
     shadowRadius: 24,
     shadowOffset: { width: 0, height: 8 },
@@ -1760,7 +1778,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   cardTime: {
-    color: SARA_TEXT_PRIMARY,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -1776,16 +1793,13 @@ const styles = StyleSheet.create({
     letterSpacing: 0.4,
   },
   cardTitle: {
-    color: SARA_TEXT_PRIMARY,
     fontSize: 18,
     fontWeight: '600',
   },
   cardSubtitle: {
-    color: SARA_TEXT_SECONDARY,
     fontSize: 15,
   },
   cardMeta: {
-    color: SARA_TEXT_META,
     fontSize: 13,
   },
   emptyState: {
@@ -1793,14 +1807,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 40,
   },
+  emptyIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   emptyTitle: {
-    color: SARA_TEXT_PRIMARY,
     fontSize: 18,
     fontWeight: '600',
     marginTop: 20,
   },
   emptySubtitle: {
-    color: SARA_TEXT_SECONDARY,
     fontSize: 15,
     textAlign: 'center',
     marginTop: 8,
@@ -1821,7 +1840,6 @@ const styles = StyleSheet.create({
   },
   timelineModeGroup: {
     flexDirection: 'row',
-    backgroundColor: '#ECE7E1',
     borderRadius: 14,
     padding: 4,
     gap: 4,
@@ -1833,33 +1851,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   timelineModeButtonActive: {
-    backgroundColor: SARA_BACKGROUND_LIGHT,
-    shadowColor: SARA_TEXT_PRIMARY,
     shadowOpacity: 0.08,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
   timelineModeButtonText: {
-    color: SARA_TEXT_SECONDARY,
     fontWeight: '600',
   },
-  timelineModeButtonTextActive: {
-    color: SARA_TEXT_PRIMARY,
-  },
+  timelineModeButtonTextActive: {},
   timelineTodayButton: {
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 999,
-    backgroundColor: SARA_BACKGROUND_LIGHT,
-    shadowColor: SARA_TEXT_PRIMARY,
     shadowOpacity: 0.08,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
   timelineTodayText: {
-    color: SARA_ACCENT,
     fontWeight: '600',
   },
   timelineRangeRow: {
@@ -1868,16 +1878,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   timelineRangeLabel: {
-    color: SARA_TEXT_PRIMARY,
     fontSize: 18,
     fontWeight: '600',
   },
   timelineCalendarCard: {
     flex: 1,
     borderRadius: 24,
-    backgroundColor: SARA_BACKGROUND_LIGHT,
     padding: 8,
-    shadowColor: SARA_TEXT_PRIMARY,
     shadowOpacity: 0.08,
     shadowRadius: 24,
     shadowOffset: { width: 0, height: 8 },
@@ -1888,7 +1895,6 @@ const styles = StyleSheet.create({
   },
   calendarScroll: {
     flex: 1,
-    backgroundColor: SARA_BACKGROUND,
   },
   calendarScrollContent: {
     paddingHorizontal: 24,
@@ -1897,10 +1903,8 @@ const styles = StyleSheet.create({
     gap: 24,
   },
   calendarCard: {
-    backgroundColor: SARA_BACKGROUND_LIGHT,
     borderRadius: 24,
     padding: 12,
-    shadowColor: SARA_TEXT_PRIMARY,
     shadowOpacity: 0.08,
     shadowRadius: 20,
     shadowOffset: { width: 0, height: 8 },
@@ -1914,29 +1918,24 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   calendarDayLabel: {
-    color: SARA_TEXT_PRIMARY,
     fontSize: 18,
     fontWeight: '600',
   },
   calendarEmptyState: {
-    backgroundColor: SARA_BACKGROUND_LIGHT,
     borderRadius: 20,
     paddingHorizontal: 20,
     paddingVertical: 24,
     gap: 6,
-    shadowColor: SARA_TEXT_PRIMARY,
     shadowOpacity: 0.05,
     shadowRadius: 20,
     shadowOffset: { width: 0, height: 8 },
     elevation: 2,
   },
   calendarEmptyTitle: {
-    color: SARA_TEXT_PRIMARY,
     fontSize: 16,
     fontWeight: '600',
   },
   calendarEmptySubtitle: {
-    color: SARA_TEXT_SECONDARY,
     fontSize: 14,
   },
   footer: {
@@ -1948,11 +1947,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   sheetBackground: {
-    backgroundColor: SARA_BACKGROUND_LIGHT,
     borderRadius: 28,
   },
   sheetHandle: {
-    backgroundColor: SARA_BORDER,
     width: 48,
   },
   sheetContent: {
@@ -1974,13 +1971,11 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   sheetTitle: {
-    color: SARA_TEXT_PRIMARY,
     fontSize: 22,
     fontWeight: '700',
     letterSpacing: -0.2,
   },
   sheetSubtitle: {
-    color: SARA_TEXT_SECONDARY,
     fontSize: 16,
   },
   sheetCloseButton: {
@@ -1988,31 +1983,26 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   sheetCloseText: {
-    color: SARA_ACCENT,
     fontSize: 14,
     fontWeight: '600',
   },
   sheetDivider: {
     height: 1,
-    backgroundColor: SARA_BORDER,
   },
   sheetSection: {
     gap: 8,
   },
   sheetLabel: {
-    color: SARA_TEXT_META,
     fontSize: 12,
     fontWeight: '600',
     letterSpacing: 0.8,
     textTransform: 'uppercase',
   },
   sheetValue: {
-    color: SARA_TEXT_PRIMARY,
     fontSize: 16,
     lineHeight: 22,
   },
   sheetRelativeText: {
-    color: SARA_TEXT_META,
     fontSize: 13,
   },
   sheetMetaRow: {
@@ -2029,14 +2019,12 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   sheetMetaLabel: {
-    color: SARA_TEXT_META,
     fontSize: 11,
     fontWeight: '600',
     letterSpacing: 0.6,
     textTransform: 'uppercase',
   },
   sheetMetaValue: {
-    color: SARA_TEXT_PRIMARY,
     fontSize: 15,
   },
   sheetChip: {
@@ -2045,10 +2033,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: SARA_CHIP,
   },
   sheetChipText: {
-    color: SARA_TEXT_PRIMARY,
     fontSize: 13,
     fontWeight: '600',
     letterSpacing: 0.2,

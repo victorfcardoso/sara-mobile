@@ -22,7 +22,6 @@ jest.mock('@/utils/toastUtils', () => ({
 }));
 
 describe('Auth Actions', () => {
-
   beforeEach(() => {
     jest.clearAllMocks();
   });

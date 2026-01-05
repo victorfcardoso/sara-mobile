@@ -86,7 +86,7 @@ const normalizeServices = (services: RawAgentService[] | null | undefined): Agen
       price,
       currency: toUpperStringOrNull(service.currency),
       requiresDeposit,
-      depositAmount: requiresDeposit ? depositAmount ?? price : null,
+      depositAmount: requiresDeposit ? (depositAmount ?? price) : null,
       eaServiceId: toNumberOrNull(service.ea_service_id),
       eaProviderId: toNumberOrNull(service.ea_provider_id),
     };
@@ -111,7 +111,9 @@ const normalizeMeta = (raw: RawAgentMeta | null | undefined): AgentIntegrations[
     phoneNumberId,
     businessAppId: toStringOrNull(raw?.business_app_id),
     approvedTemplates: Array.isArray(raw?.approved_templates)
-      ? raw!.approved_templates.filter(template => typeof template === 'string' && template.trim().length > 0)
+      ? raw!.approved_templates.filter(
+          template => typeof template === 'string' && template.trim().length > 0,
+        )
       : [],
   };
 };
@@ -171,7 +173,9 @@ const normalizeIntegrations = (raw: RawAgentSettings): AgentIntegrations => {
   };
 };
 
-const normalizePlanTier = (tier: AgentPlanTier | string | null | undefined): AgentPlanTier | null => {
+const normalizePlanTier = (
+  tier: AgentPlanTier | string | null | undefined,
+): AgentPlanTier | null => {
   if (!tier) {
     return null;
   }

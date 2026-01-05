@@ -48,12 +48,14 @@ export class SsoUtils {
    * @param dispatch - Redux dispatch function
    * @returns Promise<boolean> - Success status
    */
-  static async handleSsoCallback(_params: SsoLoginParams, _dispatch: AppDispatch): Promise<boolean> {
+  static async handleSsoCallback(
+    _params: SsoLoginParams,
+    _dispatch: AppDispatch,
+  ): Promise<boolean> {
     showToast({
       message: i18n.t('LOGIN.SSO_AUTH_FAILED'),
     });
     return false;
-
   }
 
   /**

@@ -4,6 +4,7 @@ import Animated from 'react-native-reanimated';
 import { tailwind } from '@/theme';
 import type { NotificationType, NotificationPayload } from '@/types/Notification';
 import { getNotificationTypeConfig } from './NotificationTypeIndicator';
+import { useSaraColors } from '@/hooks/useSaraColors';
 
 type InboxItemProps = {
   isRead: boolean;
@@ -16,7 +17,7 @@ type InboxItemProps = {
 // Extract meaningful summary from payload (similar to web CRM)
 const getPayloadSummary = (
   payload?: NotificationPayload,
-  pushMessageTitle?: string
+  pushMessageTitle?: string,
 ): { title: string; subtitle?: string; providerName?: string; appointmentTime?: string } => {
   if (!payload) {
     return { title: pushMessageTitle || 'New notification' };
@@ -34,7 +35,10 @@ const getPayloadSummary = (
 
   // Try to get service name
   const serviceName =
-    payload.service_name || payload.service_label || bookingData.service_name || bookingData.service_label;
+    payload.service_name ||
+    payload.service_label ||
+    bookingData.service_name ||
+    bookingData.service_label;
 
   // Try to get provider name
   const providerName = payload.provider_name || bookingData.provider_name;
@@ -98,18 +102,24 @@ const formatAppointmentTime = (iso?: string): string => {
 
 export const InboxItemComponent = (props: InboxItemProps) => {
   const { isRead, notificationType, pushMessageTitle, lastActivityAt, payload } = props;
+  const colors = useSaraColors();
 
   const config = getNotificationTypeConfig(notificationType);
-  const { title, subtitle, providerName, appointmentTime } = getPayloadSummary(payload, pushMessageTitle);
+  const { title, subtitle, providerName, appointmentTime } = getPayloadSummary(
+    payload,
+    pushMessageTitle,
+  );
 
   return (
     <View style={tailwind.style('mx-3 my-1.5')}>
       <View
-        style={tailwind.style(
-          'rounded-2xl overflow-hidden flex-row bg-sara-background-light',
-          'border',
-          isRead ? 'border-sara-border' : 'border-sara-border-strong',
-        )}>
+        style={[
+          tailwind.style('rounded-2xl overflow-hidden flex-row border'),
+          {
+            backgroundColor: colors.backgroundLight,
+            borderColor: isRead ? colors.border : colors.borderStrong,
+          },
+        ]}>
         {/* Left accent bar - uses notification type color */}
         <View
           style={[
@@ -127,7 +137,10 @@ export const InboxItemComponent = (props: InboxItemProps) => {
           <View style={tailwind.style('flex-row items-center mb-2')}>
             {/* Icon container */}
             <View
-              style={tailwind.style('w-8 h-8 rounded-lg items-center justify-center mr-2', `bg-${config.bgColor}`)}>
+              style={tailwind.style(
+                'w-8 h-8 rounded-lg items-center justify-center mr-2',
+                `bg-${config.bgColor}`,
+              )}>
               {config.icon}
             </View>
 
@@ -135,7 +148,7 @@ export const InboxItemComponent = (props: InboxItemProps) => {
             <Animated.Text
               style={tailwind.style(
                 'text-xs font-inter-medium-24 uppercase tracking-wide',
-                `text-${config.color}`
+                `text-${config.color}`,
               )}>
               {config.label}
             </Animated.Text>
@@ -144,24 +157,33 @@ export const InboxItemComponent = (props: InboxItemProps) => {
             <View style={tailwind.style('flex-1')} />
 
             {/* Unread dot */}
-            {!isRead && <View style={tailwind.style('w-2 h-2 rounded-full mr-2', `bg-${config.color}`)} />}
+            {!isRead && (
+              <View style={tailwind.style('w-2 h-2 rounded-full mr-2', `bg-${config.color}`)} />
+            )}
 
             {/* Time */}
-            <Animated.Text style={tailwind.style('text-xs font-inter-normal-20 text-sara-text-meta')}>
+            <Animated.Text
+              style={[tailwind.style('text-xs font-inter-normal-20'), { color: colors.textMeta }]}>
               {lastActivityAt()}
             </Animated.Text>
           </View>
 
           {/* Main content: Title + Subtitle + Provider */}
           <Animated.Text
-            style={tailwind.style('text-base font-inter-semibold-20 leading-tight text-sara-text-primary')}
+            style={[
+              tailwind.style('text-base font-inter-semibold-20 leading-tight'),
+              { color: colors.textPrimary },
+            ]}
             numberOfLines={1}>
             {title}
           </Animated.Text>
 
           {(subtitle || providerName) && (
             <Animated.Text
-              style={tailwind.style('text-sm font-inter-normal-20 mt-0.5 text-sara-text-secondary')}
+              style={[
+                tailwind.style('text-sm font-inter-normal-20 mt-0.5'),
+                { color: colors.textSecondary },
+              ]}
               numberOfLines={1}>
               {subtitle}
               {subtitle && providerName && ' \u2022 '}
@@ -172,8 +194,16 @@ export const InboxItemComponent = (props: InboxItemProps) => {
           {/* Appointment time chip (if available) */}
           {appointmentTime && (
             <View style={tailwind.style('flex-row mt-2')}>
-              <View style={tailwind.style('flex-row items-center px-2 py-1 rounded-lg bg-sara-chip')}>
-                <Animated.Text style={tailwind.style('text-xs font-inter-medium-24 text-sara-text-secondary')}>
+              <View
+                style={[
+                  tailwind.style('flex-row items-center px-2 py-1 rounded-lg'),
+                  { backgroundColor: colors.chip },
+                ]}>
+                <Animated.Text
+                  style={[
+                    tailwind.style('text-xs font-inter-medium-24'),
+                    { color: colors.textSecondary },
+                  ]}>
                   {appointmentTime}
                 </Animated.Text>
               </View>

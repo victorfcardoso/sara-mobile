@@ -28,4 +28,3 @@ export const NotificationsStack = () => {
     </Stack.Navigator>
   );
 };
-

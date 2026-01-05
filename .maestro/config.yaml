@@ -1,0 +1,18 @@
+# Maestro E2E Test Configuration for Sara Mobile
+# Documentation: https://maestro.mobile.dev/
+
+# App identifier for iOS
+appId: com.chatwoot.app
+
+# Wait timeout for element visibility (milliseconds)
+initFlow: flows/init.yaml
+
+# Default flows directory
+flows:
+  - flows/
+
+# Environment variables for tests
+env:
+  APP_NAME: Sara
+  # Test server URL (use mock or dev environment)
+  TEST_API_URL: https://api-dev.sara-ai.com.br

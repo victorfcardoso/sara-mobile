@@ -11,6 +11,7 @@ import { isMarkdown } from '@/utils';
 import { Icon } from '@/components-next/common';
 
 import { useAppDispatch, useAppSelector } from '@/hooks';
+import { useSaraColors } from '@/hooks/useSaraColors';
 
 import { selectQuoteMessage, setQuoteMessage } from '@/store/conversation/sendMessageSlice';
 
@@ -38,10 +39,11 @@ const File = () => {
 export const QuoteReply = () => {
   const quoteMessage = useAppSelector(selectQuoteMessage);
   const dispatch = useAppDispatch();
+  const colors = useSaraColors();
 
   const { messageListRef } = useRefsContext();
 
-  const textStyle = tailwind.style('text-gray-950');
+  const textStyle = { color: colors.textPrimary };
 
   const styles = StyleSheet.create({
     text: {
@@ -105,7 +107,7 @@ export const QuoteReply = () => {
   return (
     <Pressable
       onPress={handleScrollToMessage}
-      style={tailwind.style('flex flex-row items-center px-2.5 pb-[14px] bg-[#F8F5F3] -z-10')}>
+      style={[tailwind.style('flex flex-row items-center px-2.5 pb-[14px] -z-10'), { backgroundColor: colors.background }]}>
       {quoteMessage?.attachments?.length && quoteMessage?.attachments?.length > 0 ? (
         <Animated.View style={tailwind.style('h-9.5 w-9.5 mr-3 rounded-lg overflow-hidden')}>
           {quoteMessage?.attachments?.length > 0 &&
@@ -132,9 +134,10 @@ export const QuoteReply = () => {
       <Animated.View style={tailwind.style('flex-1')}>
         <Animated.View>
           <Animated.Text
-            style={tailwind.style(
-              'text-cxs tracking-[0.32px] leading-[15px] font-inter-420-20 text-blackA-A11',
-            )}>
+            style={[
+              tailwind.style('text-cxs tracking-[0.32px] leading-[15px] font-inter-420-20'),
+              { color: colors.textMeta },
+            ]}>
             Replying to {quoteMessage?.sender?.name}
           </Animated.Text>
         </Animated.View>
@@ -157,13 +160,13 @@ export const QuoteReply = () => {
             ) : (
               <Text
                 numberOfLines={1}
-                style={tailwind.style('text-md font-inter-normal-20 tracking-[0.32px] capitalize')}>
+                style={[tailwind.style('text-md font-inter-normal-20 tracking-[0.32px] capitalize'), { color: colors.textPrimary }]}>
                 {quoteMessage?.content}
               </Text>
             )
           ) : (
             <Text
-              style={tailwind.style('text-md font-inter-normal-20 tracking-[0.32px] capitalize')}>
+              style={[tailwind.style('text-md font-inter-normal-20 tracking-[0.32px] capitalize'), { color: colors.textPrimary }]}>
               {quoteMessage?.attachments?.[0]?.fileType}
             </Text>
           )}

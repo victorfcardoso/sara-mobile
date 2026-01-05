@@ -18,6 +18,27 @@
 - Use `PascalCase` for React components, `camelCase` for hooks/utilities, and `SCREAMING_SNAKE_CASE` for constants. Keep file names aligned with their primary export.
 - Centralize design tokens in `src/theme/` or Tailwind config and mirror navigation route names with their screen files.
 
+## Theme-Aware Component Patterns
+- **Use `useSaraColors` hook for all new components** — Returns theme-aware color values that respond to user theme preference (light, dark, or system).
+- **For inline styles**, destructure colors and apply directly: `style={{ backgroundColor: colors.background }}`.
+- **For static styling**, use Tailwind classes: `tailwind.style('bg-sara-background')` (light mode only; use `useSaraColors` for dark mode support).
+- **Check dark mode status** with `useIsDarkMode()` or `useSaraColorScheme()` when you need conditional logic.
+- **Never hardcode hex values** — Always use `useSaraColors()`, `tailwind.color()`, or Tailwind classes.
+
+Example pattern:
+```tsx
+import { useSaraColors } from '@/hooks/useSaraColors';
+
+export function MyCard() {
+  const colors = useSaraColors();
+  return (
+    <View style={{ backgroundColor: colors.backgroundLight, borderColor: colors.border }}>
+      <Text style={{ color: colors.textPrimary }}>Content</Text>
+    </View>
+  );
+}
+```
+
 ## Testing Guidelines
 - Jest with the React Native preset drives tests; shared mocks belong in the root `__mocks__/`.
 - Co-locate specs beside sources as `*.test.ts(x)` so they auto-load, stubbing network calls with axios mocks.

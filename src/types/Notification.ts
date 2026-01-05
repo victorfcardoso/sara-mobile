@@ -50,7 +50,7 @@ export type NotificationPayload = {
   title?: string;
   message?: string;
   pending_booking_id?: string;
-  available_providers?: Array<{ id: string; name: string }>;
+  available_providers?: { id: string; name: string }[];
   booking_data?: {
     customer_name?: string;
     client_name?: string;

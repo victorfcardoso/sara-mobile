@@ -6,4 +6,3 @@ export const appConfig = {
   ssoCallbackPath,
   ssoCallbackUrl: `${scheme}://${ssoCallbackPath}`,
 };
-

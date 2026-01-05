@@ -9,6 +9,7 @@ import { tailwind } from '@/theme';
 import { Icon } from '@/components-next/common';
 import { Spinner } from '@/components-next/spinner';
 import { MESSAGE_VARIANTS } from '@/constants';
+import { useSaraColors } from '@/hooks/useSaraColors';
 
 const generateUniqueFileName = (url: string, originalFileName: string) => {
   const hash = url.split('').reduce((acc, char) => {
@@ -33,11 +34,30 @@ type FilePreviewProps = Pick<FileBubbleProps, 'fileSrc'> & {
 export const FileBubblePreview = (props: FilePreviewProps) => {
   const { fileSrc, isComposed = false, variant } = props;
   const dirs = RNFetchBlob.fs.dirs;
+  const colors = useSaraColors();
 
   const [fileDownload, setFileDownload] = useState(false);
   const fileName = fileSrc.split('/')[fileSrc.split('/').length - 1];
   const uniqueFileName = generateUniqueFileName(fileSrc, fileName);
   const localFilePath = dirs.DocumentDir + `/${uniqueFileName}`;
+
+  // Theme-aware colors for file bubble
+  const getTextColor = () => {
+    if (variant === MESSAGE_VARIANTS.USER) return colors.textPrimary;
+    if (variant === MESSAGE_VARIANTS.AGENT) return '#FFFFFF';
+    return colors.textPrimary;
+  };
+
+  const getIconColor = () => {
+    if (variant === MESSAGE_VARIANTS.USER) return colors.textPrimary;
+    if (variant === MESSAGE_VARIANTS.AGENT) return '#FFFFFF';
+    return colors.textPrimary;
+  };
+
+  const getBorderColor = () => {
+    if (variant === MESSAGE_VARIANTS.USER) return colors.border;
+    return 'rgba(255,255,255,0.65)';
+  };
 
   const previewFile = () => {
     try {
@@ -76,20 +96,13 @@ export const FileBubblePreview = (props: FilePreviewProps) => {
     <React.Fragment>
       {fileDownload ? (
         <Animated.View style={tailwind.style('pr-1.5')}>
-          <Spinner
-            size={20}
-            stroke={variant === MESSAGE_VARIANTS.USER ? '#4CB6AC' : '#FFFFFF'}
-          />
+          <Spinner size={20} stroke={variant === MESSAGE_VARIANTS.USER ? colors.accent : '#FFFFFF'} />
         </Animated.View>
       ) : (
         <Animated.View style={tailwind.style('pr-1.5')}>
           <Icon
             size={24}
-            icon={
-              <FileIcon
-                fill={variant === MESSAGE_VARIANTS.USER ? '#16273D' : '#FFFFFF'}
-              />
-            }
+            icon={<FileIcon fill={getIconColor()} />}
           />
         </Animated.View>
       )}
@@ -104,23 +117,18 @@ export const FileBubblePreview = (props: FilePreviewProps) => {
                 variant === MESSAGE_VARIANTS.USER || variant === MESSAGE_VARIANTS.AGENT
                   ? 'text-base tracking-[0.32px] leading-[22px] font-inter-normal-20'
                   : '',
-                variant === MESSAGE_VARIANTS.USER
-                  ? 'text-[#16273D]'
-                  : variant === MESSAGE_VARIANTS.AGENT
-                    ? 'text-white'
-                    : '',
               ),
+              { color: getTextColor() },
               style.androidTextOnlyStyle,
             ]}>
             {fileName}
           </Animated.Text>
           <Animated.View
             style={[
-              tailwind.style('border-b-[1px] absolute left-0 right-0 ios:bottom-[1px] android:bottom-0'),
-              {
-                borderBottomColor:
-                  variant === MESSAGE_VARIANTS.USER ? '#CCE6DE' : 'rgba(255,255,255,0.65)',
-              },
+              tailwind.style(
+                'border-b-[1px] absolute left-0 right-0 ios:bottom-[1px] android:bottom-0',
+              ),
+              { borderBottomColor: getBorderColor() },
             ]}
           />
         </Animated.View>

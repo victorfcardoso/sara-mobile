@@ -12,10 +12,11 @@ This log tracks the Sara-branded fork of the Chatwoot mobile client. Update it w
 - **Chatwoot Tenant**
   - Base URL: `https://chat.sara-ai.com.br`
   - Expo config seeds this URL into the Redux store on first launch, so users land directly on the login screen.
-  - SSO buttons are hidden by default; Sara-first login handles authentication via `/auth/login` + `/chatwoot/mobile-auth`.
+  - SSO buttons are hidden by default; Sara-first login uses Cognito to obtain an ID token and then calls `/chatwoot/mobile-auth`.
 - **Sara API**
   - Set `EXPO_PUBLIC_SARA_API_BASE_URL` to the FastAPI base (e.g., `https://app.sara-ai.com`).
-  - `/chatwoot/mobile-auth` now auto-mints each operator’s Chatwoot personal access token on first login **if** the linked `AgentsCredentials` row already includes the Chatwoot connection fields (`chatwoot_api_base`, `chatwoot_account_id`, `chatwoot_inbox_id`, `chatwoot_api_token`, `chatwoot_agentbot_webhook_secret`). Missing fields trigger HTTP 409 and the mobile app reports “username/password incorrect.”
+  - Configure Cognito with `EXPO_PUBLIC_COGNITO_USER_POOL_ID` + `EXPO_PUBLIC_COGNITO_CLIENT_ID`.
+  - `/chatwoot/mobile-auth` now auto-mints each operator’s Chatwoot personal access token on first login **if** the linked `AgentsCredentials` row already includes the Chatwoot connection fields (`chatwoot_api_base`, `chatwoot_account_id`, `chatwoot_inbox_id`, `chatwoot_api_token`, `chatwoot_agentbot_webhook_secret`). Missing fields trigger HTTP 409 and the mobile app surfaces a Chatwoot setup warning.
   - `SaraAPIService` automatically attaches the Sara bearer token **and** the active agent’s `X-Agent-Id` header, so CRM endpoints (customers, appointments, services, office hours) always match the tenant selected inside React Admin.
 - **Contacts tab**
   - `src/screens/contacts/ContactsScreen.tsx` only renders CRM customers. Upcoming appointments (from `/chatwoot/mobile/appointments`) are merged into today’s section, recent contacts show next, and alphabetical groups hide any contact that already appears elsewhere to avoid duplicates between sections.
@@ -35,7 +36,7 @@ This log tracks the Sara-branded fork of the Chatwoot mobile client. Update it w
 
 ## Setup Checklist
 
-1. Copy `.env.example` → `.env` and verify the Sara values above (including `EXPO_PUBLIC_SARA_API_BASE_URL`).
+1. Copy `.env.example` → `.env` and verify the Sara values above (including `EXPO_PUBLIC_SARA_API_BASE_URL`, `EXPO_PUBLIC_COGNITO_USER_POOL_ID`, and `EXPO_PUBLIC_COGNITO_CLIENT_ID`).
 2. Run `pnpm install` (Corepack + pnpm already configured in the repo).
 3. Whenever `.env` changes, regenerate native assets:
    ```bash

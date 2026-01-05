@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, AppState, RefreshControl, StatusBar, StyleSheet } from 'react-native';
+import { ActivityIndicator, AppState, RefreshControl, StatusBar } from 'react-native';
 import Animated, {
   LinearTransition,
   runOnJS,
@@ -25,7 +25,7 @@ import {
 
 import { ActionTabs, BottomSheetBackdrop, BottomSheetWrapper } from '@/components-next';
 
-import { EmptyStateIcon } from '@/svg-icons';
+import Svg, { Path, Circle } from 'react-native-svg';
 import {
   SCREENS,
   TAB_BAR_HEIGHT,
@@ -63,24 +63,23 @@ import i18n from '@/i18n';
 import ActionBottomSheet from '@/navigation/tabs/ActionBottomSheet';
 import { getCurrentRouteName } from '@/utils/navigationUtils';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSaraColors, useIsDarkMode } from '@/hooks/useSaraColors';
 
 // The screen list thats need to be checked for refreshing the conversations list
 const REFRESH_SCREEN_LIST = [SCREENS.CONVERSATION, SCREENS.INBOX, SCREENS.SETTINGS];
 
 const AnimatedFlashList = Animated.createAnimatedComponent(FlashList);
 
-const SARA_COLORS = {
-  background: '#F8F5F3',
-  accent: '#4CB6AC',
-  textSecondary: '#566273',
-};
-
 type FlashListRenderItemType = {
   item: Conversation;
   index: number;
 };
 
-const ConversationList = () => {
+type ConversationListProps = {
+  colors: ReturnType<typeof useSaraColors>;
+};
+
+const ConversationList = ({ colors }: ConversationListProps) => {
   const { dismissAll } = useBottomSheetModal();
   const dispatch = useAppDispatch();
   const [appState, setAppState] = useState(AppState.currentState);
@@ -152,7 +151,7 @@ const ConversationList = () => {
           `pb-[${TAB_BAR_HEIGHT}px]`,
         )}>
         {isAllConversationsFetched ? null : (
-          <ActivityIndicator size="small" color={SARA_COLORS.accent} />
+          <ActivityIndicator size="small" color={colors.accent} />
         )}
       </Animated.View>
     );
@@ -248,7 +247,7 @@ const ConversationList = () => {
   return shouldShowEmptyLoader ? (
     <Animated.View
       style={tailwind.style('flex-1 items-center justify-center', `pb-[${TAB_BAR_HEIGHT}px]`)}>
-      <ActivityIndicator color={SARA_COLORS.accent} />
+      <ActivityIndicator color={colors.accent} />
     </Animated.View>
   ) : allConversations.length === 0 ? (
     <Animated.ScrollView
@@ -257,9 +256,23 @@ const ConversationList = () => {
         'flex-1 items-center justify-center',
         `pb-[${TAB_BAR_HEIGHT}px]`,
       )}>
-      <EmptyStateIcon stroke={SARA_COLORS.accent} />
+      <Animated.View style={[tailwind.style('w-16 h-16 rounded-2xl items-center justify-center mb-4'), { backgroundColor: colors.accentLight }]}>
+        <Svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+          <Path
+            d="M28 15.5C28.0034 17.2774 27.5765 19.0291 26.756 20.6C25.7907 22.4713 24.3471 24.0419 22.5717 25.1614C20.7964 26.2809 18.7536 26.9074 16.65 26.98C14.8726 26.9834 13.1209 26.5565 11.55 25.736L4 28L6.264 20.45C5.44348 18.8791 5.01657 17.1274 5.01999 15.35C5.09263 13.2464 5.71907 11.2036 6.83856 9.4283C7.95805 7.65295 9.52867 6.20932 11.4 5.244C12.9709 4.42348 14.7226 3.99657 16.5 4H17C19.808 4.15 22.4624 5.35958 24.4014 7.29859C26.3404 9.23761 27.55 11.892 27.7 14.7V15.5Z"
+            stroke={colors.accent}
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </Svg>
+      </Animated.View>
       <Animated.Text
-        style={[tailwind.style('pt-6 text-md tracking-[0.32px]'), styles.emptyStateText]}>
+        style={[tailwind.style('text-lg font-inter-semibold-20 mb-1'), { color: colors.textPrimary }]}>
+        {i18n.t('CONVERSATION.EMPTY_TITLE', { defaultValue: 'No conversations' })}
+      </Animated.Text>
+      <Animated.Text
+        style={[tailwind.style('text-base text-center px-8'), { color: colors.textSecondary }]}>
         {i18n.t('CONVERSATION.EMPTY')}
       </Animated.Text>
     </Animated.ScrollView>
@@ -285,6 +298,8 @@ const ConversationList = () => {
 const ConversationScreen = () => {
   const currentBottomSheet = useAppSelector(selectBottomSheetState);
   const dispatch = useAppDispatch();
+  const colors = useSaraColors();
+  const isDark = useIsDarkMode();
 
   const animationConfigs = useBottomSheetSpringConfigs({
     mass: 1.2,
@@ -319,11 +334,11 @@ const ConversationScreen = () => {
   }, [currentBottomSheet]);
 
   return (
-    <SafeAreaView edges={['top']} style={[tailwind.style('flex-1'), styles.container]}>
-      <StatusBar translucent backgroundColor={SARA_COLORS.background} barStyle={'dark-content'} />
+    <SafeAreaView edges={['top']} style={[tailwind.style('flex-1'), { backgroundColor: colors.background }]}>
+      <StatusBar translucent backgroundColor={colors.background} barStyle={isDark ? 'light-content' : 'dark-content'} />
       <ConversationListStateProvider>
         <ConversationHeader />
-        <ConversationList />
+        <ConversationList colors={colors} />
         <BottomSheetModal
           ref={filtersModalSheetRef}
           backdropComponent={BottomSheetBackdrop}
@@ -351,12 +366,3 @@ const ConversationScreen = () => {
 };
 
 export default ConversationScreen;
-
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: SARA_COLORS.background,
-  },
-  emptyStateText: {
-    color: SARA_COLORS.textSecondary,
-  },
-});

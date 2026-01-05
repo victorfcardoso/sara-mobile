@@ -12,6 +12,7 @@ import { useAppDispatch, useAppSelector } from '@/hooks';
 import i18n from '@/i18n';
 import { SortOptions } from '@/types';
 import { selectFilters, setFilters } from '@/store/conversation/conversationFilterSlice';
+import { useSaraColors } from '@/hooks/useSaraColors';
 
 type SortByCellProps = {
   value: string;
@@ -25,6 +26,7 @@ const SortByCell = (props: SortByCellProps) => {
   const { value, index } = props;
   const filters = useAppSelector(selectFilters);
   const dispatch = useAppDispatch();
+  const colors = useSaraColors();
 
   const hapticSelection = useHaptic();
 
@@ -39,14 +41,18 @@ const SortByCell = (props: SortByCellProps) => {
       onPress={handlePreferredSortPress}
       style={tailwind.style('flex flex-row items-center')}>
       <Animated.View
-        style={tailwind.style(
-          'flex-1 ml-3 flex-row justify-between py-[11px] pr-3',
-          index !== sortByList.length - 1 ? 'border-b-[1px] border-[#E6E0D7]' : '',
-        )}>
+        style={[
+          tailwind.style(
+            'flex-1 ml-3 flex-row justify-between py-[11px] pr-3',
+            index !== sortByList.length - 1 ? 'border-b-[1px]' : '',
+          ),
+          index !== sortByList.length - 1 ? { borderBottomColor: colors.border } : {},
+        ]}>
         <Animated.Text
-          style={tailwind.style(
-            'text-base text-[#16273D] font-inter-420-20 leading-[21px] tracking-[0.16px] capitalize',
-          )}>
+          style={[
+            tailwind.style('text-base font-inter-420-20 leading-[21px] tracking-[0.16px] capitalize'),
+            { color: colors.textPrimary },
+          ]}>
           {i18n.t(`CONVERSATION.FILTERS.SORT_BY.OPTIONS.${value.toUpperCase()}`)}
         </Animated.Text>
         {filters.sort_by === value ? <Icon icon={<TickIcon />} size={20} /> : null}

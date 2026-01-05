@@ -24,30 +24,34 @@ import i18n from '@/i18n';
 import { CONVERSATION_EVENTS } from '@/constants/analyticsEvents';
 import AnalyticsHelper from '@/utils/analyticsUtils';
 import { selectUserId } from '@/store/auth/authSelectors';
+import { useSaraColors, SaraColors } from '@/hooks/useSaraColors';
 
 type AssigneeCellProps = {
   agent: Agent;
   lastItem: boolean;
   assigneeId: number | undefined;
   onPress: () => void;
+  colors: SaraColors;
 };
 
 const AssigneeCell = (props: AssigneeCellProps) => {
-  const { agent, lastItem, assigneeId } = props;
+  const { agent, lastItem, assigneeId, colors } = props;
 
   return (
     <Pressable onPress={props.onPress} style={tailwind.style('flex flex-row items-center')}>
       <Avatar src={{ uri: agent.thumbnail || undefined }} name={agent.name ?? ''} size="md" />
       <Animated.View
-        style={tailwind.style(
-          'flex-1 ml-3 flex-row justify-between py-[11px] pr-3',
-          !lastItem ? 'border-b-[1px] border-[#E6E0D7]' : '',
-        )}>
+        style={[
+          tailwind.style(
+            'flex-1 ml-3 flex-row justify-between py-[11px] pr-3',
+            !lastItem ? 'border-b-[1px]' : '',
+          ),
+          !lastItem ? { borderBottomColor: colors.border } : {},
+        ]}>
         <Animated.Text
           style={[
-            tailwind.style(
-              'text-base text-[#16273D] font-inter-420-20 leading-[21px] tracking-[0.16px]',
-            ),
+            tailwind.style('text-base font-inter-420-20 leading-[21px] tracking-[0.16px]'),
+            { color: colors.textPrimary },
           ]}>
           {agent.name}
         </Animated.Text>
@@ -61,6 +65,7 @@ export const UpdateAssignee = () => {
   const dispatch = useAppDispatch();
   const { actionsModalSheetRef } = useRefsContext();
   const [searchTerm, setSearchTerm] = useState('');
+  const colors = useSaraColors();
 
   const selectedInboxes = useAppSelector(selectSelectedInboxes);
   const selectedConversation = useAppSelector(selectSelectedConversation);
@@ -137,7 +142,7 @@ export const UpdateAssignee = () => {
         showsVerticalScrollIndicator={false}
         style={tailwind.style('my-1 pl-3')}>
         {isFetching ? (
-          <ActivityIndicator color="#4CB6AC" />
+          <ActivityIndicator color={colors.accent} />
         ) : (
           <>
             {!isSelfAssign && (
@@ -148,14 +153,14 @@ export const UpdateAssignee = () => {
                   <Icon icon={<SelfAssign />} size={24} />
                 </Animated.View>
                 <Animated.View
-                  style={tailwind.style(
-                    'flex-1 ml-3 flex-row justify-between py-[11px] pr-3 border-b-[1px] border-[#E6E0D7]',
-                  )}>
+                  style={[
+                    tailwind.style('flex-1 ml-3 flex-row justify-between py-[11px] pr-3 border-b-[1px]'),
+                    { borderBottomColor: colors.border },
+                  ]}>
                   <Animated.Text
                     style={[
-                      tailwind.style(
-                        'text-base text-[#4CB6AC] font-inter-420-20 leading-[21px] tracking-[0.16px]',
-                      ),
+                      tailwind.style('text-base font-inter-420-20 leading-[21px] tracking-[0.16px]'),
+                      { color: colors.accent },
                     ]}>
                     {i18n.t('CONVERSATION.SELF_ASSIGN')}
                   </Animated.Text>
@@ -167,7 +172,7 @@ export const UpdateAssignee = () => {
               return (
                 <AssigneeCell
                   key={agent.id}
-                  {...{ agent: agent as Agent, lastItem: index === agents.length - 1, assigneeId }}
+                  {...{ agent: agent as Agent, lastItem: index === agents.length - 1, assigneeId, colors }}
                   onPress={() => handleAssigneePress(agent as Agent)}
                 />
               );

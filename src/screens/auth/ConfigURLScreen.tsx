@@ -13,6 +13,7 @@ import { selectBaseUrl } from '@/store/settings/settingsSelectors';
 import { resetSettings } from '@/store/settings/settingsSlice';
 import { settingsActions } from '@/store/settings/settingsActions';
 import { chatwootConfig } from '@/config/chatwootConfig';
+import { useSaraColors, useIsDarkMode } from '@/hooks/useSaraColors';
 
 type FormData = {
   url: string;
@@ -22,6 +23,8 @@ const appName = Application.applicationName;
 
 const ConfigURLScreen = () => {
   const baseUrl = useAppSelector(selectBaseUrl);
+  const colors = useSaraColors();
+  const isDark = useIsDarkMode();
 
   const dispatch = useAppDispatch();
 
@@ -47,25 +50,26 @@ const ConfigURLScreen = () => {
   };
 
   return (
-    <SafeAreaView style={tailwind.style('flex-1 bg-white')}>
+    <SafeAreaView style={[tailwind.style('flex-1'), { backgroundColor: colors.background }]}>
       <StatusBar
         translucent
-        backgroundColor={tailwind.color('bg-white')}
-        barStyle={'dark-content'}
+        backgroundColor={colors.background}
+        barStyle={isDark ? 'light-content' : 'dark-content'}
       />
-      <View style={tailwind.style('flex-1 bg-white')}>
+      <View style={[tailwind.style('flex-1'), { backgroundColor: colors.background }]}>
         <Animated.ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={tailwind.style('px-6 pt-16')}>
           <Icon icon={<LinkIcon />} size={40} />
           <View style={tailwind.style('pt-6 gap-4')}>
-            <Animated.Text style={tailwind.style('text-2xl text-gray-950 font-inter-semibold-20')}>
+            <Animated.Text style={[tailwind.style('text-2xl font-inter-semibold-20'), { color: colors.textPrimary }]}>
               {i18n.t('CONFIGURE_URL.ENTER_URL')}
             </Animated.Text>
             <Animated.Text
-              style={tailwind.style(
-                'font-inter-normal-20 leading-[18px] tracking-[0.32px] text-gray-900',
-              )}>
+              style={[
+                tailwind.style('font-inter-normal-20 leading-[18px] tracking-[0.32px]'),
+                { color: colors.textSecondary },
+              ]}>
               {i18n.t('CONFIGURE_URL.DESCRIPTION')}
             </Animated.Text>
           </View>
@@ -85,19 +89,20 @@ const ConfigURLScreen = () => {
                   style={[
                     tailwind.style(
                       'text-base font-inter-normal-20 tracking-[0.24px] leading-[20px] android:leading-[18px]',
-                      'py-2 px-3 rounded-xl text-gray-950 bg-blackA-A4',
+                      'py-2 px-3 rounded-xl',
                       'h-10',
                     ),
+                    { backgroundColor: colors.backgroundLight, color: colors.textPrimary, borderWidth: 1, borderColor: colors.border },
                   ]}
                   onBlur={onBlur}
                   onChangeText={onChange}
                   value={value}
-                  placeholderTextColor={tailwind.color('text-gray-900')}
+                  placeholderTextColor={colors.textMeta}
                   keyboardType="email-address"
                   autoCapitalize="none"
                 />
                 {errors.url && (
-                  <Animated.Text style={tailwind.style('text-ruby-900')}>
+                  <Animated.Text style={{ color: '#D84356' }}>
                     {errors.url.message}
                   </Animated.Text>
                 )}

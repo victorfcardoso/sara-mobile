@@ -110,8 +110,8 @@ export const MultiLineText: Story = {
         the native text component handles multi-line content and text wrapping behavior.
       </NativeText>
       <NativeText numberOfLines={2}>
-        This text has a numberOfLines prop set to 2, so it will be truncated after two lines with
-        an ellipsis. This is useful for preview text or when you want to limit the height of text
+        This text has a numberOfLines prop set to 2, so it will be truncated after two lines with an
+        ellipsis. This is useful for preview text or when you want to limit the height of text
         content.
       </NativeText>
     </View>
@@ -137,8 +137,8 @@ export const CombinedStyles: Story = {
           color: '#4B5D6E',
           lineHeight: 20,
         }}>
-        This is body text with custom line height. It demonstrates how multiple style properties
-        can be combined to create different text appearances.
+        This is body text with custom line height. It demonstrates how multiple style properties can
+        be combined to create different text appearances.
       </NativeText>
       <NativeText
         style={{

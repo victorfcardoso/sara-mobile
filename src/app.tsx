@@ -4,9 +4,10 @@ import { Alert, BackHandler } from 'react-native';
 import { PersistGate } from 'redux-persist/integration/react';
 import { store, persistor } from './store';
 import { AppNavigator } from '@/navigation';
+import { ThemeProvider } from '@/context/ThemeContext';
 
 import i18n from '@/i18n';
-import { bootstrapInstallationUrl } from '@/store/settings/bootstrap';
+import { bootstrapInstallationUrl, validateAndRefreshTokens } from '@/store/settings/bootstrap';
 
 const Chatwoot = () => {
   useEffect(() => {
@@ -39,8 +40,12 @@ const Chatwoot = () => {
         persistor={persistor}
         onBeforeLift={() => {
           store.dispatch(bootstrapInstallationUrl());
+          // Validate and refresh Cognito tokens on app startup
+          store.dispatch(validateAndRefreshTokens());
         }}>
-        <AppNavigator />
+        <ThemeProvider>
+          <AppNavigator />
+        </ThemeProvider>
       </PersistGate>
     </Provider>
   );

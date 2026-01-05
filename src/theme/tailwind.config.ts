@@ -26,6 +26,20 @@ const saraColors = {
     'border-strong': '#D1CCC6',
     chip: '#F5F3F0',
   },
+  // Sara dark mode colors
+  'sara-dark': {
+    background: '#1A1A1A',
+    'background-light': '#2D2D2D',
+    accent: '#4CB6AC',
+    'accent-light': '#1E3A38',
+    'accent-muted': 'rgba(76, 182, 172, 0.20)',
+    'text-primary': '#F5F5F5',
+    'text-secondary': '#B8C4CE',
+    'text-meta': '#8899A6',
+    border: '#3D3D3D',
+    'border-strong': '#4D4D4D',
+    chip: '#2A2A2A',
+  },
 };
 
 const chatwootAppColors = {

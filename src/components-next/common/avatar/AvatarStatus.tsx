@@ -17,8 +17,21 @@ import { AvatarProps, AvatarSizes } from './Avatar';
 
 interface TypingStatusProps {
   size: Partial<AvatarSizes>;
+  /** Background color (hex string or tailwind class) for status ring */
   parentsBackground: string;
 }
+
+/**
+ * Resolves background color - accepts either hex color or tailwind class
+ */
+const resolveBackgroundColor = (parentsBackground: string): string => {
+  // If it starts with #, it's already a hex color
+  if (parentsBackground.startsWith('#')) {
+    return parentsBackground;
+  }
+  // Otherwise, try to resolve it as a tailwind class
+  return tailwind.color(parentsBackground) ?? '#FFFFFF';
+};
 
 interface AnimatedDotProps {
   size: AvatarSizes;
@@ -63,6 +76,7 @@ const AnimatedDot: React.FC<AnimatedDotProps> = ({ size, delay }) => {
 
 const TypingComponent: React.FC<TypingStatusProps> = ({ size, parentsBackground }) => {
   const delays = ['xl', '2xl', '3xl', '4xl'].includes(size) ? [0, 333, 667] : [0, 500];
+  const bgColor = resolveBackgroundColor(parentsBackground);
 
   return (
     <View
@@ -71,8 +85,8 @@ const TypingComponent: React.FC<TypingStatusProps> = ({ size, parentsBackground 
         {
           bottom: avatarTheme.status.position[size],
           right: avatarTheme.status.position[size],
-          borderColor: tailwind.color(parentsBackground),
-          backgroundColor: tailwind.color(parentsBackground),
+          borderColor: bgColor,
+          backgroundColor: bgColor,
         },
       ]}>
       <View
@@ -90,8 +104,10 @@ const TypingComponent: React.FC<TypingStatusProps> = ({ size, parentsBackground 
 export const AvatarStatus: React.FC<Pick<AvatarProps, 'status' | 'size' | 'parentsBackground'>> = ({
   status,
   size,
-  parentsBackground,
+  parentsBackground = '#FFFFFF',
 }) => {
+  const bgColor = resolveBackgroundColor(parentsBackground);
+
   switch (status) {
     case 'online': {
       return (
@@ -101,7 +117,7 @@ export const AvatarStatus: React.FC<Pick<AvatarProps, 'status' | 'size' | 'paren
             {
               bottom: avatarTheme.status.position[size],
               right: avatarTheme.status.position[size],
-              borderColor: tailwind.color(parentsBackground),
+              borderColor: bgColor,
             },
           ]}>
           <View

@@ -37,6 +37,7 @@ import { MenuOption, MessageMenu } from '../message-menu';
 import { tailwind } from '@/theme';
 import { Dimensions, View } from 'react-native';
 import { Avatar } from '@/components-next';
+import { useSaraColors } from '@/hooks/useSaraColors';
 
 // import { ImageMetadata } from '@/types';
 
@@ -61,39 +62,51 @@ type MessageWrapperProps = {
   channel?: Channel;
 };
 
-const variantTextMap = {
-  [MESSAGE_VARIANTS.AGENT]: 'text-white',
-  [MESSAGE_VARIANTS.USER]: 'text-[#16273D]',
-  [MESSAGE_VARIANTS.BOT]: 'text-[#16273D]',
-  [MESSAGE_VARIANTS.TEMPLATE]: 'text-[#16273D]',
-  [MESSAGE_VARIANTS.ERROR]: 'text-white',
-  [MESSAGE_VARIANTS.PRIVATE]: 'text-amber-950 font-inter-medium-24',
-  [MESSAGE_VARIANTS.ACTIVITY]: 'text-[#566273]',
-  [MESSAGE_VARIANTS.EMAIL]: 'text-[#16273D]',
-  [MESSAGE_VARIANTS.UNSUPPORTED]: 'text-[#566273]',
+// Helper function to get variant text colors (used in MessageWrapper)
+const getVariantTextColor = (variant: string, colors: ReturnType<typeof useSaraColors>) => {
+  const variantTextColorMap: Record<string, string> = {
+    [MESSAGE_VARIANTS.AGENT]: '#FFFFFF',
+    [MESSAGE_VARIANTS.USER]: colors.textPrimary,
+    [MESSAGE_VARIANTS.BOT]: colors.textPrimary,
+    [MESSAGE_VARIANTS.TEMPLATE]: colors.textPrimary,
+    [MESSAGE_VARIANTS.ERROR]: '#FFFFFF',
+    [MESSAGE_VARIANTS.PRIVATE]: tailwind.color('text-amber-950') ?? colors.textPrimary,
+    [MESSAGE_VARIANTS.ACTIVITY]: colors.textMeta,
+    [MESSAGE_VARIANTS.EMAIL]: colors.textPrimary,
+    [MESSAGE_VARIANTS.UNSUPPORTED]: colors.textMeta,
+  };
+  return variantTextColorMap[variant] || colors.textPrimary;
 };
 
-const variantBaseMap = {
-  [MESSAGE_VARIANTS.AGENT]: 'bg-[#4CB6AC]',
-  [MESSAGE_VARIANTS.PRIVATE]: 'bg-amber-100',
-  [MESSAGE_VARIANTS.USER]: 'bg-white',
-  [MESSAGE_VARIANTS.BOT]: 'bg-[#E5F3F0]',
-  [MESSAGE_VARIANTS.TEMPLATE]: 'bg-[#E5F3F0]',
-  [MESSAGE_VARIANTS.ERROR]: 'bg-ruby-700',
-  [MESSAGE_VARIANTS.EMAIL]: 'bg-white',
-  [MESSAGE_VARIANTS.UNSUPPORTED]: 'bg-white border border-dashed border-amber-700',
-  [MESSAGE_VARIANTS.ACTIVITY]: 'bg-transparent',
+// Helper function to get variant background colors
+const getVariantBackgroundColor = (variant: string, colors: ReturnType<typeof useSaraColors>) => {
+  const variantBaseColorMap: Record<string, string> = {
+    [MESSAGE_VARIANTS.AGENT]: colors.accent,
+    [MESSAGE_VARIANTS.PRIVATE]: tailwind.color('bg-amber-100') ?? '#FEF3C7',
+    [MESSAGE_VARIANTS.USER]: colors.backgroundLight,
+    [MESSAGE_VARIANTS.BOT]: colors.accentLight,
+    [MESSAGE_VARIANTS.TEMPLATE]: colors.accentLight,
+    [MESSAGE_VARIANTS.ERROR]: tailwind.color('bg-ruby-700') ?? '#B91C1C',
+    [MESSAGE_VARIANTS.EMAIL]: colors.backgroundLight,
+    [MESSAGE_VARIANTS.UNSUPPORTED]: colors.backgroundLight,
+    [MESSAGE_VARIANTS.ACTIVITY]: 'transparent',
+  };
+  return variantBaseColorMap[variant] || colors.backgroundLight;
 };
 
-const variantBorderMap = {
-  [MESSAGE_VARIANTS.AGENT]: 'border-transparent',
-  [MESSAGE_VARIANTS.USER]: 'border border-[#CCE6DE]',
-  [MESSAGE_VARIANTS.BOT]: 'border-transparent',
-  [MESSAGE_VARIANTS.TEMPLATE]: 'border-transparent',
-  [MESSAGE_VARIANTS.ERROR]: 'border-transparent',
-  [MESSAGE_VARIANTS.EMAIL]: 'border border-[#E5F3F0]',
-  [MESSAGE_VARIANTS.UNSUPPORTED]: 'border border-dashed border-amber-700',
-  [MESSAGE_VARIANTS.ACTIVITY]: 'border-transparent',
+// Helper function to get variant border styles
+const getVariantBorderStyle = (variant: string, colors: ReturnType<typeof useSaraColors>) => {
+  const borderStyles: Record<string, { borderWidth?: number; borderColor?: string; borderStyle?: 'solid' | 'dashed' }> = {
+    [MESSAGE_VARIANTS.AGENT]: {},
+    [MESSAGE_VARIANTS.USER]: { borderWidth: 1, borderColor: colors.border },
+    [MESSAGE_VARIANTS.BOT]: {},
+    [MESSAGE_VARIANTS.TEMPLATE]: {},
+    [MESSAGE_VARIANTS.ERROR]: {},
+    [MESSAGE_VARIANTS.EMAIL]: { borderWidth: 1, borderColor: colors.accentLight },
+    [MESSAGE_VARIANTS.UNSUPPORTED]: { borderWidth: 1, borderColor: tailwind.color('border-amber-700'), borderStyle: 'dashed' },
+    [MESSAGE_VARIANTS.ACTIVITY]: {},
+  };
+  return borderStyles[variant] || {};
 };
 
 const MessageWrapper = ({
@@ -108,6 +121,8 @@ const MessageWrapper = ({
   variant,
   channel,
 }: MessageWrapperProps) => {
+  const colors = useSaraColors();
+
   const flexOrientationClass = () => {
     const map = {
       [ORIENTATION.LEFT]: 'items-start',
@@ -149,8 +164,6 @@ const MessageWrapper = ({
               tailwind.style(
                 'relative pl-3 pr-2.5 py-2 rounded-2xl overflow-hidden',
                 `${variant === MESSAGE_VARIANTS.EMAIL ? `max-w-[${EMAIL_WIDTH}px]` : `max-w-[${TEXT_MAX_WIDTH}px]`}`,
-                variantBaseMap[variant],
-                variantBorderMap[variant],
                 shouldGroupWithNext && shouldGroupWithPrevious
                   ? orientation === ORIENTATION.LEFT
                     ? 'rounded-l-none'
@@ -167,6 +180,8 @@ const MessageWrapper = ({
                     : 'rounded-br-none'
                   : '',
               ),
+              { backgroundColor: getVariantBackgroundColor(variant, colors) },
+              getVariantBorderStyle(variant, colors),
             ]}>
             {children}
             {!shouldGroupWithPrevious && (
@@ -175,10 +190,10 @@ const MessageWrapper = ({
                   'h-[21px] pt-[5px] pb-0.5 flex flex-row items-center justify-end',
                 )}>
                 <Animated.Text
-                  style={tailwind.style(
-                    'text-xs font-inter-420-20 tracking-[0.32px] pr-1',
-                    variantTextMap[variant],
-                  )}>
+                  style={[
+                    tailwind.style('text-xs font-inter-420-20 tracking-[0.32px] pr-1'),
+                    { color: getVariantTextColor(variant, colors) },
+                  ]}>
                   {unixTimestampToReadableTime(item.createdAt)}
                 </Animated.Text>
                 <DeliveryStatus

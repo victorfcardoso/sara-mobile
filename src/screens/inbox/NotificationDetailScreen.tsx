@@ -1,9 +1,17 @@
 import React, { useCallback, useState } from 'react';
-import { View, ScrollView, ActivityIndicator, Linking, Alert, TouchableOpacity, Pressable } from 'react-native';
+import {
+  View,
+  ScrollView,
+  ActivityIndicator,
+  Alert,
+  TouchableOpacity,
+  Pressable,
+  StatusBar,
+} from 'react-native';
 import Animated from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import Svg, { Path, Circle } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 
 import { tailwind } from '@/theme';
 import { TAB_BAR_HEIGHT } from '@/constants';
@@ -18,14 +26,15 @@ import i18n from '@/i18n';
 import { saraConfig } from '@/config/saraConfig';
 import { Icon } from '@/components-next';
 import { ChevronLeft } from '@/svg-icons';
+import { useSaraColors, useIsDarkMode, type SaraColors } from '@/hooks/useSaraColors';
 
 type NotificationDetailScreenProps = NativeStackScreenProps<
   NotificationsStackParamList,
   'NotificationDetail'
 >;
 
-// Icons for detail sections
-const CalendarIcon = ({ color = '#4CB6AC' }: { color?: string }) => (
+// Icons for detail sections - color passed from useSaraColors
+const CalendarIcon = ({ color }: { color: string }) => (
   <Svg width="20" height="20" viewBox="0 0 20 20" fill="none">
     <Path
       d="M6.66667 1.66667V4.16667M13.3333 1.66667V4.16667M2.91667 7.57501H17.0833M17.5 7.08334V14.1667C17.5 16.6667 16.25 18.3333 13.3333 18.3333H6.66667C3.75 18.3333 2.5 16.6667 2.5 14.1667V7.08334C2.5 4.58334 3.75 2.91667 6.66667 2.91667H13.3333C16.25 2.91667 17.5 4.58334 17.5 7.08334Z"
@@ -37,19 +46,7 @@ const CalendarIcon = ({ color = '#4CB6AC' }: { color?: string }) => (
   </Svg>
 );
 
-const UserIcon = ({ color = '#4CB6AC' }: { color?: string }) => (
-  <Svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-    <Circle cx="10" cy="6.66667" r="3.33333" stroke={color} strokeWidth="1.5" />
-    <Path
-      d="M3.33333 16.6667C3.33333 13.9052 5.57191 11.6667 8.33333 11.6667H11.6667C14.4281 11.6667 16.6667 13.9052 16.6667 16.6667"
-      stroke={color}
-      strokeWidth="1.5"
-      strokeLinecap="round"
-    />
-  </Svg>
-);
-
-const ServiceIcon = ({ color = '#4CB6AC' }: { color?: string }) => (
+const ServiceIcon = ({ color }: { color: string }) => (
   <Svg width="20" height="20" viewBox="0 0 20 20" fill="none">
     <Path
       d="M7.50001 18.3333H12.5C16.6667 18.3333 18.3333 16.6667 18.3333 12.5V7.5C18.3333 3.33333 16.6667 1.66667 12.5 1.66667H7.50001C3.33334 1.66667 1.66667 3.33333 1.66667 7.5V12.5C1.66667 16.6667 3.33334 18.3333 7.50001 18.3333Z"
@@ -68,7 +65,7 @@ const ServiceIcon = ({ color = '#4CB6AC' }: { color?: string }) => (
   </Svg>
 );
 
-const ProviderIcon = ({ color = '#4CB6AC' }: { color?: string }) => (
+const ProviderIcon = ({ color }: { color: string }) => (
   <Svg width="20" height="20" viewBox="0 0 20 20" fill="none">
     <Path
       d="M10 10C12.3012 10 14.1667 8.13452 14.1667 5.83333C14.1667 3.53214 12.3012 1.66667 10 1.66667C7.69882 1.66667 5.83334 3.53214 5.83334 5.83333C5.83334 8.13452 7.69882 10 10 10Z"
@@ -121,20 +118,32 @@ const InfoRow = ({
   icon,
   label,
   value,
+  colors,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
+  colors: SaraColors;
 }) => (
-  <View style={tailwind.style('flex-row items-start py-3 border-b border-sara-border')}>
-    <View style={tailwind.style('w-10 h-10 rounded-xl items-center justify-center bg-sara-accent-light mr-3')}>
+  <View
+    style={[tailwind.style('flex-row items-start py-3 border-b'), { borderColor: colors.border }]}>
+    <View
+      style={[
+        tailwind.style('w-10 h-10 rounded-xl items-center justify-center mr-3'),
+        { backgroundColor: colors.accentLight },
+      ]}>
       {icon}
     </View>
     <View style={tailwind.style('flex-1')}>
-      <Animated.Text style={tailwind.style('text-xs font-inter-medium-24 uppercase tracking-wide text-sara-text-meta mb-1')}>
+      <Animated.Text
+        style={[
+          tailwind.style('text-xs font-inter-medium-24 uppercase tracking-wide mb-1'),
+          { color: colors.textMeta },
+        ]}>
         {label}
       </Animated.Text>
-      <Animated.Text style={tailwind.style('text-base font-inter-semibold-20 text-sara-text-primary')}>
+      <Animated.Text
+        style={[tailwind.style('text-base font-inter-semibold-20'), { color: colors.textPrimary }]}>
         {value}
       </Animated.Text>
     </View>
@@ -148,36 +157,39 @@ const ActionButton = ({
   onPress,
   loading,
   disabled,
+  colors,
+  isDark,
 }: {
   label: string;
   variant: 'primary' | 'secondary';
   onPress: () => void;
   loading?: boolean;
   disabled?: boolean;
+  colors: SaraColors;
+  isDark: boolean;
 }) => {
-  const bgColor = {
-    primary: 'bg-sara-accent',
-    secondary: 'bg-sara-background-light border border-sara-border',
-  }[variant];
+  const bgStyle =
+    variant === 'primary'
+      ? { backgroundColor: colors.accent }
+      : { backgroundColor: colors.backgroundLight, borderWidth: 1, borderColor: colors.border };
 
-  const textColor = {
-    primary: 'text-white',
-    secondary: 'text-sara-text-primary',
-  }[variant];
+  const textColor =
+    variant === 'primary' ? (isDark ? colors.textPrimary : '#FFFFFF') : colors.textPrimary;
 
   return (
     <Pressable
       onPress={onPress}
       disabled={loading || disabled}
-      style={tailwind.style(
-        'flex-1 py-4 rounded-xl items-center justify-center',
-        bgColor,
-        (loading || disabled) && 'opacity-50',
-      )}>
+      style={[
+        tailwind.style('flex-1 py-4 rounded-xl items-center justify-center'),
+        bgStyle,
+        (loading || disabled) && { opacity: 0.5 },
+      ]}>
       {loading ? (
-        <ActivityIndicator color={variant === 'secondary' ? tailwind.color('sara-accent') : 'white'} />
+        <ActivityIndicator color={variant === 'secondary' ? colors.accent : '#FFFFFF'} />
       ) : (
-        <Animated.Text style={tailwind.style('text-base font-inter-semibold-20', textColor)}>
+        <Animated.Text
+          style={[tailwind.style('text-base font-inter-semibold-20'), { color: textColor }]}>
           {label}
         </Animated.Text>
       )}
@@ -188,6 +200,8 @@ const ActionButton = ({
 const NotificationDetailScreen = ({ route, navigation }: NotificationDetailScreenProps) => {
   const { notificationId } = route.params;
   const dispatch = useAppDispatch();
+  const colors = useSaraColors();
+  const isDark = useIsDarkMode();
 
   const notification = useAppSelector(state => selectNotificationById(state, notificationId));
 
@@ -229,8 +243,7 @@ const NotificationDetailScreen = ({ route, navigation }: NotificationDetailScree
 
   const providerName = payload.provider_name || bookingData.provider_name;
 
-  const appointmentTime =
-    payload.slot_time || payload.start_time || bookingData.start_time;
+  const appointmentTime = payload.slot_time || payload.start_time || bookingData.start_time;
 
   const formattedTime = formatDetailTime(appointmentTime);
 
@@ -251,7 +264,11 @@ const NotificationDetailScreen = ({ route, navigation }: NotificationDetailScree
   const handleDecision = useCallback(
     async (action: 'confirm' | 'decline') => {
       if (!bookingUid) {
-        showToast({ message: i18n.t('NOTIFICATION.ERRORS.MISSING_BOOKING_ID', { defaultValue: 'Booking ID not found' }) });
+        showToast({
+          message: i18n.t('NOTIFICATION.ERRORS.MISSING_BOOKING_ID', {
+            defaultValue: 'Booking ID not found',
+          }),
+        });
         return;
       }
 
@@ -270,7 +287,9 @@ const NotificationDetailScreen = ({ route, navigation }: NotificationDetailScree
           showToast({
             message:
               action === 'confirm'
-                ? i18n.t('NOTIFICATION.DECISION.CONFIRMED', { defaultValue: 'Booking confirmed successfully' })
+                ? i18n.t('NOTIFICATION.DECISION.CONFIRMED', {
+                    defaultValue: 'Booking confirmed successfully',
+                  })
                 : i18n.t('NOTIFICATION.DECISION.DECLINED', { defaultValue: 'Booking declined' }),
           });
           // Navigate back after successful action
@@ -298,9 +317,19 @@ const NotificationDetailScreen = ({ route, navigation }: NotificationDetailScree
 
   if (!notification) {
     return (
-      <SafeAreaView edges={['top']} style={tailwind.style('flex-1 bg-sara-background')}>
+      <SafeAreaView
+        edges={['top']}
+        style={[tailwind.style('flex-1'), { backgroundColor: colors.background }]}>
+        <StatusBar
+          barStyle={isDark ? 'light-content' : 'dark-content'}
+          backgroundColor={colors.background}
+        />
         <View style={tailwind.style('flex-1 items-center justify-center')}>
-          <Animated.Text style={tailwind.style('text-base font-inter-normal-20 text-sara-text-secondary')}>
+          <Animated.Text
+            style={[
+              tailwind.style('text-base font-inter-normal-20'),
+              { color: colors.textSecondary },
+            ]}>
             {i18n.t('NOTIFICATION.NOT_FOUND', { defaultValue: 'Notification not found' })}
           </Animated.Text>
         </View>
@@ -309,13 +338,29 @@ const NotificationDetailScreen = ({ route, navigation }: NotificationDetailScree
   }
 
   return (
-    <SafeAreaView edges={['top']} style={tailwind.style('flex-1 bg-sara-background')}>
+    <SafeAreaView
+      edges={['top']}
+      style={[tailwind.style('flex-1'), { backgroundColor: colors.background }]}>
+      <StatusBar
+        barStyle={isDark ? 'light-content' : 'dark-content'}
+        backgroundColor={colors.background}
+      />
       {/* Header */}
-      <View style={tailwind.style('flex-row items-center px-4 py-3 border-b border-sara-border bg-sara-background')}>
-        <TouchableOpacity onPress={handleBack} style={tailwind.style('w-10 h-10 items-center justify-center -ml-2')}>
+      <View
+        style={[
+          tailwind.style('flex-row items-center px-4 py-3 border-b'),
+          { borderColor: colors.border, backgroundColor: colors.background },
+        ]}>
+        <TouchableOpacity
+          onPress={handleBack}
+          style={tailwind.style('w-10 h-10 items-center justify-center -ml-2')}>
           <Icon icon={<ChevronLeft />} size={24} />
         </TouchableOpacity>
-        <Animated.Text style={tailwind.style('flex-1 text-lg font-inter-semibold-20 text-sara-text-primary')}>
+        <Animated.Text
+          style={[
+            tailwind.style('flex-1 text-lg font-inter-semibold-20'),
+            { color: colors.textPrimary },
+          ]}>
           {i18n.t('NOTIFICATION.DETAIL_TITLE', { defaultValue: 'Notification Details' })}
         </Animated.Text>
       </View>
@@ -341,20 +386,33 @@ const NotificationDetailScreen = ({ route, navigation }: NotificationDetailScree
               </Animated.Text>
             </View>
             <View style={tailwind.style('flex-1')} />
-            <Animated.Text style={tailwind.style('text-sm font-inter-normal-20 text-sara-text-meta')}>
+            <Animated.Text
+              style={[tailwind.style('text-sm font-inter-normal-20'), { color: colors.textMeta }]}>
               {lastActivityAt}
             </Animated.Text>
           </View>
         </View>
 
         {/* Main card */}
-        <View style={tailwind.style('mx-4 mt-2 bg-sara-background-light rounded-2xl border border-sara-border overflow-hidden')}>
+        <View
+          style={[
+            tailwind.style('mx-4 mt-2 rounded-2xl border overflow-hidden'),
+            { backgroundColor: colors.backgroundLight, borderColor: colors.border },
+          ]}>
           {/* Customer name (hero) */}
-          <View style={tailwind.style('px-4 pt-5 pb-4 border-b border-sara-border')}>
-            <Animated.Text style={tailwind.style('text-xs font-inter-medium-24 uppercase tracking-wide text-sara-text-meta mb-1')}>
+          <View style={[tailwind.style('px-4 pt-5 pb-4 border-b'), { borderColor: colors.border }]}>
+            <Animated.Text
+              style={[
+                tailwind.style('text-xs font-inter-medium-24 uppercase tracking-wide mb-1'),
+                { color: colors.textMeta },
+              ]}>
               {i18n.t('NOTIFICATION.DETAIL.CUSTOMER', { defaultValue: 'Customer' })}
             </Animated.Text>
-            <Animated.Text style={tailwind.style('text-2xl font-inter-semibold-20 text-sara-text-primary')}>
+            <Animated.Text
+              style={[
+                tailwind.style('text-2xl font-inter-semibold-20'),
+                { color: colors.textPrimary },
+              ]}>
               {customerName}
             </Animated.Text>
           </View>
@@ -363,25 +421,30 @@ const NotificationDetailScreen = ({ route, navigation }: NotificationDetailScree
           <View style={tailwind.style('px-4')}>
             {serviceName && (
               <InfoRow
-                icon={<ServiceIcon />}
+                icon={<ServiceIcon color={colors.accent} />}
                 label={i18n.t('NOTIFICATION.DETAIL.SERVICE', { defaultValue: 'Service' })}
                 value={serviceName}
+                colors={colors}
               />
             )}
 
             {providerName && (
               <InfoRow
-                icon={<ProviderIcon />}
+                icon={<ProviderIcon color={colors.accent} />}
                 label={i18n.t('NOTIFICATION.DETAIL.PROVIDER', { defaultValue: 'Provider' })}
                 value={providerName}
+                colors={colors}
               />
             )}
 
             {formattedTime && (
               <InfoRow
-                icon={<CalendarIcon />}
-                label={i18n.t('NOTIFICATION.DETAIL.APPOINTMENT_TIME', { defaultValue: 'Appointment' })}
+                icon={<CalendarIcon color={colors.accent} />}
+                label={i18n.t('NOTIFICATION.DETAIL.APPOINTMENT_TIME', {
+                  defaultValue: 'Appointment',
+                })}
                 value={`${formattedTime.date}\n${formattedTime.time}`}
+                colors={colors}
               />
             )}
           </View>
@@ -390,8 +453,14 @@ const NotificationDetailScreen = ({ route, navigation }: NotificationDetailScree
         {/* Action buttons for decision-required notifications */}
         {needsDecision && bookingUid && (
           <View style={tailwind.style('mx-4 mt-6')}>
-            <Animated.Text style={tailwind.style('text-sm font-inter-medium-24 text-sara-text-secondary mb-3 text-center')}>
-              {i18n.t('NOTIFICATION.DECISION.PROMPT', { defaultValue: 'Approve or decline this booking request?' })}
+            <Animated.Text
+              style={[
+                tailwind.style('text-sm font-inter-medium-24 mb-3 text-center'),
+                { color: colors.textSecondary },
+              ]}>
+              {i18n.t('NOTIFICATION.DECISION.PROMPT', {
+                defaultValue: 'Approve or decline this booking request?',
+              })}
             </Animated.Text>
             <View style={tailwind.style('flex-row gap-3')}>
               <ActionButton
@@ -400,6 +469,8 @@ const NotificationDetailScreen = ({ route, navigation }: NotificationDetailScree
                 onPress={() => handleDecision('decline')}
                 loading={actionLoading === 'decline'}
                 disabled={actionLoading !== null}
+                colors={colors}
+                isDark={isDark}
               />
               <ActionButton
                 label={i18n.t('NOTIFICATION.DECISION.CONFIRM_BUTTON', { defaultValue: 'Confirm' })}
@@ -407,6 +478,8 @@ const NotificationDetailScreen = ({ route, navigation }: NotificationDetailScree
                 onPress={() => handleDecision('confirm')}
                 loading={actionLoading === 'confirm'}
                 disabled={actionLoading !== null}
+                colors={colors}
+                isDark={isDark}
               />
             </View>
           </View>
@@ -414,11 +487,23 @@ const NotificationDetailScreen = ({ route, navigation }: NotificationDetailScree
 
         {/* Additional context section (for other notification types) */}
         {!needsDecision && payload.message && (
-          <View style={tailwind.style('mx-4 mt-4 p-4 bg-sara-background-light rounded-2xl border border-sara-border')}>
-            <Animated.Text style={tailwind.style('text-xs font-inter-medium-24 uppercase tracking-wide text-sara-text-meta mb-2')}>
+          <View
+            style={[
+              tailwind.style('mx-4 mt-4 p-4 rounded-2xl border'),
+              { backgroundColor: colors.backgroundLight, borderColor: colors.border },
+            ]}>
+            <Animated.Text
+              style={[
+                tailwind.style('text-xs font-inter-medium-24 uppercase tracking-wide mb-2'),
+                { color: colors.textMeta },
+              ]}>
               {i18n.t('NOTIFICATION.DETAIL.MESSAGE', { defaultValue: 'Message' })}
             </Animated.Text>
-            <Animated.Text style={tailwind.style('text-base font-inter-normal-20 text-sara-text-primary leading-relaxed')}>
+            <Animated.Text
+              style={[
+                tailwind.style('text-base font-inter-normal-20 leading-relaxed'),
+                { color: colors.textPrimary },
+              ]}>
               {payload.message}
             </Animated.Text>
           </View>

@@ -11,6 +11,7 @@ import { ChatDropdownMenu, DashboardList } from './DropdownMenu';
 import { SLAEvent } from '@/types/common';
 import { useRefsContext } from '@/context';
 import { SlaEvents } from './SlaEvents';
+import { useSaraColors } from '@/hooks/useSaraColors';
 
 type ChatHeaderProps = {
   name: string;
@@ -24,11 +25,6 @@ type ChatHeaderProps = {
   onBackPress: () => void;
   onContactDetailsPress: () => void;
   onToggleChatStatus: () => void;
-};
-
-const SARA_COLORS = {
-  background: '#F8F5F3',
-  textPrimary: '#16273D',
 };
 
 export const ChatHeader = ({
@@ -45,6 +41,7 @@ export const ChatHeader = ({
   onToggleChatStatus,
 }: ChatHeaderProps) => {
   const { slaEventsSheetRef } = useRefsContext();
+  const colors = useSaraColors();
 
   const animationConfigs = useBottomSheetSpringConfigs({
     mass: 1,
@@ -60,7 +57,7 @@ export const ChatHeader = ({
   };
 
   return (
-    <Animated.View style={{ backgroundColor: SARA_COLORS.background }}>
+    <Animated.View style={{ backgroundColor: colors.background }}>
       <Animated.View style={tailwind.style('flex flex-row justify-between items-center px-4 py-2')}>
         <Animated.View style={tailwind.style('flex-1 flex-row gap-2 items-center justify-center')}>
           <Pressable
@@ -76,7 +73,7 @@ export const ChatHeader = ({
               numberOfLines={1}
               style={[
                 tailwind.style('text-[17px] font-inter-medium-24 tracking-[0.32px]'),
-                { color: SARA_COLORS.textPrimary },
+                { color: colors.textPrimary },
               ]}>
               {name}
             </Animated.Text>

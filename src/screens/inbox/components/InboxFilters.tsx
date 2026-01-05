@@ -17,6 +17,7 @@ import {
   StatusFilter,
 } from '@/store/notification/notificationFilterSlice';
 import { useAppDispatch, useAppSelector } from '@/hooks';
+import { useSaraColors, type SaraColors } from '@/hooks/useSaraColors';
 
 type SortByCellProps = {
   value: string;
@@ -24,6 +25,7 @@ type SortByCellProps = {
   onChange: (value: InboxSortTypes) => void;
   sortOrder: InboxSortTypes;
   isLast: boolean;
+  colors: SaraColors;
 };
 
 type StatusCellProps = {
@@ -33,6 +35,7 @@ type StatusCellProps = {
   onChange: (value: StatusFilter) => void;
   statusFilter: StatusFilter;
   isLast: boolean;
+  colors: SaraColors;
 };
 
 const sortByList = Object.keys(InboxSortOptions) as InboxSortTypes[];
@@ -43,7 +46,7 @@ const statusOptions: { value: StatusFilter; label: string }[] = [
 ];
 
 const SortByCell = (props: SortByCellProps) => {
-  const { value, sortOrder, onChange, isLast } = props;
+  const { value, sortOrder, onChange, isLast, colors } = props;
 
   const hapticSelection = useHaptic();
 
@@ -57,14 +60,17 @@ const SortByCell = (props: SortByCellProps) => {
       onPress={handlePreferredSortPress}
       style={tailwind.style('flex flex-row items-center')}>
       <Animated.View
-        style={tailwind.style(
-          'flex-1 ml-3 flex-row justify-between py-[11px] pr-3',
-          !isLast && 'border-b-[1px] border-blackA-A3',
-        )}>
+        style={[
+          tailwind.style('flex-1 ml-3 flex-row justify-between py-[11px] pr-3'),
+          !isLast && { borderBottomWidth: 1, borderBottomColor: colors.border },
+        ]}>
         <Animated.Text
-          style={tailwind.style(
-            'text-base text-gray-950 font-inter-420-20 leading-[21px] tracking-[0.16px] capitalize',
-          )}>
+          style={[
+            tailwind.style(
+              'text-base font-inter-420-20 leading-[21px] tracking-[0.16px] capitalize',
+            ),
+            { color: colors.textPrimary },
+          ]}>
           {i18n.t(`NOTIFICATION.FILTERS.SORT_BY.OPTIONS.${value.toUpperCase()}`)}
         </Animated.Text>
         {sortOrder === value ? <Icon icon={<TickIcon />} size={20} /> : null}
@@ -74,7 +80,7 @@ const SortByCell = (props: SortByCellProps) => {
 };
 
 const StatusCell = (props: StatusCellProps) => {
-  const { value, label, statusFilter, onChange, isLast } = props;
+  const { value, label, statusFilter, onChange, isLast, colors } = props;
 
   const hapticSelection = useHaptic();
 
@@ -86,14 +92,15 @@ const StatusCell = (props: StatusCellProps) => {
   return (
     <Pressable onPress={handleStatusPress} style={tailwind.style('flex flex-row items-center')}>
       <Animated.View
-        style={tailwind.style(
-          'flex-1 ml-3 flex-row justify-between py-[11px] pr-3',
-          !isLast && 'border-b-[1px] border-blackA-A3',
-        )}>
+        style={[
+          tailwind.style('flex-1 ml-3 flex-row justify-between py-[11px] pr-3'),
+          !isLast && { borderBottomWidth: 1, borderBottomColor: colors.border },
+        ]}>
         <Animated.Text
-          style={tailwind.style(
-            'text-base text-gray-950 font-inter-420-20 leading-[21px] tracking-[0.16px]',
-          )}>
+          style={[
+            tailwind.style('text-base font-inter-420-20 leading-[21px] tracking-[0.16px]'),
+            { color: colors.textPrimary },
+          ]}>
           {label}
         </Animated.Text>
         {statusFilter === value ? <Icon icon={<TickIcon />} size={20} /> : null}
@@ -107,6 +114,7 @@ export const InboxFilters = () => {
   const statusFilter = useAppSelector(selectStatusFilter);
   const dispatch = useAppDispatch();
   const { inboxFiltersSheetRef } = useRefsContext();
+  const colors = useSaraColors();
 
   const handleChangeFilters = (value: InboxSortTypes) => {
     dispatch(setFilters({ key: value }));
@@ -119,9 +127,11 @@ export const InboxFilters = () => {
   };
 
   return (
-    <Animated.View>
+    <Animated.View style={{ backgroundColor: colors.backgroundLight }}>
       {/* Status Filter Section */}
-      <BottomSheetHeader headerText={i18n.t('NOTIFICATION.FILTERS.STATUS.TITLE', { defaultValue: 'Status' })} />
+      <BottomSheetHeader
+        headerText={i18n.t('NOTIFICATION.FILTERS.STATUS.TITLE', { defaultValue: 'Status' })}
+      />
       <Animated.View style={tailwind.style('py-1 pl-3')}>
         {statusOptions.map((option, index) => (
           <StatusCell
@@ -132,12 +142,13 @@ export const InboxFilters = () => {
             statusFilter={statusFilter}
             onChange={handleChangeStatus}
             isLast={index === statusOptions.length - 1}
+            colors={colors}
           />
         ))}
       </Animated.View>
 
       {/* Divider */}
-      <View style={tailwind.style('h-2 bg-gray-50')} />
+      <View style={[tailwind.style('h-2'), { backgroundColor: colors.chip }]} />
 
       {/* Sort By Section */}
       <BottomSheetHeader headerText={i18n.t('CONVERSATION.FILTERS.SORT_BY.TITLE')} />
@@ -150,6 +161,7 @@ export const InboxFilters = () => {
             sortOrder={sortOrder}
             onChange={handleChangeFilters}
             isLast={index === sortByList.length - 1}
+            colors={colors}
           />
         ))}
       </Animated.View>

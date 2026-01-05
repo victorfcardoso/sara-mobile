@@ -28,14 +28,15 @@ import { showToast } from '@/utils/toastUtils';
 import i18n from '@/i18n';
 import { selectSortOrder, selectStatusFilter } from '@/store/notification/notificationFilterSlice';
 import { InboxSortTypes } from '@/store/notification/notificationTypes';
+import { useSaraColors, useIsDarkMode } from '@/hooks/useSaraColors';
 
 // Empty state icon (checkmark in circle)
-const EmptyInboxIcon = () => (
+const EmptyInboxIcon = ({ color }: { color: string }) => (
   <Svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-    <Circle cx="16" cy="16" r="14" stroke={tailwind.color('sara-accent')} strokeWidth="2.5" />
+    <Circle cx="16" cy="16" r="14" stroke={color} strokeWidth="2.5" />
     <Path
       d="M10 16L14 20L22 12"
-      stroke={tailwind.color('sara-accent')}
+      stroke={color}
       strokeWidth="2.5"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -51,12 +52,16 @@ const InboxList = () => {
   const [isFlashListReady, setFlashListReady] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  const colors = useSaraColors();
+
   const isNotificationsLoading = useAppSelector(selectIsLoadingNotifications);
   const isAllNotificationsFetched = useAppSelector(selectIsAllNotificationsFetched);
   const sortOrder = useAppSelector(selectSortOrder);
   const statusFilter = useAppSelector(selectStatusFilter);
 
-  const notifications = useAppSelector(state => getFilteredNotifications(state, sortOrder, statusFilter));
+  const notifications = useAppSelector(state =>
+    getFilteredNotifications(state, sortOrder, statusFilter),
+  );
 
   const previousSortOrder = useRef(sortOrder);
   const previousStatusFilter = useRef(statusFilter);
@@ -86,7 +91,7 @@ const InboxList = () => {
           `pb-[${TAB_BAR_HEIGHT}px]`,
         )}>
         {isAllNotificationsFetched ? null : (
-          <ActivityIndicator size="small" color={tailwind.color('sara-accent')} />
+          <ActivityIndicator size="small" color={colors.accent} />
         )}
       </Animated.View>
     );
@@ -160,7 +165,7 @@ const InboxList = () => {
   return shouldShowEmptyLoader ? (
     <Animated.View
       style={tailwind.style('flex-1 items-center justify-center', `pb-[${TAB_BAR_HEIGHT}px]`)}>
-      <ActivityIndicator color={tailwind.color('sara-accent')} />
+      <ActivityIndicator color={colors.accent} />
     </Animated.View>
   ) : notifications.length === 0 ? (
     <Animated.ScrollView
@@ -170,15 +175,27 @@ const InboxList = () => {
         `pb-[${TAB_BAR_HEIGHT}px]`,
       )}>
       {/* Icon container */}
-      <View style={tailwind.style('w-16 h-16 rounded-2xl items-center justify-center mb-4 bg-sara-accent-light')}>
-        <EmptyInboxIcon />
+      <View
+        style={[
+          tailwind.style('w-16 h-16 rounded-2xl items-center justify-center mb-4'),
+          { backgroundColor: colors.accentLight },
+        ]}>
+        <EmptyInboxIcon color={colors.accent} />
       </View>
       {/* Title */}
-      <Animated.Text style={tailwind.style('text-lg font-inter-semibold-20 mb-1 text-sara-text-primary')}>
+      <Animated.Text
+        style={[
+          tailwind.style('text-lg font-inter-semibold-20 mb-1'),
+          { color: colors.textPrimary },
+        ]}>
         {i18n.t('NOTIFICATION.EMPTY_TITLE', { defaultValue: 'All caught up!' })}
       </Animated.Text>
       {/* Subtitle */}
-      <Animated.Text style={tailwind.style('text-base font-inter-normal-20 text-center text-sara-text-secondary')}>
+      <Animated.Text
+        style={[
+          tailwind.style('text-base font-inter-normal-20 text-center'),
+          { color: colors.textSecondary },
+        ]}>
         {i18n.t('NOTIFICATION.EMPTY_SUBTITLE', {
           defaultValue: 'New bookings, payments, and messages will appear here.',
         })}
@@ -203,6 +220,8 @@ const InboxList = () => {
 
 const InboxScreen = () => {
   const dispatch = useAppDispatch();
+  const colors = useSaraColors();
+  const isDark = useIsDarkMode();
 
   // Memoize the markAllAsRead callback
   const markAllAsRead = useCallback(async () => {
@@ -213,8 +232,14 @@ const InboxScreen = () => {
   }, [dispatch]);
 
   return (
-    <SafeAreaView edges={['top']} style={tailwind.style('flex-1 bg-sara-background')}>
-      <StatusBar translucent backgroundColor={tailwind.color('sara-background')} barStyle={'dark-content'} />
+    <SafeAreaView
+      edges={['top']}
+      style={[tailwind.style('flex-1'), { backgroundColor: colors.background }]}>
+      <StatusBar
+        translucent
+        backgroundColor={colors.background}
+        barStyle={isDark ? 'light-content' : 'dark-content'}
+      />
       <InboxListStateProvider>
         <InboxHeader markAllAsRead={markAllAsRead} />
         <InboxList />

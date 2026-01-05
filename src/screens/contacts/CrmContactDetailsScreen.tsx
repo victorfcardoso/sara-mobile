@@ -15,6 +15,7 @@ import { StackActions } from '@react-navigation/native';
 
 import I18n from '@/i18n';
 import { useAppDispatch, useAppSelector } from '@/hooks';
+import { useSaraColors, useIsDarkMode, SaraColors } from '@/hooks/useSaraColors';
 import { Avatar } from '@/components-next/common/avatar/Avatar';
 import { ChevronLeft } from '@/svg-icons';
 import { showToast } from '@/utils/toastUtils';
@@ -28,7 +29,6 @@ import { selectAppointmentsList } from '@/store/appointments/appointmentsSelecto
 import type { Appointment } from '@/store/appointments/appointmentsTypes';
 import { selectAllConversations } from '@/store/conversation/conversationSelectors';
 import {
-  CONTACT_COLORS,
   buildConversationByPhoneMap,
   formatPhoneForDisplay,
   getContactDisplayName,
@@ -39,7 +39,18 @@ import {
 
 type ScreenProps = NativeStackScreenProps<ContactsStackParamList, 'ContactDetailsScreen'>;
 
-const STATUS_COLORS: Record<
+// Additional colors used for badges (not in core Sara palette)
+const BADGE_AMBER_BG_LIGHT = '#FFEBD6';
+const BADGE_AMBER_BG_DARK = '#4A3D2A';
+const BADGE_AMBER_TEXT_LIGHT = '#8A5A2E';
+const BADGE_AMBER_TEXT_DARK = '#E5C08A';
+const BADGE_PURPLE_BG_LIGHT = '#E5E3FC';
+const BADGE_PURPLE_BG_DARK = '#2E2C4A';
+const BADGE_PURPLE_TEXT_LIGHT = '#3E3A92';
+const BADGE_PURPLE_TEXT_DARK = '#A8A4E5';
+
+// Status badge colors for light mode
+const STATUS_COLORS_LIGHT: Record<
   string,
   {
     backgroundColor: string;
@@ -53,7 +64,23 @@ const STATUS_COLORS: Record<
   NO_SHOW: { backgroundColor: '#E5E7F2', textColor: '#3B4770' },
 };
 
-const DEFAULT_STATUS_STYLE = { backgroundColor: '#E2E6EB', textColor: '#3D4A5C' };
+// Status badge colors for dark mode
+const STATUS_COLORS_DARK: Record<
+  string,
+  {
+    backgroundColor: string;
+    textColor: string;
+  }
+> = {
+  CONFIRMED: { backgroundColor: '#1E3A38', textColor: '#6BD4C8' },
+  PENDING: { backgroundColor: '#4A3D2A', textColor: '#E5C08A' },
+  AWAITING_PAYMENT: { backgroundColor: '#4A3028', textColor: '#E5A88A' },
+  CANCELED: { backgroundColor: '#4A2828', textColor: '#E5A0A0' },
+  NO_SHOW: { backgroundColor: '#2E3040', textColor: '#A8B0C8' },
+};
+
+const DEFAULT_STATUS_STYLE_LIGHT = { backgroundColor: '#E2E6EB', textColor: '#3D4A5C' };
+const DEFAULT_STATUS_STYLE_DARK = { backgroundColor: '#3A3D45', textColor: '#B8C4CE' };
 
 const getStatusLabel = (status: string): string => {
   const key = status.toUpperCase();
@@ -66,11 +93,22 @@ const CrmContactDetailsScreen = ({ navigation, route }: ScreenProps) => {
   const { contactId } = route.params;
   const dispatch = useAppDispatch();
   const fetchAttemptRef = useRef(false);
+  const colors = useSaraColors();
+  const isDark = useIsDarkMode();
 
   const contact = useAppSelector(state => selectCrmCustomerById(state, contactId));
   const uiFlags = useAppSelector(selectCrmCustomersUiFlags);
   const appointments = useAppSelector(selectAppointmentsList);
   const conversations = useAppSelector(selectAllConversations);
+
+  // Theme-aware badge colors
+  const badgeAmberBg = isDark ? BADGE_AMBER_BG_DARK : BADGE_AMBER_BG_LIGHT;
+  const badgeAmberText = isDark ? BADGE_AMBER_TEXT_DARK : BADGE_AMBER_TEXT_LIGHT;
+  const badgePurpleBg = isDark ? BADGE_PURPLE_BG_DARK : BADGE_PURPLE_BG_LIGHT;
+  const badgePurpleText = isDark ? BADGE_PURPLE_TEXT_DARK : BADGE_PURPLE_TEXT_LIGHT;
+  const threadBadgeBg = isDark ? colors.accentLight : '#E4F3F0';
+  const mutedBadgeBg = isDark ? colors.chip : '#EEE7E1';
+  const backButtonPressedBg = isDark ? colors.chip : '#EFE8E0';
 
   const normalizedPhone = useMemo(
     () => normalizePhone(contact?.whatsappPhone ?? null),
@@ -180,17 +218,17 @@ const CrmContactDetailsScreen = ({ navigation, route }: ScreenProps) => {
     contact && contact.fullName ? contact.fullName : I18n.t('CONTACTS.DETAIL.TITLE');
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-      <StatusBar translucent backgroundColor={CONTACT_COLORS.background} barStyle="dark-content" />
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
+      <StatusBar translucent backgroundColor={colors.background} barStyle={isDark ? 'light-content' : 'dark-content'} />
       <View style={styles.header}>
         <Pressable
           onPress={handleBack}
           accessibilityRole="button"
           accessibilityLabel={I18n.t('CONTACTS.DETAIL.BACK_ACCESSIBILITY')}
-          style={({ pressed }) => [styles.backButton, pressed && styles.backButtonPressed]}>
-          <ChevronLeft stroke={CONTACT_COLORS.textPrimary} />
+          style={({ pressed }) => [styles.backButton, pressed && { backgroundColor: backButtonPressedBg }]}>
+          <ChevronLeft stroke={colors.textPrimary} />
         </Pressable>
-        <Text style={styles.headerTitle} numberOfLines={1}>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]} numberOfLines={1}>
           {headerTitle}
         </Text>
         <View style={styles.headerTrailing} />
@@ -199,11 +237,13 @@ const CrmContactDetailsScreen = ({ navigation, route }: ScreenProps) => {
       {!contact ? (
         <View style={styles.loadingContainer}>
           {uiFlags.isLoading ? (
-            <ActivityIndicator color={CONTACT_COLORS.accent} />
+            <ActivityIndicator color={colors.accent} />
           ) : (
             <>
-              <Text style={styles.emptyTitle}>{I18n.t('CONTACTS.DETAIL.NOT_FOUND_TITLE')}</Text>
-              <Text style={styles.emptySubtitle}>
+              <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
+                {I18n.t('CONTACTS.DETAIL.NOT_FOUND_TITLE')}
+              </Text>
+              <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
                 {I18n.t('CONTACTS.DETAIL.NOT_FOUND_SUBTITLE')}
               </Text>
             </>
@@ -211,42 +251,44 @@ const CrmContactDetailsScreen = ({ navigation, route }: ScreenProps) => {
         </View>
       ) : (
         <ScrollView contentContainerStyle={styles.scrollContent}>
-          <View style={styles.heroCard}>
+          <View style={[styles.heroCard, { backgroundColor: colors.backgroundLight }]}>
             <Avatar size="xl" name={displayName} style={styles.avatar} />
-            <Text style={styles.heroName} numberOfLines={2}>
+            <Text style={[styles.heroName, { color: colors.textPrimary }]} numberOfLines={2}>
               {displayName}
             </Text>
-            <Text style={styles.heroPhone}>{phoneLabel}</Text>
+            <Text style={[styles.heroPhone, { color: colors.textSecondary }]}>{phoneLabel}</Text>
             <View style={styles.badgeRow}>
               {showThreadBadge ? (
-                <View style={styles.threadBadge}>
-                  <View style={styles.threadDot} />
-                  <Text style={styles.threadBadgeLabel}>
+                <View style={[styles.threadBadge, { backgroundColor: threadBadgeBg }]}>
+                  <View style={[styles.threadDot, { backgroundColor: colors.accent }]} />
+                  <Text style={[styles.threadBadgeLabel, { color: colors.accent }]}>
                     {I18n.t('CONTACTS.DETAIL.ACTIVE_THREAD')}
                   </Text>
                 </View>
               ) : (
-                <View style={styles.mutedBadge}>
-                  <Text style={styles.mutedBadgeLabel}>
+                <View style={[styles.mutedBadge, { backgroundColor: mutedBadgeBg }]}>
+                  <Text style={[styles.mutedBadgeLabel, { color: colors.textSecondary }]}>
                     {I18n.t('CONTACTS.DETAIL.NO_THREAD_LABEL')}
                   </Text>
                 </View>
               )}
               {templateRequired ? (
-                <View style={styles.templateBadge}>
-                  <Text style={styles.templateBadgeLabel}>{I18n.t('CONTACTS.BADGE_TEMPLATE')}</Text>
+                <View style={[styles.templateBadge, { backgroundColor: badgeAmberBg }]}>
+                  <Text style={[styles.templateBadgeLabel, { color: badgeAmberText }]}>
+                    {I18n.t('CONTACTS.BADGE_TEMPLATE')}
+                  </Text>
                 </View>
               ) : null}
               {awaitingName ? (
-                <View style={styles.awaitingBadge}>
-                  <Text style={styles.awaitingBadgeLabel}>
+                <View style={[styles.awaitingBadge, { backgroundColor: badgePurpleBg }]}>
+                  <Text style={[styles.awaitingBadgeLabel, { color: badgePurpleText }]}>
                     {I18n.t('CONTACTS.DETAIL.AWAITING_NAME')}
                   </Text>
                 </View>
               ) : null}
             </View>
             {lastSeenDate ? (
-              <Text style={styles.lastSeenText}>
+              <Text style={[styles.lastSeenText, { color: colors.textMeta }]}>
                 {isSameDay(lastSeenDate, new Date())
                   ? I18n.t('CONTACTS.LAST_SEEN_TODAY', {
                       time: format(lastSeenDate, 'HH:mm'),
@@ -268,54 +310,62 @@ const CrmContactDetailsScreen = ({ navigation, route }: ScreenProps) => {
               onPress={handleOpenChat}
               disabled={!conversation}
               variant="primary"
+              colors={colors}
             />
             <ActionButton
               label={I18n.t('CONTACTS.DETAIL.ACTIONS.SCHEDULE')}
               onPress={handleSchedule}
               variant="secondary"
+              colors={colors}
             />
           </View>
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{I18n.t('CONTACTS.DETAIL.INFO_SECTION')}</Text>
-            <InfoRow label={I18n.t('CONTACTS.DETAIL.EMAIL')} value={contact.email} />
-            <InfoRow label={I18n.t('CONTACTS.DETAIL.LOCATION')} value={locationParts || null} />
+          <View style={[styles.section, { backgroundColor: colors.backgroundLight }]}>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+              {I18n.t('CONTACTS.DETAIL.INFO_SECTION')}
+            </Text>
+            <InfoRow label={I18n.t('CONTACTS.DETAIL.EMAIL')} value={contact.email} colors={colors} />
+            <InfoRow label={I18n.t('CONTACTS.DETAIL.LOCATION')} value={locationParts || null} colors={colors} />
             <InfoRow
               label={I18n.t('CONTACTS.DETAIL.CREATED_AT')}
               value={createdAt ? format(createdAt, 'dd MMM yyyy, HH:mm') : null}
+              colors={colors}
             />
             <InfoRow
               label={I18n.t('CONTACTS.DETAIL.UPDATED_AT')}
               value={updatedAt ? format(updatedAt, 'dd MMM yyyy, HH:mm') : null}
+              colors={colors}
             />
           </View>
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{I18n.t('CONTACTS.DETAIL.APPOINTMENTS_TITLE')}</Text>
+          <View style={[styles.section, { backgroundColor: colors.backgroundLight }]}>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+              {I18n.t('CONTACTS.DETAIL.APPOINTMENTS_TITLE')}
+            </Text>
             {upcomingAppointments.length === 0 && pastAppointments.length === 0 ? (
-              <Text style={styles.sectionEmptyText}>
+              <Text style={[styles.sectionEmptyText, { color: colors.textSecondary }]}>
                 {I18n.t('CONTACTS.DETAIL.APPOINTMENTS_EMPTY')}
               </Text>
             ) : null}
 
             {upcomingAppointments.length > 0 ? (
               <>
-                <Text style={styles.sectionSubtitle}>
+                <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
                   {I18n.t('CONTACTS.DETAIL.APPOINTMENTS_UPCOMING')}
                 </Text>
                 {upcomingAppointments.map(appointment => (
-                  <AppointmentCard key={`upcoming-${appointment.id}`} appointment={appointment} />
+                  <AppointmentCard key={`upcoming-${appointment.id}`} appointment={appointment} colors={colors} isDark={isDark} />
                 ))}
               </>
             ) : null}
 
             {pastAppointments.length > 0 ? (
               <>
-                <Text style={styles.sectionSubtitle}>
+                <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
                   {I18n.t('CONTACTS.DETAIL.APPOINTMENTS_HISTORY')}
                 </Text>
                 {pastAppointments.map(appointment => (
-                  <AppointmentCard key={`past-${appointment.id}`} appointment={appointment} />
+                  <AppointmentCard key={`past-${appointment.id}`} appointment={appointment} colors={colors} isDark={isDark} />
                 ))}
               </>
             ) : null}
@@ -331,12 +381,17 @@ const ActionButton = ({
   onPress,
   disabled,
   variant,
+  colors,
 }: {
   label: string;
   onPress: () => void;
   disabled?: boolean;
   variant: 'primary' | 'secondary';
+  colors: SaraColors;
 }) => {
+  const disabledBg = colors.accentMuted;
+  const disabledText = colors.textMeta;
+
   return (
     <Pressable
       onPress={onPress}
@@ -345,15 +400,17 @@ const ActionButton = ({
       accessibilityState={{ disabled: Boolean(disabled) }}
       style={({ pressed }) => [
         styles.actionButtonBase,
-        variant === 'primary' ? styles.actionButtonPrimary : styles.actionButtonSecondary,
+        variant === 'primary'
+          ? { backgroundColor: disabled ? disabledBg : colors.accent }
+          : { borderWidth: 1, borderColor: colors.accent, backgroundColor: colors.background },
         pressed && styles.actionButtonPressed,
-        disabled && styles.actionButtonDisabled,
       ]}>
       <Text
         style={[
           styles.actionButtonText,
-          variant === 'primary' ? styles.actionButtonTextPrimary : styles.actionButtonTextSecondary,
-          disabled && styles.actionButtonTextDisabled,
+          variant === 'primary'
+            ? { color: disabled ? disabledText : colors.backgroundLight }
+            : { color: colors.accent },
         ]}>
         {label}
       </Text>
@@ -361,40 +418,60 @@ const ActionButton = ({
   );
 };
 
-const InfoRow = ({ label, value }: { label: string; value: string | null }) => {
+const InfoRow = ({
+  label,
+  value,
+  colors,
+}: {
+  label: string;
+  value: string | null;
+  colors: SaraColors;
+}) => {
   return (
     <View style={styles.infoRow}>
-      <Text style={styles.infoLabel}>{label}</Text>
-      <Text style={styles.infoValue}>{value || I18n.t('CONTACTS.DETAIL.VALUE_UNAVAILABLE')}</Text>
+      <Text style={[styles.infoLabel, { color: colors.textPrimary }]}>{label}</Text>
+      <Text style={[styles.infoValue, { color: colors.textSecondary }]}>
+        {value || I18n.t('CONTACTS.DETAIL.VALUE_UNAVAILABLE')}
+      </Text>
     </View>
   );
 };
 
-const AppointmentCard = ({ appointment }: { appointment: Appointment }) => {
+const AppointmentCard = ({
+  appointment,
+  colors,
+  isDark,
+}: {
+  appointment: Appointment;
+  colors: SaraColors;
+  isDark: boolean;
+}) => {
   const statusKey = (appointment.status || '').toUpperCase();
-  const badgeStyle = STATUS_COLORS[statusKey] ?? DEFAULT_STATUS_STYLE;
+  const statusColors = isDark ? STATUS_COLORS_DARK : STATUS_COLORS_LIGHT;
+  const defaultStatusStyle = isDark ? DEFAULT_STATUS_STYLE_DARK : DEFAULT_STATUS_STYLE_LIGHT;
+  const badgeStyle = statusColors[statusKey] ?? defaultStatusStyle;
   const timeLabel = appointment.startAt
     ? format(new Date(appointment.startAt), 'EEE, MMM d • HH:mm')
     : I18n.t('APPOINTMENTS.TIME_PLACEHOLDER');
 
   return (
-    <View style={styles.appointmentCard}>
+    <View style={[styles.appointmentCard, { borderColor: colors.border }]}>
       <View style={styles.appointmentHeader}>
-        <Text style={styles.appointmentTime}>{timeLabel}</Text>
+        <Text style={[styles.appointmentTime, { color: colors.textPrimary }]}>{timeLabel}</Text>
         <View style={[styles.statusPill, { backgroundColor: badgeStyle.backgroundColor }]}>
           <Text style={[styles.statusPillText, { color: badgeStyle.textColor }]}>
             {getStatusLabel(statusKey)}
           </Text>
         </View>
       </View>
-      <Text style={styles.appointmentTitle}>
+      <Text style={[styles.appointmentTitle, { color: colors.textPrimary }]}>
         {appointment.serviceName || I18n.t('CONTACTS.DETAIL.SERVICE_PLACEHOLDER')}
       </Text>
-      <Text style={styles.appointmentSubtitle}>
+      <Text style={[styles.appointmentSubtitle, { color: colors.textSecondary }]}>
         {appointment.customerName || I18n.t('CONTACTS.UNKNOWN_NAME')}
       </Text>
       {appointment.location ? (
-        <Text style={styles.appointmentMeta}>{appointment.location}</Text>
+        <Text style={[styles.appointmentMeta, { color: colors.textMeta }]}>{appointment.location}</Text>
       ) : null}
     </View>
   );
@@ -405,7 +482,6 @@ export { CrmContactDetailsScreen };
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: CONTACT_COLORS.background,
   },
   header: {
     flexDirection: 'row',
@@ -421,15 +497,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  backButtonPressed: {
-    backgroundColor: '#EFE8E0',
-  },
   headerTitle: {
     flex: 1,
     marginHorizontal: 12,
     fontSize: 18,
     fontFamily: 'Inter-600-24',
-    color: CONTACT_COLORS.textPrimary,
   },
   headerTrailing: {
     width: 44,
@@ -443,14 +515,12 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 18,
     fontFamily: 'Inter-500-24',
-    color: CONTACT_COLORS.textPrimary,
     marginBottom: 8,
     textAlign: 'center',
   },
   emptySubtitle: {
     fontSize: 14,
     fontFamily: 'Inter-420-20',
-    color: CONTACT_COLORS.textSecondary,
     textAlign: 'center',
   },
   scrollContent: {
@@ -458,12 +528,11 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   heroCard: {
-    backgroundColor: CONTACT_COLORS.card,
     borderRadius: 24,
     paddingVertical: 24,
     paddingHorizontal: 20,
     marginBottom: 20,
-    shadowColor: '#00000010',
+    shadowColor: '#000000',
     shadowOpacity: 0.08,
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 12,
@@ -476,14 +545,12 @@ const styles = StyleSheet.create({
   heroName: {
     fontSize: 22,
     fontFamily: 'Inter-600-24',
-    color: CONTACT_COLORS.textPrimary,
     textAlign: 'center',
   },
   heroPhone: {
     marginTop: 6,
     fontSize: 15,
     fontFamily: 'Inter-420-20',
-    color: CONTACT_COLORS.textSecondary,
   },
   badgeRow: {
     flexDirection: 'row',
@@ -498,58 +565,48 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
-    backgroundColor: '#E4F3F0',
   },
   threadDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: CONTACT_COLORS.accent,
     marginRight: 6,
   },
   threadBadgeLabel: {
     fontSize: 12,
     fontFamily: 'Inter-500-24',
-    color: CONTACT_COLORS.accent,
   },
   mutedBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
-    backgroundColor: '#EEE7E1',
   },
   mutedBadgeLabel: {
     fontSize: 12,
     fontFamily: 'Inter-500-24',
-    color: CONTACT_COLORS.textSecondary,
   },
   templateBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
-    backgroundColor: CONTACT_COLORS.badgeAmberBg,
   },
   templateBadgeLabel: {
     fontSize: 12,
     fontFamily: 'Inter-500-24',
-    color: CONTACT_COLORS.badgeAmberText,
   },
   awaitingBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
-    backgroundColor: '#E5E3FC',
   },
   awaitingBadgeLabel: {
     fontSize: 12,
     fontFamily: 'Inter-500-24',
-    color: '#3E3A92',
   },
   lastSeenText: {
     marginTop: 18,
     fontSize: 13,
     fontFamily: 'Inter-420-20',
-    color: CONTACT_COLORS.muted,
     textAlign: 'center',
   },
   actionsRow: {
@@ -564,36 +621,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  actionButtonPrimary: {
-    backgroundColor: CONTACT_COLORS.accent,
-  },
-  actionButtonSecondary: {
-    borderWidth: 1,
-    borderColor: CONTACT_COLORS.accent,
-    backgroundColor: CONTACT_COLORS.background,
-  },
   actionButtonPressed: {
     opacity: 0.9,
-  },
-  actionButtonDisabled: {
-    backgroundColor: '#D3E4E1',
-    borderColor: '#D3E4E1',
   },
   actionButtonText: {
     fontSize: 15,
     fontFamily: 'Inter-500-24',
   },
-  actionButtonTextPrimary: {
-    color: '#0F4D49',
-  },
-  actionButtonTextSecondary: {
-    color: CONTACT_COLORS.accent,
-  },
-  actionButtonTextDisabled: {
-    color: '#6F8A86',
-  },
   section: {
-    backgroundColor: CONTACT_COLORS.card,
     borderRadius: 24,
     padding: 20,
     marginBottom: 20,
@@ -601,19 +636,16 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 17,
     fontFamily: 'Inter-600-24',
-    color: CONTACT_COLORS.textPrimary,
     marginBottom: 16,
   },
   sectionSubtitle: {
     fontSize: 14,
     fontFamily: 'Inter-500-24',
-    color: CONTACT_COLORS.textSecondary,
     marginBottom: 12,
   },
   sectionEmptyText: {
     fontSize: 14,
     fontFamily: 'Inter-420-20',
-    color: CONTACT_COLORS.textSecondary,
   },
   infoRow: {
     flexDirection: 'row',
@@ -625,18 +657,15 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     fontFamily: 'Inter-500-24',
-    color: CONTACT_COLORS.textPrimary,
   },
   infoValue: {
     flex: 1,
     fontSize: 14,
     fontFamily: 'Inter-420-20',
-    color: CONTACT_COLORS.textSecondary,
     textAlign: 'right',
   },
   appointmentCard: {
     borderWidth: 1,
-    borderColor: '#E6E2DD',
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
@@ -650,7 +679,6 @@ const styles = StyleSheet.create({
   appointmentTime: {
     fontSize: 14,
     fontFamily: 'Inter-500-24',
-    color: CONTACT_COLORS.textPrimary,
   },
   statusPill: {
     paddingHorizontal: 10,
@@ -664,18 +692,15 @@ const styles = StyleSheet.create({
   appointmentTitle: {
     fontSize: 16,
     fontFamily: 'Inter-500-24',
-    color: CONTACT_COLORS.textPrimary,
     marginBottom: 4,
   },
   appointmentSubtitle: {
     fontSize: 14,
     fontFamily: 'Inter-420-20',
-    color: CONTACT_COLORS.textSecondary,
     marginBottom: 4,
   },
   appointmentMeta: {
     fontSize: 13,
     fontFamily: 'Inter-420-20',
-    color: CONTACT_COLORS.muted,
   },
 });

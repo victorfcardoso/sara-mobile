@@ -23,13 +23,10 @@ import { Message } from '@/types';
 import { selectInboxById } from '@/store/inbox/inboxSelectors';
 import { selectUserId } from '@/store/auth/authSelectors';
 import { getCurrentRouteName } from '@/utils/navigationUtils';
+import { useSaraColors } from '@/hooks/useSaraColors';
 
 type DateSeparator = { date: string; type: 'date' };
 type MessageOrDate = Message | DateSeparator;
-
-const SARA_COLORS = {
-  background: '#F8F5F3',
-};
 
 /**
  * Determines if a message should be grouped with the next message and previous message
@@ -172,10 +169,11 @@ export const MessagesListContainer = () => {
   const inbox = useAppSelector(state => (inboxId ? selectInboxById(state, inboxId) : undefined));
   const isEmailInbox = isAnEmailChannel(inbox);
   const userId = useAppSelector(selectUserId);
+  const colors = useSaraColors();
 
   return (
     <PlatformSpecificKeyboardWrapperComponent
-      style={[tailwind.style('flex-1'), { backgroundColor: SARA_COLORS.background }]}
+      style={[tailwind.style('flex-1'), { backgroundColor: colors.background }]}
       interpolator="linear">
       <MessagesList
         messages={messagesWithGrouping}

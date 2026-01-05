@@ -16,8 +16,7 @@ const parseList = (value: string | undefined, fallback: string[]): string[] => {
 export default (_ctx: ConfigContext): ExpoConfig => {
   const appName = process.env.EXPO_PUBLIC_APP_NAME ?? 'Chatwoot';
   const appSlug = process.env.EXPO_PUBLIC_APP_SLUG || 'chatwoot-mobile';
-  const iosBundleIdentifier =
-    process.env.EXPO_PUBLIC_IOS_BUNDLE_IDENTIFIER ?? 'com.chatwoot.app';
+  const iosBundleIdentifier = process.env.EXPO_PUBLIC_IOS_BUNDLE_IDENTIFIER ?? 'com.chatwoot.app';
   const androidPackageName = process.env.EXPO_PUBLIC_ANDROID_PACKAGE ?? 'com.chatwoot.app';
   const urlScheme = process.env.EXPO_PUBLIC_URL_SCHEME ?? 'chatwootapp';
   const associatedDomains = parseList(process.env.EXPO_PUBLIC_IOS_ASSOCIATED_DOMAINS, [
@@ -98,6 +97,8 @@ export default (_ctx: ConfigContext): ExpoConfig => {
     extra: {
       defaultInstallationUrl: process.env.EXPO_PUBLIC_CHATWOOT_BASE_URL,
       saraApiBaseUrl: process.env.EXPO_PUBLIC_SARA_API_BASE_URL,
+      cognitoUserPoolId: process.env.EXPO_PUBLIC_COGNITO_USER_POOL_ID,
+      cognitoClientId: process.env.EXPO_PUBLIC_COGNITO_CLIENT_ID,
       eas: {
         projectId: process.env.EXPO_PUBLIC_PROJECT_ID,
         storybookEnabled: process.env.EXPO_STORYBOOK_ENABLED,

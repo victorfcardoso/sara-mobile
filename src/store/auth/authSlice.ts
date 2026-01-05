@@ -88,6 +88,9 @@ export const authSlice = createSlice({
         state.user.account_id = action.payload;
       }
     },
+    updateSaraTokens: (state, action) => {
+      state.saraTokens = action.payload;
+    },
   },
   extraReducers: builder => {
     builder
@@ -143,15 +146,10 @@ export const authSlice = createSlice({
         state.uiFlags.isSwitchingAgent = false;
         state.error =
           action.payload?.message ??
-          (Array.isArray(action.payload?.errors) ? action.payload?.errors[0] ?? null : null);
+          (Array.isArray(action.payload?.errors) ? (action.payload?.errors[0] ?? null) : null);
       });
   },
 });
-export const {
-  logout,
-  setAccount,
-  resetAuth,
-  setCurrentUserAvailability,
-  clearAuthError,
-} = authSlice.actions;
+export const { logout, setAccount, resetAuth, setCurrentUserAvailability, clearAuthError, updateSaraTokens } =
+  authSlice.actions;
 export default authSlice.reducer;

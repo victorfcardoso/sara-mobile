@@ -4,6 +4,7 @@ import { Text } from 'react-native';
 import { tailwind } from '@/theme';
 import { NativeView } from '@/components-next/native-components';
 import { formatTimeToShortForm, formatRelativeTime } from '@/utils/dateTimeUtils';
+import { useSaraColors } from '@/hooks/useSaraColors';
 
 // Constants from Vue component
 const MINUTE_IN_MS = 60000;
@@ -18,6 +19,7 @@ export const LastActivityTime = ({ timestamp }: LastActivityTimeProps) => {
   const [lastActivityTime, setLastActivityTime] = useState(
     formatTimeToShortForm(formatRelativeTime(timestamp)),
   );
+  const colors = useSaraColors();
 
   useEffect(() => {
     const getRefreshTime = () => {
@@ -44,9 +46,10 @@ export const LastActivityTime = ({ timestamp }: LastActivityTimeProps) => {
   return (
     <NativeView>
       <Text
-        style={tailwind.style(
-          'text-sm font-inter-420-20 leading-[16px] tracking-[0.32px] text-[#566273]',
-        )}>
+        style={[
+          tailwind.style('text-sm font-inter-420-20 leading-[16px] tracking-[0.32px]'),
+          { color: colors.textMeta },
+        ]}>
         {lastActivityTime}
       </Text>
     </NativeView>

@@ -17,6 +17,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import I18n from '@/i18n';
 import { useAppDispatch, useAppSelector } from '@/hooks';
+import { useSaraColors, useIsDarkMode, SaraColors } from '@/hooks/useSaraColors';
 import { SearchBar } from '@/components-next/common/search/SearchBar';
 import { Avatar } from '@/components-next/common/avatar/Avatar';
 import { crmCustomersActions } from '@/store/crm-customers';
@@ -31,9 +32,7 @@ import type { CrmCustomer } from '@/store/crm-customers/crmCustomersTypes';
 import { selectAppointmentsList } from '@/store/appointments/appointmentsSelectors';
 import type { Appointment } from '@/store/appointments/appointmentsTypes';
 import { ContactsStackParamList } from '@/navigation/stack/ContactsStack';
-import { tailwind } from '@/theme';
 import {
-  CONTACT_COLORS as SARA_COLORS,
   buildAppointmentIndex,
   formatPhoneForDisplay,
   formatUpcomingLabel,
@@ -43,9 +42,15 @@ import {
   toDateOrNull,
 } from './contactUtils';
 
-// Resolve Sara theme colors from tailwind config
-const SARA_CHIP = tailwind.color('sara-chip') ?? '#F5F3F0';
-const SARA_BACKGROUND_LIGHT = tailwind.color('sara-background-light') ?? '#FFFFFF';
+// Additional colors used for badges (not in core Sara palette)
+const BADGE_AMBER_BG_LIGHT = '#FFEBD6';
+const BADGE_AMBER_BG_DARK = '#4A3D2A';
+const BADGE_AMBER_TEXT_LIGHT = '#8A5A2E';
+const BADGE_AMBER_TEXT_DARK = '#E5C08A';
+const BADGE_TEAL_BG_LIGHT = '#CCE6DE';
+const BADGE_TEAL_BG_DARK = '#1E3A38';
+const BADGE_TEAL_TEXT_LIGHT = '#0F4D49';
+const BADGE_TEAL_TEXT_DARK = '#6BD4C8';
 
 type ContactFilter = 'all' | 'has-thread' | 'upcoming';
 
@@ -90,100 +95,100 @@ const buildSections = (
     return true;
   });
 
-	type UpcomingCandidate = {
-		contact: CrmCustomer;
-		upcomingAppointment: Appointment;
-		appointmentDate: Date | null;
-	};
+  type UpcomingCandidate = {
+    contact: CrmCustomer;
+    upcomingAppointment: Appointment;
+    appointmentDate: Date | null;
+  };
 
-	const upcomingCandidates: UpcomingCandidate[] = filtered
-		.map(contact => {
-			const phone = normalizePhone(contact.whatsappPhone);
-			if (!phone || !upcomingIndex.has(phone)) {
-				return null;
-			}
-			const appointment = upcomingIndex.get(phone);
-			if (!appointment) {
-				return null;
-			}
-			return {
-				contact,
-				upcomingAppointment: appointment,
-				appointmentDate: toDateOrNull(appointment.startAt),
-			};
-		})
-		.filter((candidate): candidate is UpcomingCandidate => Boolean(candidate));
+  const upcomingCandidates: UpcomingCandidate[] = filtered
+    .map(contact => {
+      const phone = normalizePhone(contact.whatsappPhone);
+      if (!phone || !upcomingIndex.has(phone)) {
+        return null;
+      }
+      const appointment = upcomingIndex.get(phone);
+      if (!appointment) {
+        return null;
+      }
+      return {
+        contact,
+        upcomingAppointment: appointment,
+        appointmentDate: toDateOrNull(appointment.startAt),
+      };
+    })
+    .filter((candidate): candidate is UpcomingCandidate => Boolean(candidate));
 
-	const upcomingToday: ContactSectionItem[] = upcomingCandidates
-		.sort((a, b) => {
-			const dateA = a.appointmentDate?.getTime() ?? 0;
-			const dateB = b.appointmentDate?.getTime() ?? 0;
-			return dateA - dateB;
-		})
-		.map(candidate => ({
-			contact: candidate.contact,
-			upcomingAppointment: candidate.upcomingAppointment,
-			sectionId: 'upcoming',
-		}));
+  const upcomingToday: ContactSectionItem[] = upcomingCandidates
+    .sort((a, b) => {
+      const dateA = a.appointmentDate?.getTime() ?? 0;
+      const dateB = b.appointmentDate?.getTime() ?? 0;
+      return dateA - dateB;
+    })
+    .map(candidate => ({
+      contact: candidate.contact,
+      upcomingAppointment: candidate.upcomingAppointment,
+      sectionId: 'upcoming',
+    }));
 
-	const upcomingContactIds = new Set(upcomingToday.map(item => item.contact.id));
+  const upcomingContactIds = new Set(upcomingToday.map(item => item.contact.id));
 
-	const recents = filtered
-		.filter(contact => contact.latestSeen && !upcomingContactIds.has(contact.id))
-		.map(contact => ({ contact, date: toDateOrNull(contact.latestSeen) }))
-		.filter(item => item.date)
-		.sort((a, b) => (b.date?.getTime() || 0) - (a.date?.getTime() || 0))
-		.slice(0, 3)
-		.map(item => ({ contact: item.contact, upcomingAppointment: null, sectionId: 'recents' }));
+  const recents = filtered
+    .filter(contact => contact.latestSeen && !upcomingContactIds.has(contact.id))
+    .map(contact => ({ contact, date: toDateOrNull(contact.latestSeen) }))
+    .filter(item => item.date)
+    .sort((a, b) => (b.date?.getTime() || 0) - (a.date?.getTime() || 0))
+    .slice(0, 3)
+    .map(item => ({ contact: item.contact, upcomingAppointment: null, sectionId: 'recents' }));
 
   const alphabeticallySorted = filtered
     .slice()
     .sort((a, b) => getContactDisplayName(a).localeCompare(getContactDisplayName(b)));
 
-	const shouldShowRecents = !normalizedSearch && recents.length > 0;
-	const shouldShowUpcoming = !normalizedSearch && upcomingToday.length > 0;
+  const shouldShowRecents = !normalizedSearch && recents.length > 0;
+  const shouldShowUpcoming = !normalizedSearch && upcomingToday.length > 0;
 
-	const excludedContactIds = new Set<string>();
-	if (shouldShowUpcoming) {
-		upcomingToday.forEach(item => excludedContactIds.add(item.contact.id));
-	}
-	if (shouldShowRecents) {
-		recents.forEach(item => excludedContactIds.add(item.contact.id));
-	}
+  const excludedContactIds = new Set<string>();
+  if (shouldShowUpcoming) {
+    upcomingToday.forEach(item => excludedContactIds.add(item.contact.id));
+  }
+  if (shouldShowRecents) {
+    recents.forEach(item => excludedContactIds.add(item.contact.id));
+  }
 
-	const alphabeticalSectionsMap = new Map<string, ContactSectionItem[]>();
-	alphabeticallySorted.forEach(contact => {
-		if (excludedContactIds.has(contact.id)) {
-			return;
-		}
-		const label = getContactDisplayName(contact).charAt(0).toUpperCase() || '#';
-		if (!alphabeticalSectionsMap.has(label)) {
-			alphabeticalSectionsMap.set(label, []);
-		}
-		const phone = normalizePhone(contact.whatsappPhone);
-		const appointment = phone ? (upcomingIndex.get(phone) ?? null) : null;
-		alphabeticalSectionsMap.get(label)?.push({
-			contact,
-			upcomingAppointment: appointment,
-			sectionId: `alpha-${label}`,
-		});
-	});
+  const alphabeticalSectionsMap = new Map<string, ContactSectionItem[]>();
+  alphabeticallySorted.forEach(contact => {
+    if (excludedContactIds.has(contact.id)) {
+      return;
+    }
+    const label = getContactDisplayName(contact).charAt(0).toUpperCase() || '#';
+    if (!alphabeticalSectionsMap.has(label)) {
+      alphabeticalSectionsMap.set(label, []);
+    }
+    const phone = normalizePhone(contact.whatsappPhone);
+    const appointment = phone ? (upcomingIndex.get(phone) ?? null) : null;
+    alphabeticalSectionsMap.get(label)?.push({
+      contact,
+      upcomingAppointment: appointment,
+      sectionId: `alpha-${label}`,
+    });
+  });
 
-	const sections: ContactSection[] = [];
+  const sections: ContactSection[] = [];
 
-	if (shouldShowRecents) {
-		sections.push({
-			key: 'recents',
-			title: I18n.t('CONTACTS.SECTIONS.RECENTS'),
-			data: recents,
-		});
-	}
+  if (shouldShowRecents) {
+    sections.push({
+      key: 'recents',
+      title: I18n.t('CONTACTS.SECTIONS.RECENTS'),
+      data: recents,
+    });
+  }
 
-	if (shouldShowUpcoming) {
-		sections.push({
-			key: 'upcoming',
-			title: I18n.t('CONTACTS.SECTIONS.UPCOMING_TODAY'),
-			data: upcomingToday,
+  if (shouldShowUpcoming) {
+    sections.push({
+      key: 'upcoming',
+      title: I18n.t('CONTACTS.SECTIONS.UPCOMING_TODAY'),
+      data: upcomingToday,
     });
   }
 
@@ -205,6 +210,8 @@ export const ContactsScreen = () => {
   const error = useAppSelector(selectCrmCustomersError);
   const serverSearchQuery = useAppSelector(selectCrmCustomersSearchQuery);
   const appointments = useAppSelector(selectAppointmentsList);
+  const colors = useSaraColors();
+  const isDark = useIsDarkMode();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<ContactFilter>('all');
@@ -252,16 +259,24 @@ export const ContactsScreen = () => {
     setActiveFilter(value);
   }, []);
 
-  const renderSectionHeader = useCallback(({ section }: { section: ContactSection }) => {
-    if (!section.title) {
-      return null;
-    }
-    return (
-      <View style={styles.sectionHeaderContainer}>
-        <Text style={styles.sectionHeaderText}>{section.title}</Text>
-      </View>
-    );
-  }, []);
+  const renderSectionHeader = useCallback(
+    ({ section }: { section: ContactSection }) => {
+      if (!section.title) {
+        return null;
+      }
+      return (
+        <View style={[styles.sectionHeaderContainer, { backgroundColor: colors.background }]}>
+          <Text style={[styles.sectionHeaderText, { color: colors.textMeta }]}>{section.title}</Text>
+        </View>
+      );
+    },
+    [colors],
+  );
+
+  const badgeAmberBg = isDark ? BADGE_AMBER_BG_DARK : BADGE_AMBER_BG_LIGHT;
+  const badgeAmberText = isDark ? BADGE_AMBER_TEXT_DARK : BADGE_AMBER_TEXT_LIGHT;
+  const badgeTealBg = isDark ? BADGE_TEAL_BG_DARK : BADGE_TEAL_BG_LIGHT;
+  const badgeTealText = isDark ? BADGE_TEAL_TEXT_DARK : BADGE_TEAL_TEXT_LIGHT;
 
   const renderItem = useCallback(
     ({ item }: { item: ContactSectionItem }) => {
@@ -280,7 +295,11 @@ export const ContactsScreen = () => {
 
       return (
         <Pressable
-          style={({ pressed }) => [styles.rowContainer, pressed && styles.rowPressed]}
+          style={({ pressed }) => [
+            styles.rowContainer,
+            { backgroundColor: colors.backgroundLight, borderBottomColor: colors.border },
+            pressed && { backgroundColor: colors.chip },
+          ]}
           accessibilityRole="button"
           accessibilityLabel={displayName}
           onPress={handlePress}
@@ -288,20 +307,29 @@ export const ContactsScreen = () => {
           <Avatar size="lg" name={displayName} src={undefined} style={styles.avatar} />
           <View style={styles.rowContent}>
             <View style={styles.rowHeader}>
-              <Text style={styles.rowName} numberOfLines={1}>
+              <Text style={[styles.rowName, { color: colors.textPrimary }]} numberOfLines={1}>
                 {displayName}
               </Text>
-              {showThreadBadge ? <View style={styles.threadDot} /> : null}
+              {showThreadBadge ? (
+                <View style={[styles.threadDot, { backgroundColor: colors.accent }]} />
+              ) : null}
               {templateRequired ? (
-                <View style={styles.templateBadge}>
-                  <Text style={styles.templateBadgeText}>{I18n.t('CONTACTS.BADGE_TEMPLATE')}</Text>
+                <View style={[styles.templateBadge, { backgroundColor: badgeAmberBg }]}>
+                  <Text style={[styles.templateBadgeText, { color: badgeAmberText }]}>
+                    {I18n.t('CONTACTS.BADGE_TEMPLATE')}
+                  </Text>
                 </View>
               ) : null}
             </View>
-            <Text style={styles.rowPhone}>{phoneLabel}</Text>
-            {upcomingLabel ? <Text style={styles.rowUpcoming}>{upcomingLabel}</Text> : null}
+            <Text style={[styles.rowPhone, { color: colors.textSecondary }]}>{phoneLabel}</Text>
+            {upcomingLabel ? (
+              <Text
+                style={[styles.rowUpcoming, { color: badgeTealText, backgroundColor: badgeTealBg }]}>
+                {upcomingLabel}
+              </Text>
+            ) : null}
             {lastInteractionDate ? (
-              <Text style={styles.rowMeta}>
+              <Text style={[styles.rowMeta, { color: colors.textMeta }]}>
                 {isSameDay(lastInteractionDate, new Date())
                   ? I18n.t('CONTACTS.LAST_SEEN_TODAY', {
                       time: format(lastInteractionDate, 'HH:mm'),
@@ -315,7 +343,7 @@ export const ContactsScreen = () => {
         </Pressable>
       );
     },
-    [navigation],
+    [navigation, colors, badgeAmberBg, badgeAmberText, badgeTealBg, badgeTealText],
   );
 
   const keyExtractor = useCallback(
@@ -330,28 +358,34 @@ export const ContactsScreen = () => {
     if (error) {
       return (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyTitle}>{I18n.t('CONTACTS.ERROR_TITLE')}</Text>
-          <Text style={styles.emptySubtitle}>{error}</Text>
+          <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
+            {I18n.t('CONTACTS.ERROR_TITLE')}
+          </Text>
+          <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>{error}</Text>
         </View>
       );
     }
     if (showEmptyState) {
       return (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyTitle}>{I18n.t('CONTACTS.EMPTY_TITLE')}</Text>
-          <Text style={styles.emptySubtitle}>{I18n.t('CONTACTS.EMPTY_SUBTITLE')}</Text>
+          <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
+            {I18n.t('CONTACTS.EMPTY_TITLE')}
+          </Text>
+          <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
+            {I18n.t('CONTACTS.EMPTY_SUBTITLE')}
+          </Text>
         </View>
       );
     }
     return null;
-  }, [error, isInitialLoading, showEmptyState]);
+  }, [error, isInitialLoading, showEmptyState, colors]);
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-      <StatusBar translucent backgroundColor={SARA_COLORS.background} barStyle="dark-content" />
-      <View style={styles.headerContainer}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
+      <StatusBar translucent backgroundColor={colors.background} barStyle={isDark ? 'light-content' : 'dark-content'} />
+      <View style={[styles.headerContainer, { backgroundColor: colors.background }]}>
         <View style={styles.headerRow}>
-          <Text style={styles.headerTitle}>{I18n.t('CONTACTS.TITLE')}</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{I18n.t('CONTACTS.TITLE')}</Text>
         </View>
         <SearchBar
           value={searchQuery}
@@ -363,22 +397,25 @@ export const ContactsScreen = () => {
             label={I18n.t('CONTACTS.FILTER_ALL')}
             isActive={activeFilter === 'all'}
             onPress={() => handleFilterChange('all')}
+            colors={colors}
           />
           <FilterChip
             label={I18n.t('CONTACTS.FILTER_HAS_THREAD')}
             isActive={activeFilter === 'has-thread'}
             onPress={() => handleFilterChange('has-thread')}
+            colors={colors}
           />
           <FilterChip
             label={I18n.t('CONTACTS.FILTER_UPCOMING')}
             isActive={activeFilter === 'upcoming'}
             onPress={() => handleFilterChange('upcoming')}
+            colors={colors}
           />
         </View>
       </View>
       {isInitialLoading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator color={SARA_COLORS.accent} />
+          <ActivityIndicator color={colors.accent} />
         </View>
       ) : (
         <SectionList<ContactSectionItem, ContactSection>
@@ -393,19 +430,19 @@ export const ContactsScreen = () => {
             <RefreshControl
               refreshing={uiFlags.isRefreshing}
               onRefresh={handleRefresh}
-              tintColor={SARA_COLORS.accent}
-              colors={[SARA_COLORS.accent]}
+              tintColor={colors.accent}
+              colors={[colors.accent]}
             />
           }
           ListFooterComponent={
             uiFlags.isLoadingMore ? (
               <View style={styles.loadingMoreContainer}>
-                <ActivityIndicator color={SARA_COLORS.accent} />
+                <ActivityIndicator color={colors.accent} />
               </View>
             ) : null
           }
           ListEmptyComponent={listEmptyComponent}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[styles.listContent, { backgroundColor: colors.background }]}
         />
       )}
     </SafeAreaView>
@@ -416,21 +453,28 @@ type FilterChipProps = {
   label: string;
   isActive: boolean;
   onPress: () => void;
+  colors: SaraColors;
 };
 
-const FilterChip = ({ label, isActive, onPress }: FilterChipProps) => {
+const FilterChip = ({ label, isActive, onPress, colors }: FilterChipProps) => {
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [
         styles.filterChip,
-        isActive && styles.filterChipActive,
+        { backgroundColor: isActive ? colors.textPrimary : colors.chip },
         pressed && styles.filterChipPressed,
       ]}
       accessibilityRole="button"
       accessibilityState={{ selected: isActive }}
       accessibilityLabel={label}>
-      <Text style={[styles.filterChipText, isActive && styles.filterChipTextActive]}>{label}</Text>
+      <Text
+        style={[
+          styles.filterChipText,
+          { color: isActive ? colors.backgroundLight : colors.textSecondary },
+        ]}>
+        {label}
+      </Text>
     </Pressable>
   );
 };
@@ -438,10 +482,8 @@ const FilterChip = ({ label, isActive, onPress }: FilterChipProps) => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: SARA_COLORS.background,
   },
   headerContainer: {
-    backgroundColor: SARA_COLORS.background,
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 8,
@@ -455,7 +497,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 28,
     fontFamily: 'Inter-580-24',
-    color: SARA_COLORS.textPrimary,
   },
   filterRow: {
     flexDirection: 'row',
@@ -467,10 +508,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 18,
-    backgroundColor: SARA_CHIP,
-  },
-  filterChipActive: {
-    backgroundColor: SARA_COLORS.textPrimary,
   },
   filterChipPressed: {
     opacity: 0.85,
@@ -478,24 +515,17 @@ const styles = StyleSheet.create({
   filterChipText: {
     fontSize: 14,
     fontFamily: 'Inter-500-24',
-    color: SARA_COLORS.textSecondary,
-  },
-  filterChipTextActive: {
-    color: SARA_BACKGROUND_LIGHT,
   },
   listContent: {
     paddingBottom: 24,
-    backgroundColor: SARA_COLORS.background,
   },
   sectionHeaderContainer: {
     paddingHorizontal: 20,
     paddingVertical: 8,
-    backgroundColor: SARA_COLORS.background,
   },
   sectionHeaderText: {
     fontSize: 13,
     fontFamily: 'Inter-420-20',
-    color: SARA_COLORS.muted,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
   },
@@ -504,12 +534,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     paddingHorizontal: 20,
     paddingVertical: 14,
-    backgroundColor: SARA_COLORS.card,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: SARA_COLORS.divider,
-  },
-  rowPressed: {
-    backgroundColor: SARA_CHIP,
   },
   avatar: {
     marginRight: 16,
@@ -526,38 +551,31 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     fontFamily: 'Inter-500-24',
-    color: SARA_COLORS.textPrimary,
   },
   threadDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: SARA_COLORS.accent,
   },
   templateBadge: {
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 10,
-    backgroundColor: SARA_COLORS.badgeAmberBg,
     marginLeft: 6,
   },
   templateBadgeText: {
     fontSize: 11,
     fontFamily: 'Inter-420-20',
-    color: SARA_COLORS.badgeAmberText,
   },
   rowPhone: {
     marginTop: 4,
     fontSize: 14,
     fontFamily: 'Inter-420-20',
-    color: SARA_COLORS.textSecondary,
   },
   rowUpcoming: {
     marginTop: 6,
     fontSize: 13,
     fontFamily: 'Inter-420-20',
-    color: SARA_COLORS.badgeTealText,
-    backgroundColor: SARA_COLORS.badgeTealBg,
     alignSelf: 'flex-start',
     paddingHorizontal: 8,
     paddingVertical: 2,
@@ -567,7 +585,6 @@ const styles = StyleSheet.create({
     marginTop: 6,
     fontSize: 12,
     fontFamily: 'Inter-400-20',
-    color: SARA_COLORS.muted,
   },
   loadingContainer: {
     flex: 1,
@@ -585,14 +602,12 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 18,
     fontFamily: 'Inter-500-24',
-    color: SARA_COLORS.textPrimary,
     marginBottom: 8,
     textAlign: 'center',
   },
   emptySubtitle: {
     fontSize: 14,
     fontFamily: 'Inter-420-20',
-    color: SARA_COLORS.textSecondary,
     textAlign: 'center',
   },
 });

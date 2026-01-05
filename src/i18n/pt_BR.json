@@ -42,6 +42,7 @@
     "PASSWORD_ERROR": "Digite uma senha válida",
     "LOGIN": "Entrar",
     "LOGIN_LOADING": "Entrar...",
+    "REMEMBER_ME": "Lembrar-me",
     "FORGOT_PASSWORD": "Esqueceu sua senha?",
     "RESET_HERE": "Redefinir aqui",
     "NO_ACCOUNT": "Não possui uma conta?",
@@ -49,7 +50,12 @@
     "SETTINGS": "Configurações",
     "CHANGE_LANGUAGE": "Alterar idioma",
     "TERMS": "Termos & Condições",
-    "CHANGE_URL": "Alterar URL"
+    "CHANGE_URL": "Alterar URL",
+    "ERRORS": {
+      "NEW_PASSWORD_REQUIRED": "Você precisa definir uma nova senha. Por favor, contate seu administrador.",
+      "MFA_REQUIRED": "Autenticação multifator é necessária. Por favor, contate seu administrador para concluir a configuração.",
+      "MFA_SETUP_REQUIRED": "Configuração de MFA é necessária. Por favor, contate seu administrador para concluir a configuração."
+    }
   },
   "FORGOT_PASSWORD": {
     "EMAIL": "Por favor, digite seu e-mail",
@@ -284,6 +290,11 @@
     "LOGOUT": "Sair",
     "SUBMIT": "Enviar",
     "SET_LANGUAGE": "Configurar Idioma",
+    "CHANGE_THEME": "Aparência",
+    "SET_THEME": "Escolher aparência",
+    "THEME_LIGHT": "Claro",
+    "THEME_DARK": "Escuro",
+    "THEME_SYSTEM": "Sistema",
     "DEBUG_ACTIONS": "Ações de Depuração",
     "AGENT_PROFILE": "Perfil da agente",
     "WORKFLOW": "Fluxo de trabalho",

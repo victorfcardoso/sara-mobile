@@ -2,7 +2,22 @@ import axios from 'axios';
 
 import { mockUser, mockChatwootSession, mockSaraTokens } from './authMockData';
 
+import { forgotPassword, signIn } from '@/services/cognitoAuth';
+
+// Import after mocks are set up
+import { AuthService } from '@/store/auth/authService';
+import { apiService } from '@/services/APIService';
+
 jest.mock('axios');
+
+jest.mock('@/services/cognitoAuth', () => {
+  const actual = jest.requireActual('@/services/cognitoAuth');
+  return {
+    ...actual,
+    signIn: jest.fn(),
+    forgotPassword: jest.fn(),
+  };
+});
 
 jest.mock('@/services/APIService', () => ({
   apiService: {
@@ -22,10 +37,6 @@ jest.mock('@/services/SaraAPIService', () => ({
   },
 }));
 
-// Import after mocks are set up
-import { AuthService } from '@/store/auth/authService';
-import { apiService } from '@/services/APIService';
-
 describe('AuthService', () => {
   const mockedAxios = axios as jest.Mocked<typeof axios>;
 
@@ -34,19 +45,14 @@ describe('AuthService', () => {
   });
 
   describe('login', () => {
-    it('authenticates with Sara, fetches Chatwoot session, and hydrates profile', async () => {
+    it('authenticates with Cognito, fetches Chatwoot session, and hydrates profile', async () => {
       const credentials = { email: 'test@example.com', password: 'password' };
+      const mockSession = {
+        getIdToken: () => ({ getJwtToken: () => mockSaraTokens.accessToken }),
+        getRefreshToken: () => ({ getToken: () => mockSaraTokens.refreshToken }),
+      };
 
-      mockedAxios.post.mockResolvedValueOnce({
-        data: {
-          status: 'SUCCESSFUL',
-          data: {
-            access_token: mockSaraTokens.accessToken,
-            refresh_token: mockSaraTokens.refreshToken,
-            token_type: mockSaraTokens.tokenType,
-          },
-        },
-      });
+      (signIn as jest.Mock).mockResolvedValueOnce(mockSession);
 
       mockedAxios.post.mockResolvedValueOnce({
         data: {
@@ -76,17 +82,9 @@ describe('AuthService', () => {
 
       const result = await AuthService.login(credentials);
 
-      expect(mockedAxios.post).toHaveBeenNthCalledWith(
-        1,
-        expect.stringContaining('/auth/login'),
-        credentials,
-        expect.objectContaining({
-          headers: { 'Content-Type': 'application/json' },
-        }),
-      );
+      expect(signIn).toHaveBeenCalledWith(credentials.email, credentials.password);
 
-      expect(mockedAxios.post).toHaveBeenNthCalledWith(
-        2,
+      expect(mockedAxios.post).toHaveBeenCalledWith(
         expect.stringContaining('/chatwoot/mobile-auth'),
         {},
         expect.objectContaining({
@@ -114,11 +112,11 @@ describe('AuthService', () => {
       });
     });
 
-    it('throws when Sara login fails', async () => {
+    it('throws when Cognito login fails', async () => {
       const credentials = { email: 'test@example.com', password: 'wrong' };
       const failure = new Error('Invalid credentials');
 
-      mockedAxios.post.mockRejectedValueOnce(failure);
+      (signIn as jest.Mock).mockRejectedValueOnce(failure);
 
       await expect(AuthService.login(credentials)).rejects.toThrow(failure);
     });
@@ -137,16 +135,14 @@ describe('AuthService', () => {
   });
 
   describe('resetPassword', () => {
-    it('delegates to apiService.post', async () => {
+    it('delegates to Cognito forgotPassword', async () => {
       const payload = { email: 'test@example.com' };
-      const mockResponse = { data: { message: 'Password reset email sent' } };
-
-      (apiService.post as jest.Mock).mockResolvedValueOnce(mockResponse);
+      (forgotPassword as jest.Mock).mockResolvedValueOnce(undefined);
 
       const result = await AuthService.resetPassword(payload);
 
-      expect(apiService.post).toHaveBeenCalledWith('auth/password', payload);
-      expect(result).toEqual(mockResponse.data);
+      expect(forgotPassword).toHaveBeenCalledWith(payload.email);
+      expect(result).toEqual({ message: 'FORGOT_PASSWORD.API_SUCCESS' });
     });
   });
 

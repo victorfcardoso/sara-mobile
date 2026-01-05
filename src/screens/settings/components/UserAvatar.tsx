@@ -6,6 +6,7 @@ import { AvailabilityStatus } from '@/types/common/AvailabilityStatus';
 import { tailwind } from '@/theme';
 import { cx, styleAdapter } from '@/utils';
 import { userStatusList } from '@/constants';
+import { useSaraColors } from '@/hooks/useSaraColors';
 
 function getInitials(name: string) {
   if (!name) {
@@ -84,6 +85,7 @@ export interface UserAvatarProps extends ViewProps {
 
 export const UserAvatar: React.FC<Partial<UserAvatarProps>> = props => {
   const { name, src, status, parentsBackground = 'text-white', style, ...boxProps } = props;
+  const colors = useSaraColors();
 
   const resolvedSource = useMemo<ImageSourcePropType | undefined>(() => {
     if (!src) {
@@ -101,7 +103,8 @@ export const UserAvatar: React.FC<Partial<UserAvatarProps>> = props => {
   return (
     <View
       style={[
-        tailwind.style('relative items-center justify-center bg-gray-100 rounded-full h-24 w-24'),
+        tailwind.style('relative items-center justify-center rounded-full h-24 w-24'),
+        { backgroundColor: colors.chip },
         styleAdapter(style),
       ]}
       {...boxProps}>
@@ -110,7 +113,8 @@ export const UserAvatar: React.FC<Partial<UserAvatarProps>> = props => {
       ) : name ? (
         <Text
           style={[
-            tailwind.style('text-center uppercase text-gray-800 font-inter-medium-24 text-3xl'),
+            tailwind.style('text-center uppercase font-inter-medium-24 text-3xl'),
+            { color: colors.textPrimary },
           ]}
           adjustsFontSizeToFit
           allowFontScaling={false}>

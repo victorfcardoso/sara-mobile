@@ -41,11 +41,9 @@ import type { AgentService } from '@/store/agent-settings';
 import { showToast } from '@/utils/toastUtils';
 import type { SettingsStackParamList } from '@/navigation/stack/SettingsStack';
 import { ServiceCatalogService } from '@/services/ServiceCatalogService';
+import { useSaraColors, useIsDarkMode, type SaraColors } from '@/hooks/useSaraColors';
 
-type SettingsNavigation = NativeStackNavigationProp<
-  SettingsStackParamList,
-  'ServiceCatalogScreen'
->;
+type SettingsNavigation = NativeStackNavigationProp<SettingsStackParamList, 'ServiceCatalogScreen'>;
 
 type FormMode = 'create' | 'edit';
 
@@ -67,34 +65,47 @@ type FormErrors = Partial<
   Record<'label' | 'durationMin' | 'price' | 'currency' | 'depositAmount', string>
 >;
 
-// Resolve Sara theme colors from tailwind config
-const SARA_BACKGROUND = tailwind.color('sara-background') ?? '#F8F5F3';
-const SARA_BACKGROUND_LIGHT = tailwind.color('sara-background-light') ?? '#FFFFFF';
-const SARA_ACCENT = tailwind.color('sara-accent') ?? '#4CB6AC';
-const SARA_TEXT_PRIMARY = tailwind.color('sara-text-primary') ?? '#16273D';
-const SARA_TEXT_SECONDARY = tailwind.color('sara-text-secondary') ?? '#4B5D6E';
-const SARA_BORDER = tailwind.color('sara-border') ?? '#E6E2DD';
-const SARA_CHIP = tailwind.color('sara-chip') ?? '#F5F3F0';
+// Static colors that don't change between themes (semantic colors for warnings, errors, etc.)
+const DESTRUCTIVE_COLOR = '#B54747';
+const WARNING_BG_LIGHT = '#FEF4E1';
+const WARNING_BG_DARK = '#3D2E1A';
+const WARNING_TEXT_LIGHT = '#8A5A2E';
+const WARNING_TEXT_DARK = '#F5D89A';
+const WARNING_BORDER_LIGHT = '#F4DEBE';
+const WARNING_BORDER_DARK = '#5A4520';
+const ERROR_BG_LIGHT = '#FDEDEE';
+const ERROR_BG_DARK = '#3D1A1A';
+const BADGE_BG_LIGHT = '#CCE6DE';
+const BADGE_BG_DARK = '#1E3A2E';
+const ACTION_BUTTON_DANGER_BG_LIGHT = '#FBEFF0';
+const ACTION_BUTTON_DANGER_BG_DARK = '#3D2020';
+const ACTION_BUTTON_DANGER_PRESSED_LIGHT = '#F4E0E2';
+const ACTION_BUTTON_DANGER_PRESSED_DARK = '#4D2828';
+const PAYMENT_TEXT_LIGHT = '#2F7A6D';
+const PAYMENT_TEXT_DARK = '#6BC4B8';
 
-// Additional colors used in this screen (not in core Sara palette)
-const DESTRUCTIVE_COLOR = tailwind.color('red-800') ?? '#B54747';
-const WARNING_BG = tailwind.color('amber-50') ?? '#FEF4E1';
-const WARNING_TEXT = tailwind.color('brown-700') ?? '#8A5A2E';
-const WARNING_BORDER = tailwind.color('amber-100') ?? '#F4DEBE';
-const ERROR_BG = tailwind.color('red-50') ?? '#FDEDEE';
-const BADGE_BG = tailwind.color('jade-200') ?? '#CCE6DE';
-const INPUT_BG = tailwind.color('sara-background') ?? '#FDFBF9';
-const ICON_BUTTON_BG = tailwind.color('stone-100') ?? '#EFE8E0';
-const ICON_BUTTON_PRESSED = tailwind.color('stone-200') ?? '#E3DCD2';
-const HEADER_ACTION_BG = tailwind.color('teal-50') ?? '#E3F2EF';
-const HEADER_ACTION_PRESSED = tailwind.color('teal-100') ?? '#D3E8E2';
-const SWITCH_IOS_BG = tailwind.color('stone-300') ?? '#D8D1C9';
-const ACTION_BUTTON_BG = tailwind.color('amber-50') ?? '#F7F3EB';
-const ACTION_BUTTON_PRESSED = tailwind.color('stone-200') ?? '#EDE5DA';
-const ACTION_BUTTON_DANGER_BG = tailwind.color('red-50') ?? '#FBEFF0';
-const ACTION_BUTTON_DANGER_PRESSED = tailwind.color('red-100') ?? '#F4E0E2';
-const CARD_DIVIDER = tailwind.color('stone-100') ?? '#EFE6DB';
-const PAYMENT_TEXT = tailwind.color('teal-700') ?? '#2F7A6D';
+// Helper to get theme-aware UI colors
+const getUiColors = (isDark: boolean, colors: SaraColors) => ({
+  warningBg: isDark ? WARNING_BG_DARK : WARNING_BG_LIGHT,
+  warningText: isDark ? WARNING_TEXT_DARK : WARNING_TEXT_LIGHT,
+  warningBorder: isDark ? WARNING_BORDER_DARK : WARNING_BORDER_LIGHT,
+  errorBg: isDark ? ERROR_BG_DARK : ERROR_BG_LIGHT,
+  badgeBg: isDark ? BADGE_BG_DARK : BADGE_BG_LIGHT,
+  actionButtonBg: colors.chip,
+  actionButtonPressed: colors.border,
+  actionButtonDangerBg: isDark ? ACTION_BUTTON_DANGER_BG_DARK : ACTION_BUTTON_DANGER_BG_LIGHT,
+  actionButtonDangerPressed: isDark
+    ? ACTION_BUTTON_DANGER_PRESSED_DARK
+    : ACTION_BUTTON_DANGER_PRESSED_LIGHT,
+  paymentText: isDark ? PAYMENT_TEXT_DARK : PAYMENT_TEXT_LIGHT,
+  iconButtonBg: colors.chip,
+  iconButtonPressed: colors.border,
+  headerActionBg: colors.accentLight,
+  headerActionPressed: colors.accent,
+  switchIosBg: colors.border,
+  cardDivider: colors.border,
+  inputBg: colors.background,
+});
 
 const buildDraft = (service?: AgentService | null): ServiceFormDraft => {
   return {
@@ -106,12 +117,13 @@ const buildDraft = (service?: AgentService | null): ServiceFormDraft => {
       service?.durationMin != null && Number.isFinite(service.durationMin)
         ? String(service.durationMin)
         : '',
-    price:
-      service?.price != null && Number.isFinite(service.price) ? String(service.price) : '',
+    price: service?.price != null && Number.isFinite(service.price) ? String(service.price) : '',
     currency: service?.currency ?? 'BRL',
     requiresDeposit: Boolean(service?.requiresDeposit),
     depositAmount:
-      service?.requiresDeposit && service?.depositAmount != null && Number.isFinite(service.depositAmount)
+      service?.requiresDeposit &&
+      service?.depositAmount != null &&
+      Number.isFinite(service.depositAmount)
         ? String(service.depositAmount)
         : '',
     eaServiceId:
@@ -171,6 +183,9 @@ const coerceNumberOrNull = (value: string): number | null => {
 export const ServiceCatalogScreen = (): JSX.Element => {
   const navigation = useNavigation<SettingsNavigation>();
   const dispatch = useAppDispatch();
+  const colors = useSaraColors();
+  const isDark = useIsDarkMode();
+  const uiColors = getUiColors(isDark, colors);
 
   const agentSettings = useAppSelector(selectAgentSettingsData);
   const loadingAgentSettings = useAppSelector(selectAgentSettingsIsFetching);
@@ -199,7 +214,7 @@ export const ServiceCatalogScreen = (): JSX.Element => {
       : null;
 
   const visibleServices = useMemo<
-    Array<AgentService & { isFirst: boolean; orderIndex: number }>
+    (AgentService & { isFirst: boolean; orderIndex: number })[]
   >(() => {
     return services.map((service, index) => ({
       ...service,
@@ -302,10 +317,10 @@ export const ServiceCatalogScreen = (): JSX.Element => {
     const priceValue = Number.parseFloat(formDraft.price.replace(',', '.'));
     const depositValue = formDraft.requiresDeposit
       ? Number.parseFloat(
-          (formDraft.depositAmount.trim().length ? formDraft.depositAmount : formDraft.price).replace(
-            ',',
-            '.',
-          ),
+          (formDraft.depositAmount.trim().length
+            ? formDraft.depositAmount
+            : formDraft.price
+          ).replace(',', '.'),
         )
       : null;
     const payload = {
@@ -401,53 +416,73 @@ export const ServiceCatalogScreen = (): JSX.Element => {
         : i18n.t('SERVICE_CATALOG_PAGE.CREATE_TITLE');
 
     return (
-      <SafeAreaView style={[tailwind.style('flex-1'), { backgroundColor: SARA_BACKGROUND }]}>
-        <StatusBar barStyle="dark-content" />
+      <SafeAreaView style={[tailwind.style('flex-1'), { backgroundColor: colors.background }]}>
+        <StatusBar
+          barStyle={isDark ? 'light-content' : 'dark-content'}
+          backgroundColor={colors.background}
+        />
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={tailwind.style('flex-1')}>
-          <View style={styles.formHeader}>
+          <View style={[styles.formHeader, { backgroundColor: colors.background }]}>
             <Pressable
               onPress={closeForm}
               style={({ pressed }) => [
                 styles.iconButton,
-                pressed ? { backgroundColor: SARA_CHIP } : null,
+                { backgroundColor: uiColors.iconButtonBg },
+                pressed ? { backgroundColor: uiColors.iconButtonPressed } : null,
               ]}>
-              <Icon icon={<ChevronLeft stroke={SARA_TEXT_PRIMARY} strokeWidth={1.5} />} size={24} />
+              <Icon
+                icon={<ChevronLeft stroke={colors.textPrimary} strokeWidth={1.5} />}
+                size={24}
+              />
             </Pressable>
-            <Text style={styles.formHeaderTitle}>{formTitle}</Text>
+            <Text style={[styles.formHeaderTitle, { color: colors.textPrimary }]}>{formTitle}</Text>
             <View style={styles.iconButtonPlaceholder} />
           </View>
           <ScrollView
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={styles.formContent}>
             <View style={styles.formField}>
-              <Text style={styles.fieldLabel}>
+              <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
                 {i18n.t('SERVICE_CATALOG_PAGE.FIELD_LABEL')}
               </Text>
               <TextInput
                 value={formDraft.label}
                 onChangeText={text => updateDraftField('label', text)}
                 placeholder={i18n.t('SERVICE_CATALOG_PAGE.FIELD_LABEL_PLACEHOLDER')}
-                style={styles.textInput}
-                placeholderTextColor={SARA_TEXT_SECONDARY}
+                style={[
+                  styles.textInput,
+                  {
+                    backgroundColor: uiColors.inputBg,
+                    borderColor: colors.border,
+                    color: colors.textPrimary,
+                  },
+                ]}
+                placeholderTextColor={colors.textSecondary}
                 autoCapitalize="sentences"
               />
-              {formErrors.label ? (
-                <Text style={styles.errorText}>{formErrors.label}</Text>
-              ) : null}
+              {formErrors.label ? <Text style={styles.errorText}>{formErrors.label}</Text> : null}
             </View>
 
             <View style={styles.formField}>
-              <Text style={styles.fieldLabel}>
+              <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
                 {i18n.t('SERVICE_CATALOG_PAGE.FIELD_DESCRIPTION')}
               </Text>
               <TextInput
                 value={formDraft.description}
                 onChangeText={text => updateDraftField('description', text)}
                 placeholder={i18n.t('SERVICE_CATALOG_PAGE.FIELD_DESCRIPTION_PLACEHOLDER')}
-                style={[styles.textInput, styles.multilineInput]}
-                placeholderTextColor={SARA_TEXT_SECONDARY}
+                style={[
+                  styles.textInput,
+                  styles.multilineInput,
+                  {
+                    backgroundColor: uiColors.inputBg,
+                    borderColor: colors.border,
+                    color: colors.textPrimary,
+                  },
+                ]}
+                placeholderTextColor={colors.textSecondary}
                 multiline
                 numberOfLines={4}
               />
@@ -455,14 +490,22 @@ export const ServiceCatalogScreen = (): JSX.Element => {
 
             <View style={styles.row}>
               <View style={[styles.formField, styles.rowItem]}>
-                <Text style={styles.fieldLabel}>
+                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
                   {i18n.t('SERVICE_CATALOG_PAGE.FIELD_DURATION')}
                 </Text>
                 <TextInput
                   value={formDraft.durationMin}
                   onChangeText={text => updateDraftField('durationMin', text)}
                   placeholder="30"
-                  style={styles.textInput}
+                  placeholderTextColor={colors.textMeta}
+                  style={[
+                    styles.textInput,
+                    {
+                      backgroundColor: uiColors.inputBg,
+                      borderColor: colors.border,
+                      color: colors.textPrimary,
+                    },
+                  ]}
                   keyboardType="number-pad"
                 />
                 {formErrors.durationMin ? (
@@ -470,44 +513,58 @@ export const ServiceCatalogScreen = (): JSX.Element => {
                 ) : null}
               </View>
               <View style={[styles.formField, styles.rowItem]}>
-                <Text style={styles.fieldLabel}>
+                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
                   {i18n.t('SERVICE_CATALOG_PAGE.FIELD_PRICE')}
                 </Text>
                 <TextInput
                   value={formDraft.price}
                   onChangeText={text => updateDraftField('price', text)}
                   placeholder="120.00"
-                  style={styles.textInput}
+                  placeholderTextColor={colors.textMeta}
+                  style={[
+                    styles.textInput,
+                    {
+                      backgroundColor: uiColors.inputBg,
+                      borderColor: colors.border,
+                      color: colors.textPrimary,
+                    },
+                  ]}
                   keyboardType="decimal-pad"
                 />
-                {formErrors.price ? (
-                  <Text style={styles.errorText}>{formErrors.price}</Text>
-                ) : null}
+                {formErrors.price ? <Text style={styles.errorText}>{formErrors.price}</Text> : null}
               </View>
             </View>
 
             <View style={styles.switchRow}>
-              <Text style={styles.fieldLabel}>
+              <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
                 {i18n.t('SERVICE_CATALOG_PAGE.FIELD_REQUIRES_DEPOSIT')}
               </Text>
               <Switch
                 value={formDraft.requiresDeposit}
                 onValueChange={value => updateDraftField('requiresDeposit', value)}
-                trackColor={{ false: SARA_BORDER, true: SARA_ACCENT }}
-                ios_backgroundColor={SWITCH_IOS_BG}
+                trackColor={{ false: colors.border, true: colors.accent }}
+                ios_backgroundColor={uiColors.switchIosBg}
               />
             </View>
 
             {formDraft.requiresDeposit ? (
               <View style={styles.formField}>
-                <Text style={styles.fieldLabel}>
+                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
                   {i18n.t('SERVICE_CATALOG_PAGE.FIELD_DEPOSIT_AMOUNT')}
                 </Text>
                 <TextInput
                   value={formDraft.depositAmount}
                   onChangeText={text => updateDraftField('depositAmount', text)}
                   placeholder={formDraft.price || '120.00'}
-                  style={styles.textInput}
+                  placeholderTextColor={colors.textMeta}
+                  style={[
+                    styles.textInput,
+                    {
+                      backgroundColor: uiColors.inputBg,
+                      borderColor: colors.border,
+                      color: colors.textPrimary,
+                    },
+                  ]}
                   keyboardType="decimal-pad"
                 />
                 {formErrors.depositAmount ? (
@@ -536,7 +593,7 @@ export const ServiceCatalogScreen = (): JSX.Element => {
             </View>
             {submitting ? (
               <View style={styles.submittingOverlay}>
-                <ActivityIndicator color={SARA_ACCENT} size="small" />
+                <ActivityIndicator color={colors.accent} size="small" />
               </View>
             ) : null}
           </ScrollView>
@@ -546,46 +603,63 @@ export const ServiceCatalogScreen = (): JSX.Element => {
   }
 
   return (
-    <SafeAreaView style={[tailwind.style('flex-1'), { backgroundColor: SARA_BACKGROUND }]}>
-      <StatusBar barStyle="dark-content" />
-      <View style={styles.header}>
+    <SafeAreaView style={[tailwind.style('flex-1'), { backgroundColor: colors.background }]}>
+      <StatusBar
+        barStyle={isDark ? 'light-content' : 'dark-content'}
+        backgroundColor={colors.background}
+      />
+      <View style={[styles.header, { backgroundColor: colors.background }]}>
         <Pressable
           onPress={handleGoBack}
           style={({ pressed }) => [
             styles.iconButton,
-            pressed ? styles.iconButtonPressed : null,
+            { backgroundColor: uiColors.iconButtonBg },
+            pressed ? { backgroundColor: uiColors.iconButtonPressed } : null,
           ]}>
-          <Icon icon={<ChevronLeft stroke={SARA_TEXT_PRIMARY} strokeWidth={1.4} />} size={22} />
+          <Icon icon={<ChevronLeft stroke={colors.textPrimary} strokeWidth={1.4} />} size={22} />
         </Pressable>
-        <Text style={styles.headerTitle}>{i18n.t('SERVICE_CATALOG_PAGE.TITLE')}</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
+          {i18n.t('SERVICE_CATALOG_PAGE.TITLE')}
+        </Text>
         <Pressable
           onPress={openCreateForm}
           disabled={!easyAppointmentsConnected}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           style={({ pressed }) => [
             styles.headerAction,
+            { backgroundColor: uiColors.headerActionBg },
             !easyAppointmentsConnected ? styles.headerActionDisabled : null,
-            pressed && easyAppointmentsConnected ? styles.headerActionPressed : null,
+            pressed && easyAppointmentsConnected
+              ? { backgroundColor: uiColors.headerActionPressed }
+              : null,
           ]}>
-          <Icon icon={<AddIcon stroke={SARA_TEXT_PRIMARY} strokeWidth={1.4} />} size={18} />
+          <Icon icon={<AddIcon stroke={colors.textPrimary} strokeWidth={1.4} />} size={18} />
         </Pressable>
       </View>
       {!easyAppointmentsConnected ? (
-        <View style={styles.noticeCard}>
-          <Text style={styles.noticeText}>
+        <View
+          style={[
+            styles.noticeCard,
+            { backgroundColor: uiColors.warningBg, borderColor: uiColors.warningBorder },
+          ]}>
+          <Text style={[styles.noticeText, { color: uiColors.warningText }]}>
             {i18n.t('SERVICE_CATALOG_PAGE.EA_DISCONNECTED_NOTICE')}
           </Text>
         </View>
       ) : null}
       {planTier === 'basic' ? (
-        <View style={styles.noticeCard}>
-          <Text style={styles.noticeText}>
+        <View
+          style={[
+            styles.noticeCard,
+            { backgroundColor: uiColors.warningBg, borderColor: uiColors.warningBorder },
+          ]}>
+          <Text style={[styles.noticeText, { color: uiColors.warningText }]}>
             {i18n.t('SERVICE_CATALOG_PAGE.PLAN_NOTICE')}
           </Text>
         </View>
       ) : null}
       {agentSettingsError ? (
-        <View style={styles.errorBanner}>
+        <View style={[styles.errorBanner, { backgroundColor: uiColors.errorBg }]}>
           <Text style={styles.errorBannerText}>{agentSettingsError}</Text>
         </View>
       ) : null}
@@ -593,46 +667,67 @@ export const ServiceCatalogScreen = (): JSX.Element => {
         style={tailwind.style('flex-1')}
         contentContainerStyle={styles.listContent}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={SARA_ACCENT} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.accent}
+          />
         }>
         {loadingAgentSettings && services.length === 0 ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator color={SARA_ACCENT} size="small" />
+            <ActivityIndicator color={colors.accent} size="small" />
           </View>
         ) : null}
         {!loadingAgentSettings && services.length === 0 ? (
           <View style={styles.emptyState}>
-            <Icon icon={<CreditCardIcon stroke={SARA_TEXT_SECONDARY} strokeWidth={1.4} />} size={48} />
-            <Text style={styles.emptyTitle}>{i18n.t('SERVICE_CATALOG_PAGE.EMPTY_TITLE')}</Text>
-            <Text style={styles.emptySubtitle}>
+            <Icon
+              icon={<CreditCardIcon stroke={colors.textSecondary} strokeWidth={1.4} />}
+              size={48}
+            />
+            <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
+              {i18n.t('SERVICE_CATALOG_PAGE.EMPTY_TITLE')}
+            </Text>
+            <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
               {i18n.t('SERVICE_CATALOG_PAGE.EMPTY_SUBTITLE')}
             </Text>
           </View>
         ) : null}
         {visibleServices.map(service => {
           const cardKey =
-            service.serviceId ??
-            `${service.orderIndex}-${service.label ?? 'service'}`;
+            service.serviceId ?? `${service.orderIndex}-${service.label ?? 'service'}`;
           const isDeleting = pendingDeleteId === service.serviceId;
 
           return (
-            <View key={cardKey} style={styles.card}>
+            <View
+              key={cardKey}
+              style={[
+                styles.card,
+                {
+                  backgroundColor: colors.backgroundLight,
+                  borderColor: colors.border,
+                  shadowColor: colors.textPrimary,
+                },
+              ]}>
               <View style={styles.cardHeader}>
                 <View style={styles.cardTitleBlock}>
                   <View style={styles.cardTitleRow}>
-                    <Text style={styles.cardTitle} numberOfLines={1}>
+                    <Text
+                      style={[styles.cardTitle, { color: colors.textPrimary }]}
+                      numberOfLines={1}>
                       {service.label || i18n.t('SERVICE_CATALOG_PAGE.UNTITLED_SERVICE')}
                     </Text>
                     {planTier === 'basic' && service.isFirst ? (
-                      <View style={styles.badge}>
-                        <Text style={styles.badgeText}>
+                      <View style={[styles.badge, { backgroundColor: uiColors.badgeBg }]}>
+                        <Text style={[styles.badgeText, { color: colors.textPrimary }]}>
                           {i18n.t('SERVICE_CATALOG_PAGE.VISIBLE_BADGE')}
                         </Text>
                       </View>
                     ) : null}
                   </View>
                   {service.description ? (
-                    <Text style={styles.cardDescription} numberOfLines={2}>
+                    <Text
+                      style={[styles.cardDescription, { color: colors.textSecondary }]}
+                      numberOfLines={2}>
                       {service.description}
                     </Text>
                   ) : null}
@@ -643,9 +738,13 @@ export const ServiceCatalogScreen = (): JSX.Element => {
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     style={({ pressed }) => [
                       styles.actionButton,
-                      pressed ? styles.actionButtonPressed : null,
+                      { backgroundColor: uiColors.actionButtonBg },
+                      pressed ? { backgroundColor: uiColors.actionButtonPressed } : null,
                     ]}>
-                    <Icon icon={<PencilIcon stroke={SARA_TEXT_SECONDARY} strokeWidth={1.4} />} size={18} />
+                    <Icon
+                      icon={<PencilIcon stroke={colors.textSecondary} strokeWidth={1.4} />}
+                      size={18}
+                    />
                   </Pressable>
                   <Pressable
                     onPress={() => confirmDelete(service)}
@@ -653,26 +752,34 @@ export const ServiceCatalogScreen = (): JSX.Element => {
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     style={({ pressed }) => [
                       styles.actionButton,
-                      styles.actionButtonDanger,
+                      { backgroundColor: uiColors.actionButtonDangerBg },
                       isDeleting ? styles.actionButtonDisabled : null,
-                      pressed && !isDeleting ? styles.actionButtonDangerPressed : null,
+                      pressed && !isDeleting
+                        ? { backgroundColor: uiColors.actionButtonDangerPressed }
+                        : null,
                     ]}>
                     {isDeleting ? (
                       <ActivityIndicator color={DESTRUCTIVE_COLOR} size="small" />
                     ) : (
-                      <Icon icon={<TrashIcon stroke={DESTRUCTIVE_COLOR} strokeWidth={1.5} />} size={18} />
+                      <Icon
+                        icon={<TrashIcon stroke={DESTRUCTIVE_COLOR} strokeWidth={1.5} />}
+                        size={18}
+                      />
                     )}
                   </Pressable>
                 </View>
               </View>
-              <View style={styles.cardDivider} />
+              <View style={[styles.cardDivider, { backgroundColor: uiColors.cardDivider }]} />
               <View style={styles.cardDetailsRow}>
                 <View style={styles.detailGroup}>
                   <View style={styles.detailItem}>
                     <View style={styles.detailItemIcon}>
-                      <Icon icon={<ClockIcon stroke={SARA_TEXT_SECONDARY} strokeWidth={1.25} />} size={16} />
+                      <Icon
+                        icon={<ClockIcon stroke={colors.textSecondary} strokeWidth={1.25} />}
+                        size={16}
+                      />
                     </View>
-                    <Text style={styles.detailText}>
+                    <Text style={[styles.detailText, { color: colors.textPrimary }]}>
                       {service.durationMin
                         ? `${service.durationMin} ${i18n.t('SERVICE_CATALOG_PAGE.MINUTES_SUFFIX')}`
                         : '—'}
@@ -680,9 +787,12 @@ export const ServiceCatalogScreen = (): JSX.Element => {
                   </View>
                   <View style={styles.detailItem}>
                     <View style={styles.detailItemIcon}>
-                      <Icon icon={<CreditCardIcon stroke={SARA_TEXT_SECONDARY} strokeWidth={1.25} />} size={16} />
+                      <Icon
+                        icon={<CreditCardIcon stroke={colors.textSecondary} strokeWidth={1.25} />}
+                        size={16}
+                      />
                     </View>
-                    <Text style={styles.detailText}>
+                    <Text style={[styles.detailText, { color: colors.textPrimary }]}>
                       {service.price != null && Number.isFinite(service.price)
                         ? `${Number(service.price).toFixed(2)} ${service.currency ?? 'BRL'}`
                         : `— ${service.currency ?? 'BRL'}`}
@@ -690,7 +800,7 @@ export const ServiceCatalogScreen = (): JSX.Element => {
                   </View>
                 </View>
                 {service.requiresDeposit ? (
-                  <Text style={styles.paymentText}>
+                  <Text style={[styles.paymentText, { color: uiColors.paymentText }]}>
                     {i18n.t('SERVICE_CATALOG_PAGE.PAYMENT_REQUIRED_BADGE')}
                   </Text>
                 ) : null}
@@ -711,14 +821,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: SARA_BACKGROUND,
   },
   headerTitle: {
     flex: 1,
     textAlign: 'center',
     fontSize: 20,
     fontFamily: 'Inter-SemiBold',
-    color: SARA_TEXT_PRIMARY,
   },
   iconButton: {
     width: 40,
@@ -726,10 +834,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: ICON_BUTTON_BG,
-  },
-  iconButtonPressed: {
-    backgroundColor: ICON_BUTTON_PRESSED,
   },
   iconButtonPlaceholder: {
     width: 40,
@@ -741,25 +845,18 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: HEADER_ACTION_BG,
-  },
-  headerActionPressed: {
-    backgroundColor: HEADER_ACTION_PRESSED,
   },
   headerActionDisabled: {
     opacity: 0.35,
   },
   noticeCard: {
-    backgroundColor: WARNING_BG,
     marginHorizontal: 20,
     marginBottom: 12,
     borderRadius: 16,
     padding: 14,
     borderWidth: 1,
-    borderColor: WARNING_BORDER,
   },
   noticeText: {
-    color: WARNING_TEXT,
     fontSize: 13,
     fontFamily: 'Inter-Regular',
   },
@@ -768,7 +865,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     padding: 12,
     borderRadius: 12,
-    backgroundColor: ERROR_BG,
   },
   errorBannerText: {
     color: DESTRUCTIVE_COLOR,
@@ -797,22 +893,17 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 18,
     fontFamily: 'Inter-Medium',
-    color: SARA_TEXT_PRIMARY,
   },
   emptySubtitle: {
     fontSize: 14,
     fontFamily: 'Inter-Regular',
-    color: SARA_TEXT_SECONDARY,
     textAlign: 'center',
     paddingHorizontal: 32,
   },
   card: {
-    backgroundColor: SARA_BACKGROUND_LIGHT,
     borderRadius: 22,
     padding: 18,
     borderWidth: 1,
-    borderColor: SARA_BORDER,
-    shadowColor: SARA_TEXT_PRIMARY,
     shadowOpacity: 0.05,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 6 },
@@ -836,16 +927,13 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 16,
     fontFamily: 'Inter-SemiBold',
-    color: SARA_TEXT_PRIMARY,
   },
   cardDescription: {
     marginTop: 4,
     fontSize: 13,
     fontFamily: 'Inter-Regular',
-    color: SARA_TEXT_SECONDARY,
   },
   badge: {
-    backgroundColor: BADGE_BG,
     borderRadius: 12,
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -853,7 +941,6 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: 11,
     fontFamily: 'Inter-Medium',
-    color: SARA_TEXT_PRIMARY,
   },
   cardActions: {
     flexDirection: 'row',
@@ -866,23 +953,12 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: ACTION_BUTTON_BG,
-  },
-  actionButtonPressed: {
-    backgroundColor: ACTION_BUTTON_PRESSED,
-  },
-  actionButtonDanger: {
-    backgroundColor: ACTION_BUTTON_DANGER_BG,
-  },
-  actionButtonDangerPressed: {
-    backgroundColor: ACTION_BUTTON_DANGER_PRESSED,
   },
   actionButtonDisabled: {
     opacity: 0.5,
   },
   cardDivider: {
     height: 1,
-    backgroundColor: CARD_DIVIDER,
     marginTop: 14,
     marginBottom: 12,
   },
@@ -908,12 +984,10 @@ const styles = StyleSheet.create({
   detailText: {
     fontSize: 13,
     fontFamily: 'Inter-Medium',
-    color: SARA_TEXT_PRIMARY,
   },
   paymentText: {
     fontSize: 12,
     fontFamily: 'Inter-Medium',
-    color: PAYMENT_TEXT,
   },
   formHeader: {
     paddingHorizontal: 20,
@@ -928,7 +1002,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 20,
     fontFamily: 'Inter-SemiBold',
-    color: SARA_TEXT_PRIMARY,
   },
   formContent: {
     paddingHorizontal: 20,
@@ -941,19 +1014,15 @@ const styles = StyleSheet.create({
   fieldLabel: {
     fontSize: 13,
     fontFamily: 'Inter-Medium',
-    color: SARA_TEXT_SECONDARY,
     marginBottom: 6,
   },
   textInput: {
-    backgroundColor: INPUT_BG,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: SARA_BORDER,
     paddingHorizontal: 14,
     paddingVertical: 10,
     fontSize: 15,
     fontFamily: 'Inter-Regular',
-    color: SARA_TEXT_PRIMARY,
   },
   multilineInput: {
     minHeight: 96,

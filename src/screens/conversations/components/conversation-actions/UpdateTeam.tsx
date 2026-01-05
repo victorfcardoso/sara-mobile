@@ -18,15 +18,17 @@ import i18n from '@/i18n';
 import { CONVERSATION_EVENTS } from '@/constants/analyticsEvents';
 import AnalyticsHelper from '@/utils/analyticsUtils';
 import { filterTeams } from '@/store/team/teamSelectors';
+import { useSaraColors, SaraColors } from '@/hooks/useSaraColors';
 
 type TeamCellProps = {
   value: Team;
   lastItem: boolean;
   teamId: number | undefined;
+  colors: SaraColors;
 };
 
 const TeamCell = (props: TeamCellProps) => {
-  const { value, lastItem, teamId } = props;
+  const { value, lastItem, teamId, colors } = props;
   const dispatch = useAppDispatch();
 
   const { actionsModalSheetRef } = useRefsContext();
@@ -51,15 +53,17 @@ const TeamCell = (props: TeamCellProps) => {
     <Pressable onPress={handleAssigneePress} style={tailwind.style('flex flex-row items-center')}>
       <Avatar name={value.name ?? ''} size="md" />
       <Animated.View
-        style={tailwind.style(
-          'flex-1 ml-3 flex-row justify-between py-[11px] pr-3',
-          !lastItem ? 'border-b-[1px] border-[#E6E0D7]' : '',
-        )}>
+        style={[
+          tailwind.style(
+            'flex-1 ml-3 flex-row justify-between py-[11px] pr-3',
+            !lastItem ? 'border-b-[1px]' : '',
+          ),
+          !lastItem ? { borderBottomColor: colors.border } : {},
+        ]}>
         <Animated.Text
           style={[
-            tailwind.style(
-              'text-base text-[#16273D] font-inter-420-20 leading-[21px] tracking-[0.16px]',
-            ),
+            tailwind.style('text-base font-inter-420-20 leading-[21px] tracking-[0.16px]'),
+            { color: colors.textPrimary },
           ]}>
           {value.name}
         </Animated.Text>
@@ -69,17 +73,17 @@ const TeamCell = (props: TeamCellProps) => {
   );
 };
 
-const TeamStack = ({ teams, teamId }: { teams: Team[]; teamId: number | undefined }) => {
+const TeamStack = ({ teams, teamId, colors }: { teams: Team[]; teamId: number | undefined; colors: SaraColors }) => {
   const isFetching = useAppSelector(selectLoading);
 
   return (
     <BottomSheetScrollView showsVerticalScrollIndicator={false} style={tailwind.style('my-1 pl-3')}>
       {isFetching ? (
-        <ActivityIndicator color="#4CB6AC" />
+        <ActivityIndicator color={colors.accent} />
       ) : (
         teams.map((value, index) => {
           return (
-            <TeamCell key={index} {...{ value, lastItem: index === teams.length - 1, teamId }} />
+            <TeamCell key={index} {...{ value, lastItem: index === teams.length - 1, teamId, colors }} />
           );
         })
       )}
@@ -90,6 +94,7 @@ const TeamStack = ({ teams, teamId }: { teams: Team[]; teamId: number | undefine
 export const UpdateTeam = () => {
   const { actionsModalSheetRef } = useRefsContext();
   const [searchTerm, setSearchTerm] = useState('');
+  const colors = useSaraColors();
 
   const selectedConversation = useAppSelector(selectSelectedConversation);
 
@@ -117,7 +122,7 @@ export const UpdateTeam = () => {
         onChangeText={handleChangeText}
         placeholder={i18n.t('CONVERSATION.SEARCH_TEAM')}
       />
-      <TeamStack teams={teams} teamId={teamId} />
+      <TeamStack teams={teams} teamId={teamId} colors={colors} />
     </React.Fragment>
   );
 };

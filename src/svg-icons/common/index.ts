@@ -46,3 +46,4 @@ export * from './Clock';
 export * from './CreditCard';
 export * from './Zap';
 export * from './Pencil';
+export * from './Theme';

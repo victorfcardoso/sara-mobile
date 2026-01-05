@@ -41,23 +41,15 @@ import { Icon } from '@/components-next/common/icon';
 import { ChevronLeft } from '@/svg-icons/common/ChevronLeft';
 import { BottomSheetBackdrop } from '@/components-next/common/bottomsheet';
 import { showToast } from '@/utils/toastUtils';
-
-const COLORS = {
-  background: '#F8F5F3',
-  panel: '#FFFFFF',
-  border: '#E6E0D7',
-  muted: '#4B5D6E',
-  heading: '#16273D',
-  accent: '#0F4D49',
-  teal: '#4CB6AC',
-  tealText: '#16273D',
-};
+import { useSaraColors, useIsDarkMode } from '@/hooks/useSaraColors';
 
 type SettingsNavigation = NativeStackNavigationProp<SettingsStackParamList, 'AgentProfileScreen'>;
 
 export const AgentProfileScreen = (): JSX.Element => {
   const navigation = useNavigation<SettingsNavigation>();
   const dispatch = useAppDispatch();
+  const colors = useSaraColors();
+  const isDark = useIsDarkMode();
 
   const agentSettings = useAppSelector(selectAgentSettingsData);
   const agentSettingsLoading = useAppSelector(selectAgentSettingsIsFetching);
@@ -115,8 +107,7 @@ export const AgentProfileScreen = (): JSX.Element => {
         showToast({ message: i18n.t('AGENT_PROFILE_PAGE.SWITCH_SUCCESS') });
         closeAgentSwitcher();
       } catch (error) {
-        const message =
-          error instanceof Error ? error.message : i18n.t('ERRORS.COMMON_ERROR');
+        const message = error instanceof Error ? error.message : i18n.t('ERRORS.COMMON_ERROR');
         showToast({ message });
       }
     },
@@ -152,19 +143,17 @@ export const AgentProfileScreen = (): JSX.Element => {
 
   const renderInfoRow = (label: string, value: string | null, testID?: string) => (
     <View
-      style={[
-        tailwind.style('py-3'),
-        { borderBottomColor: COLORS.border, borderBottomWidth: 1 },
-      ]}
+      style={[tailwind.style('py-3'), { borderBottomColor: colors.border, borderBottomWidth: 1 }]}
       key={label}>
-      <Text style={[tailwind.style('text-xs uppercase tracking-[1px]'), { color: COLORS.muted }]}>
+      <Text
+        style={[
+          tailwind.style('text-xs uppercase tracking-[1px]'),
+          { color: colors.textSecondary },
+        ]}>
         {label}
       </Text>
       <Text
-        style={[
-          tailwind.style('text-base font-medium mt-1'),
-          { color: COLORS.heading },
-        ]}
+        style={[tailwind.style('text-base font-medium mt-1'), { color: colors.textPrimary }]}
         testID={testID}>
         {value && value.trim().length > 0 ? value : i18n.t('SETTINGS.FIELD_NOT_CONFIGURED')}
       </Text>
@@ -199,9 +188,7 @@ export const AgentProfileScreen = (): JSX.Element => {
       setIsEditingName(false);
     } catch (error) {
       const message =
-        error instanceof Error
-          ? error.message
-          : i18n.t('AGENT_PROFILE_PAGE.SAVE_NAME_ERROR');
+        error instanceof Error ? error.message : i18n.t('AGENT_PROFILE_PAGE.SAVE_NAME_ERROR');
       showToast({ message });
       setIsEditingName(true);
     } finally {
@@ -219,21 +206,24 @@ export const AgentProfileScreen = (): JSX.Element => {
   }, [nameInputEditable]);
 
   return (
-    <SafeAreaView style={[tailwind.style('flex-1'), { backgroundColor: COLORS.background }]}>
-      <StatusBar barStyle="dark-content" />
+    <SafeAreaView style={[tailwind.style('flex-1'), { backgroundColor: colors.background }]}>
+      <StatusBar
+        barStyle={isDark ? 'light-content' : 'dark-content'}
+        backgroundColor={colors.background}
+      />
       <View
         style={[
           tailwind.style('flex-row items-center px-4 py-3'),
-          { borderBottomWidth: 1, borderBottomColor: COLORS.border },
+          { borderBottomWidth: 1, borderBottomColor: colors.border },
         ]}>
         <Pressable
           accessibilityHint={i18n.t('AGENT_PROFILE_PAGE.BACK_HINT')}
           accessibilityRole="button"
           onPress={handleGoBack}
           style={tailwind.style('h-10 w-10 items-center justify-center mr-2')}>
-          <Icon icon={<ChevronLeft stroke={COLORS.heading} />} size={20} />
+          <Icon icon={<ChevronLeft stroke={colors.textPrimary} />} size={20} />
         </Pressable>
-        <Text style={[tailwind.style('text-lg font-semibold'), { color: COLORS.heading }]}>
+        <Text style={[tailwind.style('text-lg font-semibold'), { color: colors.textPrimary }]}>
           {i18n.t('SETTINGS.AGENT_PROFILE')}
         </Text>
       </View>
@@ -244,24 +234,31 @@ export const AgentProfileScreen = (): JSX.Element => {
         <View
           style={[
             tailwind.style('rounded-2xl p-5'),
-            { backgroundColor: COLORS.panel, borderColor: COLORS.border, borderWidth: 1 },
+            { backgroundColor: colors.backgroundLight, borderColor: colors.border, borderWidth: 1 },
           ]}>
-          <Text style={[tailwind.style('text-sm uppercase tracking-[1px]'), { color: COLORS.muted }]}>
+          <Text
+            style={[
+              tailwind.style('text-sm uppercase tracking-[1px]'),
+              { color: colors.textSecondary },
+            ]}>
             {i18n.t('AGENT_PROFILE_PAGE.ACTIVE_AGENT')}
           </Text>
-          <Text style={[tailwind.style('text-2xl font-semibold mt-2'), { color: COLORS.heading }]}>
+          <Text
+            style={[tailwind.style('text-2xl font-semibold mt-2'), { color: colors.textPrimary }]}>
             {agentDisplayName}
           </Text>
-          <Text style={[tailwind.style('text-sm mt-1'), { color: COLORS.muted }]}>
+          <Text style={[tailwind.style('text-sm mt-1'), { color: colors.textSecondary }]}>
             {i18n.t('AGENT_PROFILE_PAGE.AGENT_ID_LABEL', { id: agentIdLabel })}
           </Text>
           <Pressable
             onPress={openAgentSwitcher}
-            disabled={isSwitchingAgent || (manageableAgentsLoading && manageableAgents.length === 0)}
+            disabled={
+              isSwitchingAgent || (manageableAgentsLoading && manageableAgents.length === 0)
+            }
             style={({ pressed }) => [
               tailwind.style('mt-4 rounded-[13px] py-[11px] items-center justify-center'),
               {
-                backgroundColor: COLORS.teal,
+                backgroundColor: colors.accent,
                 opacity:
                   isSwitchingAgent || (manageableAgentsLoading && manageableAgents.length === 0)
                     ? 0.5
@@ -271,13 +268,10 @@ export const AgentProfileScreen = (): JSX.Element => {
               },
             ]}>
             {isSwitchingAgent ? (
-              <ActivityIndicator color={COLORS.tealText} />
+              <ActivityIndicator color={colors.textPrimary} />
             ) : (
               <Text
-                style={[
-                  tailwind.style('text-base font-medium'),
-                  { color: COLORS.tealText },
-                ]}>
+                style={[tailwind.style('text-base font-medium'), { color: colors.textPrimary }]}>
                 {i18n.t('AGENT_PROFILE_PAGE.SWITCH_BUTTON')}
               </Text>
             )}
@@ -287,26 +281,27 @@ export const AgentProfileScreen = (): JSX.Element => {
         <View
           style={[
             tailwind.style('rounded-2xl p-5'),
-            { backgroundColor: COLORS.panel, borderColor: COLORS.border, borderWidth: 1 },
+            { backgroundColor: colors.backgroundLight, borderColor: colors.border, borderWidth: 1 },
           ]}>
-          <Text style={[tailwind.style('text-base font-semibold mb-3'), { color: COLORS.heading }]}>
+          <Text
+            style={[tailwind.style('text-base font-semibold mb-3'), { color: colors.textPrimary }]}>
             {i18n.t('AGENT_PROFILE_PAGE.IDENTITY_SECTION')}
           </Text>
           {agentSettingsLoading && !agentSettings ? (
             <View style={tailwind.style('py-6 items-center justify-center')}>
-              <ActivityIndicator color={COLORS.accent} />
+              <ActivityIndicator color={colors.accent} />
             </View>
           ) : (
             <>
               <View
                 style={[
                   tailwind.style('py-3'),
-                  { borderBottomColor: COLORS.border, borderBottomWidth: 1 },
+                  { borderBottomColor: colors.border, borderBottomWidth: 1 },
                 ]}>
                 <Text
                   style={[
                     tailwind.style('text-xs uppercase tracking-[1px]'),
-                    { color: COLORS.muted },
+                    { color: colors.textSecondary },
                   ]}>
                   {i18n.t('AGENT_PROFILE_PAGE.NAME_LABEL')}
                 </Text>
@@ -316,6 +311,7 @@ export const AgentProfileScreen = (): JSX.Element => {
                     onChangeText={setNameValue}
                     editable={nameInputEditable}
                     placeholder={i18n.t('AGENT_PROFILE_PAGE.NAME_PLACEHOLDER')}
+                    placeholderTextColor={colors.textMeta}
                     autoCapitalize="words"
                     autoCorrect={false}
                     returnKeyType="done"
@@ -325,6 +321,7 @@ export const AgentProfileScreen = (): JSX.Element => {
                     selectTextOnFocus
                     style={[
                       styles.inlineInput,
+                      { color: colors.textPrimary },
                       !nameInputEditable ? styles.inlineInputDisabled : null,
                     ]}
                   />
@@ -336,7 +333,7 @@ export const AgentProfileScreen = (): JSX.Element => {
                     <Text
                       style={[
                         tailwind.style('text-base font-medium'),
-                        { color: COLORS.heading },
+                        { color: colors.textPrimary },
                       ]}
                       numberOfLines={1}
                       ellipsizeMode="tail">
@@ -366,22 +363,24 @@ export const AgentProfileScreen = (): JSX.Element => {
         ref={bottomSheetRef}
         snapPoints={snapPoints}
         backdropComponent={props => <BottomSheetBackdrop {...props} />}
+        backgroundStyle={{ backgroundColor: colors.backgroundLight }}
+        handleIndicatorStyle={{ backgroundColor: colors.textMeta }}
         enablePanDownToClose>
         <View style={tailwind.style('px-5 pt-4 pb-2')}>
-          <Text style={[tailwind.style('text-lg font-semibold'), { color: COLORS.heading }]}>
+          <Text style={[tailwind.style('text-lg font-semibold'), { color: colors.textPrimary }]}>
             {i18n.t('AGENT_PROFILE_PAGE.SWITCH_SHEET_TITLE')}
           </Text>
-          <Text style={[tailwind.style('text-sm mt-1'), { color: COLORS.muted }]}>
+          <Text style={[tailwind.style('text-sm mt-1'), { color: colors.textSecondary }]}>
             {i18n.t('AGENT_PROFILE_PAGE.SWITCH_SHEET_DESCRIPTION')}
           </Text>
         </View>
         {manageableAgentsLoading && manageableAgents.length === 0 ? (
           <View style={tailwind.style('py-8 items-center justify-center')}>
-            <ActivityIndicator color={COLORS.accent} />
+            <ActivityIndicator color={colors.accent} />
           </View>
         ) : manageableAgents.length === 0 ? (
           <View style={tailwind.style('py-8 px-5')}>
-            <Text style={[tailwind.style('text-sm text-center'), { color: COLORS.muted }]}>
+            <Text style={[tailwind.style('text-sm text-center'), { color: colors.textSecondary }]}>
               {manageableAgentsError ?? i18n.t('AGENT_PROFILE_PAGE.EMPTY_STATE')}
             </Text>
           </View>
@@ -399,21 +398,21 @@ export const AgentProfileScreen = (): JSX.Element => {
                   style={[
                     tailwind.style('px-5 py-3'),
                     {
-                      backgroundColor: isActive ? '#EEF7F5' : 'transparent',
+                      backgroundColor: isActive ? colors.accentLight : 'transparent',
                     },
                   ]}>
                   <Text
                     style={[
                       tailwind.style('text-base font-medium'),
-                      { color: COLORS.heading },
+                      { color: colors.textPrimary },
                     ]}>
                     {item.name}
                   </Text>
-                  <Text style={[tailwind.style('text-xs mt-1'), { color: COLORS.muted }]}>
+                  <Text style={[tailwind.style('text-xs mt-1'), { color: colors.textSecondary }]}>
                     {i18n.t('AGENT_PROFILE_PAGE.AGENT_ID_LABEL', { id: item.id })}
                   </Text>
                   {item.publicWhatsappPhone ? (
-                    <Text style={[tailwind.style('text-xs mt-1'), { color: COLORS.muted }]}>
+                    <Text style={[tailwind.style('text-xs mt-1'), { color: colors.textSecondary }]}>
                       {formatBrazilPhone(item.publicWhatsappPhone) ?? item.publicWhatsappPhone}
                     </Text>
                   ) : null}
@@ -430,7 +429,6 @@ export const AgentProfileScreen = (): JSX.Element => {
 const styles = StyleSheet.create({
   inlineInput: {
     fontSize: 16,
-    color: COLORS.heading,
     paddingVertical: 4,
     paddingHorizontal: 0,
   },

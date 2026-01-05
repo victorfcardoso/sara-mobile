@@ -55,7 +55,12 @@ const RescheduledIcon = ({ color = BRAND_COLORS.warning }: { color?: string }) =
 const CancelledIcon = ({ color = BRAND_COLORS.error }: { color?: string }) => (
   <Svg width="16" height="16" viewBox="0 0 16 16" fill="none">
     <Circle cx="8" cy="8" r="6" stroke={color} strokeWidth="1.5" />
-    <Path d="M10.5 5.5L5.5 10.5M5.5 5.5L10.5 10.5" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+    <Path
+      d="M10.5 5.5L5.5 10.5M5.5 5.5L10.5 10.5"
+      stroke={color}
+      strokeWidth="1.5"
+      strokeLinecap="round"
+    />
   </Svg>
 );
 
@@ -69,13 +74,26 @@ const AssignIcon = ({ color = BRAND_COLORS.navy }: { color?: string }) => (
       strokeLinecap="round"
     />
     <Circle cx="11.3333" cy="10.6667" r="3.33333" stroke={color} strokeWidth="1.5" />
-    <Path d="M11.3333 9V12.3333M9.66665 10.6667H13" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+    <Path
+      d="M11.3333 9V12.3333M9.66665 10.6667H13"
+      stroke={color}
+      strokeWidth="1.5"
+      strokeLinecap="round"
+    />
   </Svg>
 );
 
 const PaymentIcon = ({ color = BRAND_COLORS.warning }: { color?: string }) => (
   <Svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-    <Rect x="1.33331" y="3.33333" width="13.3333" height="9.33333" rx="2" stroke={color} strokeWidth="1.5" />
+    <Rect
+      x="1.33331"
+      y="3.33333"
+      width="13.3333"
+      height="9.33333"
+      rx="2"
+      stroke={color}
+      strokeWidth="1.5"
+    />
     <Path d="M1.33331 6.66667H14.6666" stroke={color} strokeWidth="1.5" />
     <Path d="M4 10H6.66667" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
   </Svg>
@@ -115,7 +133,13 @@ const MessageIcon = ({ color = BRAND_COLORS.teal }: { color?: string }) => (
 const DecisionIcon = ({ color = BRAND_COLORS.navy }: { color?: string }) => (
   <Svg width="16" height="16" viewBox="0 0 16 16" fill="none">
     <Circle cx="8" cy="8" r="6" stroke={color} strokeWidth="1.5" />
-    <Path d="M8 5.33333V8L9.66667 9.66667" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <Path
+      d="M8 5.33333V8L9.66667 9.66667"
+      stroke={color}
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
     <Circle cx="8" cy="8" r="1" fill={color} />
   </Svg>
 );
@@ -148,12 +172,7 @@ const SLAIcon = ({ color = BRAND_COLORS.error }: { color?: string }) => (
       stroke={color}
       strokeWidth="1.5"
     />
-    <Path
-      d="M8 5.33333V8.66667"
-      stroke={color}
-      strokeWidth="1.5"
-      strokeLinecap="round"
-    />
+    <Path d="M8 5.33333V8.66667" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
     <Circle cx="8" cy="10.6667" r="0.66667" fill={color} />
   </Svg>
 );
@@ -167,7 +186,9 @@ export interface NotificationTypeConfig {
   hexColor: string; // For accent bar
 }
 
-export const getNotificationTypeConfig = (type: NotificationType | string): NotificationTypeConfig => {
+export const getNotificationTypeConfig = (
+  type: NotificationType | string,
+): NotificationTypeConfig => {
   const typeConfigs: Record<string, NotificationTypeConfig> = {
     // Booking types (Sara)
     'booking.confirmed': {
@@ -389,16 +410,25 @@ type NotificationTypeIndicatorProps = {
   showLabel?: boolean;
 };
 
-export const NotificationTypeIndicator = ({ type, showLabel = false }: NotificationTypeIndicatorProps) => {
+export const NotificationTypeIndicator = ({
+  type,
+  showLabel = false,
+}: NotificationTypeIndicatorProps) => {
   const config = getNotificationTypeConfig(type);
 
   if (showLabel) {
     return (
       <Animated.View
-        style={tailwind.style('flex-row items-center gap-1 px-2 py-1 rounded-lg', `bg-${config.bgColor}`)}>
+        style={tailwind.style(
+          'flex-row items-center gap-1 px-2 py-1 rounded-lg',
+          `bg-${config.bgColor}`,
+        )}>
         <Animated.View style={tailwind.style('w-4 h-4')}>{config.icon}</Animated.View>
         <Animated.Text
-          style={tailwind.style('text-xs font-inter-medium-24 uppercase tracking-wide', `text-${config.color}`)}>
+          style={tailwind.style(
+            'text-xs font-inter-medium-24 uppercase tracking-wide',
+            `text-${config.color}`,
+          )}>
           {config.label}
         </Animated.Text>
       </Animated.View>
@@ -407,7 +437,10 @@ export const NotificationTypeIndicator = ({ type, showLabel = false }: Notificat
 
   return (
     <Animated.View
-      style={tailwind.style('w-8 h-8 rounded-lg items-center justify-center', `bg-${config.bgColor}`)}>
+      style={tailwind.style(
+        'w-8 h-8 rounded-lg items-center justify-center',
+        `bg-${config.bgColor}`,
+      )}>
       {config.icon}
     </Animated.View>
   );

@@ -175,7 +175,12 @@ export const InteractiveExample: Story = {
     return (
       <View>
         <View style={{ padding: 16, gap: 8 }}>
-          <Text style={{ fontSize: 18, fontWeight: 'bold', color: tailwind.color('sara-text-primary') }}>
+          <Text
+            style={{
+              fontSize: 18,
+              fontWeight: 'bold',
+              color: tailwind.color('sara-text-primary'),
+            }}>
             Switch Account
           </Text>
           <Text style={{ fontSize: 14, color: tailwind.color('sara-text-secondary') }}>

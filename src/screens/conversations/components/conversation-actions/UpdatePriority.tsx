@@ -17,6 +17,7 @@ import { TickIcon } from '@/svg-icons/common';
 import { CONVERSATION_EVENTS } from '@/constants/analyticsEvents';
 import { showToast } from '@/utils/toastUtils';
 import AnalyticsHelper from '@/utils/analyticsUtils';
+import { useSaraColors, SaraColors } from '@/hooks/useSaraColors';
 
 type PriorityCellProps = {
   value: {
@@ -26,6 +27,7 @@ type PriorityCellProps = {
   isLastItem: boolean;
   selectedPriority: ConversationPriority | undefined;
   onPress: () => void;
+  colors: SaraColors;
 };
 
 const PriorityList = [
@@ -37,19 +39,23 @@ const PriorityList = [
 ];
 
 const PriorityCell = (props: PriorityCellProps) => {
-  const { value, isLastItem, onPress, selectedPriority } = props;
+  const { value, isLastItem, onPress, selectedPriority, colors } = props;
   return (
     <Pressable onPress={() => onPress()} style={tailwind.style('flex flex-row items-center')}>
       <Animated.View>{/* <Icon icon={value.icon} size={24} /> */}</Animated.View>
       <Animated.View
-        style={tailwind.style(
-          'flex-1 ml-3 flex-row justify-between py-[11px] pr-3',
-          !isLastItem ? 'border-b-[1px] border-[#E6E0D7]' : '',
-        )}>
+        style={[
+          tailwind.style(
+            'flex-1 ml-3 flex-row justify-between py-[11px] pr-3',
+            !isLastItem ? 'border-b-[1px]' : '',
+          ),
+          !isLastItem ? { borderBottomColor: colors.border } : {},
+        ]}>
         <Animated.Text
-          style={tailwind.style(
-            'text-base text-[#16273D] font-inter-420-20 leading-[21px] tracking-[0.16px] capitalize',
-          )}>
+          style={[
+            tailwind.style('text-base font-inter-420-20 leading-[21px] tracking-[0.16px] capitalize'),
+            { color: colors.textPrimary },
+          ]}>
           {i18n.t(`CONVERSATION.PRIORITY.OPTIONS.${PriorityOptions[value.id].toUpperCase()}`)}
         </Animated.Text>
         {selectedPriority === value.id ? <Icon icon={<TickIcon />} size={20} /> : null}
@@ -60,6 +66,7 @@ const PriorityCell = (props: PriorityCellProps) => {
 
 export const UpdatePriority = () => {
   const { actionsModalSheetRef } = useRefsContext();
+  const colors = useSaraColors();
 
   const dispatch = useAppDispatch();
   const selectedConversation = useAppSelector(selectSelectedConversation);
@@ -89,7 +96,7 @@ export const UpdatePriority = () => {
         {PriorityList.map((value, index) => (
           <PriorityCell
             key={index}
-            {...{ value, isLastItem: index === PriorityList.length - 1 }}
+            {...{ value, isLastItem: index === PriorityList.length - 1, colors }}
             onPress={() => handlePriorityPress(value.id as ConversationPriority)}
             selectedPriority={selectedConversation?.priority}
           />

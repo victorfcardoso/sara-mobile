@@ -8,6 +8,7 @@ import {
   ViewProps,
 } from 'react-native';
 
+import { useSaraColors } from '@/hooks/useSaraColors';
 import { avatarTheme, tailwind } from '@/theme';
 import { Channel } from '@/types';
 import { cx, styleAdapter } from '@/utils';
@@ -99,12 +100,17 @@ export const Avatar: React.FC<Partial<AvatarProps>> = props => {
     name,
     src,
     status,
-    parentsBackground = 'text-white',
+    parentsBackground,
     imageProps = {},
     channel,
     style,
     ...boxProps
   } = props;
+
+  const colors = useSaraColors();
+
+  // Default parentsBackground to theme-aware background color
+  const effectiveParentsBackground = parentsBackground ?? colors.backgroundLight;
 
   const isSquared = squared;
   const isSourceAvailable = !!src;
@@ -119,6 +125,7 @@ export const Avatar: React.FC<Partial<AvatarProps>> = props => {
         tailwind.style(
           cx(avatarTheme.base, avatarTheme.size[size], !isSquared ? avatarTheme.circular : ''),
         ),
+        { backgroundColor: colors.chip },
         styleAdapter(style),
       ]}
       {...boxProps}>
@@ -134,19 +141,18 @@ export const Avatar: React.FC<Partial<AvatarProps>> = props => {
         <Text
           style={[
             tailwind.style(
-              cx(
-                avatarTheme.initials.base,
-                avatarTheme.initials.size[size],
-                'font-inter-medium-24',
-              ),
+              cx(avatarTheme.initials.size[size], 'font-inter-medium-24 text-center uppercase'),
             ),
+            { color: colors.textSecondary },
           ]}
           adjustsFontSizeToFit
           allowFontScaling={false}>
           {getInitials(name, size)}
         </Text>
       ) : null}
-      {status && <AvatarStatus parentsBackground={parentsBackground} size={size} status={status} />}
+      {status && (
+        <AvatarStatus parentsBackground={effectiveParentsBackground} size={size} status={status} />
+      )}
     </View>
   );
 };

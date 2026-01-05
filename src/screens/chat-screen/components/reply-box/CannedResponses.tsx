@@ -5,9 +5,11 @@ import Animated from 'react-native-reanimated';
 import { tailwind } from '@/theme';
 import { selectAllCannedResponses } from '@/store/canned-response/cannedResponseSlice';
 import { useAppDispatch, useAppSelector } from '@/hooks';
+import { useSaraColors } from '@/hooks/useSaraColors';
 import { cannedResponseActions } from '@/store/canned-response/cannedResponseActions';
 import { CannedResponse } from '@/types';
 import { FlashList } from '@shopify/flash-list';
+import type { SaraColors } from '@/hooks/useSaraColors';
 
 type CannedResponsesProps = {
   searchKey: string;
@@ -17,20 +19,23 @@ type CannedResponsesProps = {
 const CannedResponseItem = ({
   item,
   onSelect,
+  colors,
 }: {
   item: CannedResponse;
   onSelect: (cannedResponse: CannedResponse) => void;
+  colors: SaraColors;
 }) => {
   return (
     <Pressable
       onPress={() => onSelect(item)}
-      style={tailwind.style(
-        'w-full flex-row justify-between items-center border-b border-gray-200 py-3 px-4',
-      )}>
-      <Animated.Text numberOfLines={1} style={tailwind.style('text-md flex-1 text-gray-950')}>
+      style={[
+        tailwind.style('w-full flex-row justify-between items-center py-3 px-4'),
+        { borderBottomWidth: 1, borderBottomColor: colors.border },
+      ]}>
+      <Animated.Text numberOfLines={1} style={[tailwind.style('text-md flex-1'), { color: colors.textPrimary }]}>
         {item.content.replace(/\n/g, ' ')}
       </Animated.Text>
-      <Animated.Text style={tailwind.style('text-sm text-gray-900 ml-2')}>
+      <Animated.Text style={[tailwind.style('text-sm ml-2'), { color: colors.textSecondary }]}>
         {`/${item.shortCode}`}
       </Animated.Text>
     </Pressable>
@@ -40,6 +45,7 @@ const CannedResponseItem = ({
 export const CannedResponses = (props: CannedResponsesProps) => {
   const dispatch = useAppDispatch();
   const cannedResponses = useAppSelector(selectAllCannedResponses);
+  const colors = useSaraColors();
 
   useEffect(() => {
     const searchKey = props.searchKey.slice(1);
@@ -54,13 +60,12 @@ export const CannedResponses = (props: CannedResponsesProps) => {
   return (
     <Animated.View
       style={[
-        tailwind.style(
-          'left-0 right-0 bg-white border-t border-[#CCE6DE] max-h-[180px] relative bottom-0 h-[180px]',
-        ),
+        tailwind.style('left-0 right-0 max-h-[180px] relative bottom-0 h-[180px]'),
+        { backgroundColor: colors.backgroundLight, borderTopWidth: 1, borderTopColor: colors.border },
       ]}>
       <FlashList
         data={cannedResponses}
-        renderItem={({ item }) => <CannedResponseItem item={item} onSelect={props.onSelect} />}
+        renderItem={({ item }) => <CannedResponseItem item={item} onSelect={props.onSelect} colors={colors} />}
         keyExtractor={item => item.id.toString()}
         keyboardShouldPersistTaps="always"
       />

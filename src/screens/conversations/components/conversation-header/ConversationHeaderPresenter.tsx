@@ -7,6 +7,7 @@ import { tailwind } from '@/theme';
 import i18n from '@/i18n';
 import { useScaleAnimation } from '@/utils';
 import { useHeaderAnimation } from '@/hooks/useHeaderAnimation';
+import { useSaraColors, SaraColors } from '@/hooks/useSaraColors';
 
 type HeaderState = 'Search' | 'Filter' | 'Select' | 'none';
 
@@ -23,6 +24,7 @@ type LeftSectionProps = {
   currentState: HeaderState;
   isSelectedAll: boolean;
   onLeftIconPress: () => void;
+  colors: SaraColors;
 };
 
 type FilterSectionProps = {
@@ -30,26 +32,29 @@ type FilterSectionProps = {
   onClearFilter: () => void;
   handlers: Record<string, unknown>;
   animatedStyle: ViewStyle | AnimatedStyle<ViewStyle>;
+  colors: SaraColors;
 };
 
 type RightSectionProps = {
   currentState: HeaderState;
   filtersAppliedCount: number;
   onRightIconPress: () => void;
+  colors: SaraColors;
 };
 
-const HeaderTitle = () => (
+const HeaderTitle = ({ colors }: { colors: SaraColors }) => (
   <Animated.View style={tailwind.style('flex-1')}>
     <Text
-      style={tailwind.style(
-        'text-[17px] font-inter-medium-24 tracking-[0.32px] leading-[17px] text-center text-[#16273D]',
-      )}>
+      style={[
+        tailwind.style('text-[17px] font-inter-medium-24 tracking-[0.32px] leading-[17px] text-center'),
+        { color: colors.textPrimary },
+      ]}>
       {i18n.t('CONVERSATION.HEADER.TITLE')}
     </Text>
   </Animated.View>
 );
 
-const LeftSection = ({ currentState, isSelectedAll, onLeftIconPress }: LeftSectionProps) => {
+const LeftSection = ({ currentState, isSelectedAll, onLeftIconPress, colors }: LeftSectionProps) => {
   const { entering, exiting } = useHeaderAnimation();
 
   if (currentState === 'Filter' || currentState === 'Search') return null;
@@ -69,13 +74,7 @@ const LeftSection = ({ currentState, isSelectedAll, onLeftIconPress }: LeftSecti
         <Animated.View exiting={exiting} entering={entering}>
           <Icon
             size={24}
-            icon={
-              isSelectedAll ? (
-                <CheckedIcon />
-              ) : (
-                <UncheckedIcon stroke="#566273" />
-              )
-            }
+            icon={isSelectedAll ? <CheckedIcon /> : <UncheckedIcon stroke={colors.textMeta} />}
           />
         </Animated.View>
       </Pressable>
@@ -88,6 +87,7 @@ const FilterSection = ({
   onClearFilter,
   handlers,
   animatedStyle,
+  colors,
 }: FilterSectionProps) => {
   const { entering, exiting } = useHeaderAnimation();
 
@@ -98,10 +98,10 @@ const FilterSection = ({
       entering={entering}>
       <Pressable onPress={onClearFilter} disabled={filtersAppliedCount === 0} {...handlers}>
         <Text
-          style={tailwind.style(
-            'text-md font-inter-medium-24 leading-[17px] tracking-[0.24px]',
-            filtersAppliedCount === 0 ? 'text-[#B4BFC6]' : 'text-[#4CB6AC]',
-          )}>
+          style={[
+            tailwind.style('text-md font-inter-medium-24 leading-[17px] tracking-[0.24px]'),
+            { color: filtersAppliedCount === 0 ? colors.textMeta : colors.accent },
+          ]}>
           {i18n.t('CONVERSATION.HEADER.CLEAR_FILTER')}
           {filtersAppliedCount > 0 ? ` (${filtersAppliedCount})` : ''}
         </Text>
@@ -114,6 +114,7 @@ const RightSection = ({
   currentState,
   filtersAppliedCount,
   onRightIconPress,
+  colors,
 }: RightSectionProps) => {
   const { entering, exiting } = useHeaderAnimation();
 
@@ -122,18 +123,19 @@ const RightSection = ({
       <Pressable onPress={onRightIconPress} hitSlop={16}>
         {currentState === 'Filter' || currentState === 'Select' ? (
           <Animated.View exiting={exiting} entering={entering}>
-            <Icon size={24} icon={<CloseIcon stroke="#16273D" />} />
+            <Icon size={24} icon={<CloseIcon stroke={colors.textPrimary} />} />
           </Animated.View>
         ) : (
           <Animated.View exiting={exiting} entering={entering}>
             {filtersAppliedCount > 0 && (
               <Animated.View
-                style={tailwind.style(
-                  'absolute z-10 -right-0.5 h-2.5 w-2.5 rounded-full bg-[#4CB6AC]',
-                )}
+                style={[
+                  tailwind.style('absolute z-10 -right-0.5 h-2.5 w-2.5 rounded-full'),
+                  { backgroundColor: colors.accent },
+                ]}
               />
             )}
-            <Icon size={24} icon={<FilterIcon stroke="#4CB6AC" />} />
+            <Icon size={24} icon={<FilterIcon stroke={colors.accent} />} />
           </Animated.View>
         )}
       </Pressable>
@@ -150,6 +152,7 @@ export const ConversationHeaderPresenter = ({
   onClearFilter,
 }: ConversationHeaderPresenterProps) => {
   const { handlers, animatedStyle } = useScaleAnimation();
+  const colors = useSaraColors();
 
   return (
     <Animated.View
@@ -158,6 +161,7 @@ export const ConversationHeaderPresenter = ({
         currentState={currentState}
         isSelectedAll={isSelectedAll}
         onLeftIconPress={onLeftIconPress}
+        colors={colors}
       />
       {currentState === 'Filter' && (
         <FilterSection
@@ -165,13 +169,15 @@ export const ConversationHeaderPresenter = ({
           onClearFilter={onClearFilter}
           handlers={handlers}
           animatedStyle={animatedStyle}
+          colors={colors}
         />
       )}
-      <HeaderTitle />
+      <HeaderTitle colors={colors} />
       <RightSection
         currentState={currentState}
         filtersAppliedCount={filtersAppliedCount}
         onRightIconPress={onRightIconPress}
+        colors={colors}
       />
     </Animated.View>
   );

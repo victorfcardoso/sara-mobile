@@ -575,10 +575,27 @@ const BRAND = {
 
 ### Usage in Code
 
+**For theme-aware components (dark mode support):**
+
+```tsx
+import { useSaraColors } from '@/hooks/useSaraColors';
+
+export function MyComponent() {
+  const colors = useSaraColors();
+  return (
+    <View style={{ backgroundColor: colors.background }}>
+      <Text style={{ color: colors.textPrimary }}>Hello</Text>
+    </View>
+  );
+}
+```
+
+**For light-mode-only Tailwind classes:**
+
 ```tsx
 import tailwind from '@/theme/tailwind';
 
-// Tailwind classes (preferred)
+// Tailwind classes (light mode only)
 <View style={tailwind.style('bg-sara-background')}>
   <Text style={tailwind.style('text-sara-text-primary')}>Hello</Text>
 </View>
@@ -587,6 +604,8 @@ import tailwind from '@/theme/tailwind';
 <SomeIcon color={tailwind.color('sara-accent')} />
 <StatusBar backgroundColor={tailwind.color('sara-background')} />
 ```
+
+> **Note**: Use `useSaraColors()` for new components to support dark mode. See `docs/THEMING.md` for complete theming guide.
 
 ### Color Mapping (CRM → Mobile)
 
@@ -613,32 +632,70 @@ import tailwind from '@/theme/tailwind';
 | Roboto 600 | `inter-semibold-20` |
 | Roboto 700 | `inter-semibold-20` (use `fontWeight: 700` override) |
 
-### Component Patterns
+### Component Patterns (Theme-Aware)
 
 ```tsx
-// Mobile card equivalent
-<View style={tailwind.style(
-  'bg-sara-background-light rounded-2xl p-4',
-  'border border-sara-border'
-)}>
-  {/* content */}
-</View>
+import { useSaraColors } from '@/hooks/useSaraColors';
+
+// Mobile card equivalent (with dark mode support)
+export function Card({ children }) {
+  const colors = useSaraColors();
+  return (
+    <View style={{
+      backgroundColor: colors.backgroundLight,
+      borderColor: colors.border,
+      borderWidth: 1,
+      borderRadius: 12,
+      padding: 16,
+    }}>
+      {children}
+    </View>
+  );
+}
 
 // Mobile accent bar (use View with absolute positioning)
-<View style={[
-  tailwind.style('absolute left-0 top-0 bottom-0 w-1 rounded-l-lg'),
-  { backgroundColor: tailwind.color('sara-accent') }
-]} />
+export function AccentBar() {
+  const colors = useSaraColors();
+  return (
+    <View style={{
+      position: 'absolute',
+      left: 0,
+      top: 0,
+      bottom: 0,
+      width: 4,
+      borderTopLeftRadius: 8,
+      borderBottomLeftRadius: 8,
+      backgroundColor: colors.accent,
+    }} />
+  );
+}
 
-// Mobile button (primary)
-<TouchableOpacity style={tailwind.style(
-  'bg-sara-accent py-3 px-6 rounded-xl'
-)}>
-  <Text style={tailwind.style('text-white font-inter-semibold-20 text-center')}>
-    Action
-  </Text>
-</TouchableOpacity>
+// Mobile button (primary) with theme support
+export function PrimaryButton({ label, onPress }) {
+  const colors = useSaraColors();
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      style={{
+        backgroundColor: colors.accent,
+        paddingVertical: 12,
+        paddingHorizontal: 24,
+        borderRadius: 8,
+      }}
+    >
+      <Text style={{ color: colors.backgroundLight, fontWeight: '600' }}>
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
+}
 ```
+
+> **Legacy pattern (light mode only):**
+> ```tsx
+> <View style={tailwind.style('bg-sara-background-light rounded-2xl p-4')}>
+> ```
+> This approach only works for light mode. Use `useSaraColors()` for new components.
 
 ### Date Formatting (Mobile)
 

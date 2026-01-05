@@ -1,0 +1,19 @@
+# Maestro Init Flow - Runs before each test
+# Ensures app is in a clean state
+
+appId: com.chatwoot.app
+
+---
+
+# Launch the app fresh
+- launchApp:
+    clearState: true
+    clearKeychain: true
+
+# Wait for app to fully load (splash screen to finish)
+- extendedWaitUntil:
+    visible: "Email"
+    timeout: 15000
+
+# Take a screenshot of initial state for debugging
+- takeScreenshot: screenshots/init_state

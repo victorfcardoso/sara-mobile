@@ -39,7 +39,7 @@ interface NotificationNewMessageIconProps {
 
 export const NotificationNewMessageIcon = ({
   fill = '#4CB6AC',
-  stroke = '#F8F5F3'
+  stroke = '#F8F5F3',
 }: NotificationNewMessageIconProps) => {
   return (
     <Svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -56,7 +56,7 @@ interface NotificationAssignedIconProps {
 
 export const NotificationAssignedIcon = ({
   fill = '#6C778A',
-  bgFill = 'white'
+  bgFill = 'white',
 }: NotificationAssignedIconProps) => {
   return (
     <Svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -76,7 +76,7 @@ interface NotificationSLAIconProps {
 
 export const NotificationSLAIcon = ({
   bgFill = '#E54666',
-  fill = 'white'
+  fill = 'white',
 }: NotificationSLAIconProps) => {
   return (
     <Svg width="20" height="20" viewBox="0 0 20 20" fill="none">

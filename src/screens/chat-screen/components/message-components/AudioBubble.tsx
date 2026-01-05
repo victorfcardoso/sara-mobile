@@ -26,6 +26,7 @@ import {
 import { MESSAGE_VARIANTS } from '@/constants';
 import { useAppDispatch, useAppSelector } from '@/hooks';
 import { convertOggToWav } from '@/utils/audioConverter';
+import { useSaraColors } from '@/hooks/useSaraColors';
 
 // eslint-disable-next-line react/display-name
 const PlayIcon = React.memo(({ fill, fillOpacity }: IconProps) => {
@@ -57,6 +58,7 @@ type AudioPlayerProps = Pick<AudioBubbleProps, 'audioSrc'> & {
 // eslint-disable-next-line react/display-name
 export const AudioBubblePlayer = React.memo((props: AudioPlayerProps) => {
   const { audioSrc, variant } = props;
+  const colors = useSaraColors();
 
   const [isSoundLoading, setIsSoundLoading] = useState(false);
   const [isAudioPlaying, setAudioPlaying] = useState(false);
@@ -67,6 +69,17 @@ export const AudioBubblePlayer = React.memo((props: AudioPlayerProps) => {
 
   const currentPosition = useSharedValue(0);
   const totalDuration = useSharedValue(0);
+
+  // Theme-aware colors for audio player
+  const getIconColor = () => {
+    if (variant === MESSAGE_VARIANTS.USER) return colors.textPrimary;
+    return colors.textPrimary;
+  };
+
+  const getIconOpacity = () => {
+    if (variant === MESSAGE_VARIANTS.USER) return '1';
+    return '0.565';
+  };
 
   const audioPlayBackStatus = useCallback<Callback>(
     ({ status, data }) => {
@@ -155,18 +168,17 @@ export const AudioBubblePlayer = React.memo((props: AudioPlayerProps) => {
 
   const sliderProps = useMemo(
     () => ({
-      trackColor:
-        variant === MESSAGE_VARIANTS.USER ? 'bg-[#E4EFEC]' : 'bg-[#C2E4DE]',
-      filledTrackColor:
-        variant === MESSAGE_VARIANTS.USER ? 'bg-[#4CB6AC]' : 'bg-[#1F7F75]',
+      // Use theme-aware colors for slider
+      trackColor: variant === MESSAGE_VARIANTS.USER ? `bg-[${colors.chip}]` : 'bg-[#C2E4DE]',
+      filledTrackColor: variant === MESSAGE_VARIANTS.USER ? `bg-[${colors.accent}]` : 'bg-[#1F7F75]',
       knobStyle:
-        variant === MESSAGE_VARIANTS.USER ? 'border border-[#4CB6AC]' : 'border border-[#1F7F75]',
+        variant === MESSAGE_VARIANTS.USER ? `border border-[${colors.accent}]` : 'border border-[#1F7F75]',
       manualSeekTo,
       currentPosition,
       totalDuration,
       pauseAudio,
     }),
-    [variant, manualSeekTo, currentPosition, totalDuration, pauseAudio],
+    [variant, manualSeekTo, currentPosition, totalDuration, pauseAudio, colors],
   );
 
   return (
@@ -174,7 +186,7 @@ export const AudioBubblePlayer = React.memo((props: AudioPlayerProps) => {
       <Pressable disabled={isSoundLoading} hitSlop={10} onPress={togglePlayback}>
         {isSoundLoading ? (
           <Animated.View>
-            <Spinner size={13} stroke={variant === MESSAGE_VARIANTS.USER ? 'white' : 'black'} />
+            <Spinner size={13} stroke={variant === MESSAGE_VARIANTS.USER ? colors.textPrimary : colors.textPrimary} />
           </Animated.View>
         ) : isCurrentAudioSrcPlaying ? (
           <Animated.View
@@ -184,8 +196,8 @@ export const AudioBubblePlayer = React.memo((props: AudioPlayerProps) => {
             <Icon
               icon={
                 <PauseIcon
-                  fillOpacity={variant === MESSAGE_VARIANTS.USER ? '1' : '0.565'}
-                  fill={variant === MESSAGE_VARIANTS.USER ? 'white' : 'black'}
+                  fillOpacity={getIconOpacity()}
+                  fill={getIconColor()}
                 />
               }
               size={13}
@@ -197,8 +209,8 @@ export const AudioBubblePlayer = React.memo((props: AudioPlayerProps) => {
             entering={FadeIn}
             exiting={FadeOut}>
             <PlayIcon
-              fillOpacity={variant === MESSAGE_VARIANTS.USER ? '1' : '0.565'}
-              fill={variant === MESSAGE_VARIANTS.USER ? 'white' : 'black'}
+              fillOpacity={getIconOpacity()}
+              fill={getIconColor()}
             />
           </Animated.View>
         )}

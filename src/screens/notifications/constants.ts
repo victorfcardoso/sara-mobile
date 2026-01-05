@@ -1,6 +1,18 @@
 import { NotificationPriority, NotificationType } from './types';
 
-export const COLORS = {
+export type NotificationColors = {
+  background: string;
+  card: string;
+  border: string;
+  textPrimary: string;
+  textSecondary: string;
+  muted: string;
+  iconNavy: string;
+  accent: string;
+  contextRowBackground: string;
+};
+
+export const COLORS_LIGHT: NotificationColors = {
   background: '#F8F5F3',
   card: '#FFFFFF',
   border: '#E6E0D7',
@@ -9,7 +21,26 @@ export const COLORS = {
   muted: '#8D95A6',
   iconNavy: '#16273D',
   accent: '#4CB6AC',
+  contextRowBackground: '#F3EEE7',
 };
+
+export const COLORS_DARK: NotificationColors = {
+  background: '#1A1A1A',
+  card: '#2D2D2D',
+  border: '#3D3D3D',
+  textPrimary: '#F5F5F5',
+  textSecondary: '#B8C4CE',
+  muted: '#8899A6',
+  iconNavy: '#F5F5F5',
+  accent: '#4CB6AC',
+  contextRowBackground: '#2A2A2A',
+};
+
+// Legacy export for compatibility - use getNotificationColors() instead
+export const COLORS = COLORS_LIGHT;
+
+export const getNotificationColors = (isDark: boolean): NotificationColors =>
+  isDark ? COLORS_DARK : COLORS_LIGHT;
 
 export const TYPE_STYLES: Record<
   NotificationType,

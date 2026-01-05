@@ -6,7 +6,11 @@ interface MediumIconProps {
   inactiveColor?: string;
 }
 
-export const MediumIcon = ({ size = 20, activeColor = '#FFC53D', inactiveColor = '#DDDDE3' }: MediumIconProps) => {
+export const MediumIcon = ({
+  size = 20,
+  activeColor = '#FFC53D',
+  inactiveColor = '#DDDDE3',
+}: MediumIconProps) => {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Mask

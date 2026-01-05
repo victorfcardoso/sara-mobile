@@ -3,11 +3,7 @@ import { Linking, StyleSheet } from 'react-native';
 import Markdown, { MarkdownIt } from 'react-native-markdown-display';
 
 import { tailwind } from '@/theme';
-
-const SARA_COLORS = {
-  incomingText: '#16273D',
-  outgoingText: '#FFFFFF',
-};
+import { useSaraColors } from '@/hooks/useSaraColors';
 
 type MarkdownDisplayProps = {
   messageContent: string;
@@ -20,6 +16,8 @@ type MarkdownDisplayProps = {
 
 export const MarkdownDisplay = (props: MarkdownDisplayProps) => {
   const { messageContent, isIncoming, isOutgoing, isBotText, isPrivate, isMessageFailed } = props;
+  const colors = useSaraColors();
+
   const handleURL = (url: string) => {
     Linking.openURL(url).then(() => {});
     return true;
@@ -33,12 +31,12 @@ export const MarkdownDisplay = (props: MarkdownDisplayProps) => {
       return tailwind.color('text-amber-950');
     }
     if (isOutgoing) {
-      return SARA_COLORS.outgoingText;
+      return '#FFFFFF'; // Always white for outgoing messages
     }
     if (isIncoming || isBotText) {
-      return SARA_COLORS.incomingText;
+      return colors.textPrimary;
     }
-    return tailwind.color('text-gray-950');
+    return colors.textPrimary;
   })();
 
   const fontFamily = isPrivate ? 'Inter-500-20' : 'Inter-400-20';

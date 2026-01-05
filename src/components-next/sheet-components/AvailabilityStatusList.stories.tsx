@@ -89,7 +89,10 @@ export const InteractiveExample: Story = {
             borderTopWidth: 1,
             borderTopColor: tailwind.color('sara-border'),
           }}>
-          <AvailabilityStatusList availabilityStatus={status} changeAvailabilityStatus={setStatus} />
+          <AvailabilityStatusList
+            availabilityStatus={status}
+            changeAvailabilityStatus={setStatus}
+          />
         </View>
       </View>
     );
@@ -146,10 +149,7 @@ export const SheetModalExample: Story = {
             Let your team know your current status
           </Text>
         </View>
-        <AvailabilityStatusList
-          availabilityStatus="online"
-          changeAvailabilityStatus={() => {}}
-        />
+        <AvailabilityStatusList availabilityStatus="online" changeAvailabilityStatus={() => {}} />
       </View>
     </View>
   ),
@@ -261,10 +261,7 @@ export const AllStates: Story = {
             borderColor: tailwind.color('sara-border'),
             overflow: 'hidden',
           }}>
-          <AvailabilityStatusList
-            availabilityStatus="online"
-            changeAvailabilityStatus={() => {}}
-          />
+          <AvailabilityStatusList availabilityStatus="online" changeAvailabilityStatus={() => {}} />
         </View>
       </View>
 
@@ -286,10 +283,7 @@ export const AllStates: Story = {
             borderColor: tailwind.color('sara-border'),
             overflow: 'hidden',
           }}>
-          <AvailabilityStatusList
-            availabilityStatus="busy"
-            changeAvailabilityStatus={() => {}}
-          />
+          <AvailabilityStatusList availabilityStatus="busy" changeAvailabilityStatus={() => {}} />
         </View>
       </View>
 

@@ -13,6 +13,7 @@ import { BottomSheetHeader, Icon } from '@/components-next';
 import { useAppDispatch, useAppSelector } from '@/hooks';
 import i18n from '@/i18n';
 import { StatusOptions } from '@/types';
+import { useSaraColors } from '@/hooks/useSaraColors';
 
 type StatusCellProps = {
   value: StatusCollection;
@@ -33,6 +34,7 @@ const StatusCell = (props: StatusCellProps) => {
   const filters = useAppSelector(selectFilters);
   const dispatch = useAppDispatch();
   const hapticSelection = useHaptic();
+  const colors = useSaraColors();
 
   const handleStatusPress = () => {
     hapticSelection?.();
@@ -46,14 +48,18 @@ const StatusCell = (props: StatusCellProps) => {
         <Icon icon={value.icon} size={24} />
       </Animated.View>
       <Animated.View
-        style={tailwind.style(
-          'flex-1 ml-3 flex-row justify-between py-[11px] pr-3',
-          index !== status.length - 1 ? 'border-b-[1px] border-[#E6E0D7]' : '',
-        )}>
+        style={[
+          tailwind.style(
+            'flex-1 ml-3 flex-row justify-between py-[11px] pr-3',
+            index !== status.length - 1 ? 'border-b-[1px]' : '',
+          ),
+          index !== status.length - 1 ? { borderBottomColor: colors.border } : {},
+        ]}>
         <Animated.Text
-          style={tailwind.style(
-            'text-base text-[#16273D] font-inter-420-20 leading-[21px] tracking-[0.16px] capitalize',
-          )}>
+          style={[
+            tailwind.style('text-base font-inter-420-20 leading-[21px] tracking-[0.16px] capitalize'),
+            { color: colors.textPrimary },
+          ]}>
           {i18n.t(`CONVERSATION.FILTERS.STATUS.OPTIONS.${StatusOptions[value.id].toUpperCase()}`)}
         </Animated.Text>
         {filters.status === value.id ? <Icon icon={<TickIcon />} size={20} /> : null}

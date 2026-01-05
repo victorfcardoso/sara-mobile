@@ -5,8 +5,9 @@ import type { CrmCustomer } from './crmCustomersTypes';
 
 export const selectCrmCustomersState = (state: RootState) => state.crmCustomers;
 
-export const selectCrmCustomers = createSelector(selectCrmCustomersState, slice =>
-  Object.values(slice.entities).filter(Boolean) as CrmCustomer[],
+export const selectCrmCustomers = createSelector(
+  selectCrmCustomersState,
+  slice => Object.values(slice.entities).filter(Boolean) as CrmCustomer[],
 );
 
 export const selectCrmCustomerById = (state: RootState, id: string) =>

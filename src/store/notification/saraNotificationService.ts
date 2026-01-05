@@ -37,10 +37,24 @@ interface SaraNotificationRecord {
 }
 
 // Generate notification title based on type and payload
-function formatNotificationTitle(type: string | null | undefined, payload: SaraNotificationRecord['payload']): string {
+function formatNotificationTitle(
+  type: string | null | undefined,
+  payload: SaraNotificationRecord['payload'],
+): string {
   const bookingData = payload?.booking_data || {};
-  const customerName = payload?.customer_name || payload?.client_name || bookingData?.customer_name || bookingData?.client_name || payload?.patient_name || 'Paciente';
-  const serviceName = payload?.service_name || payload?.service_label || bookingData?.service_name || bookingData?.service_label || 'consulta';
+  const customerName =
+    payload?.customer_name ||
+    payload?.client_name ||
+    bookingData?.customer_name ||
+    bookingData?.client_name ||
+    payload?.patient_name ||
+    'Paciente';
+  const serviceName =
+    payload?.service_name ||
+    payload?.service_label ||
+    bookingData?.service_name ||
+    bookingData?.service_label ||
+    'consulta';
 
   const titles: Record<string, string> = {
     'doctor.decision_required': `Aprovação necessária: ${customerName} - ${serviceName}`,
@@ -72,7 +86,8 @@ function transformSaraNotification(record: SaraNotificationRecord): Notification
 
   const payload: NotificationPayload = {
     customer_name: record.payload?.customer_name || bookingData?.customer_name,
-    patient_name: record.payload?.patient_name || record.payload?.customer_name || bookingData?.customer_name,
+    patient_name:
+      record.payload?.patient_name || record.payload?.customer_name || bookingData?.customer_name,
     service_name: record.payload?.service_name || bookingData?.service_name,
     service_label: record.payload?.service_label || bookingData?.service_label,
     provider_name: record.payload?.provider_name || bookingData?.provider_name,
@@ -87,11 +102,15 @@ function transformSaraNotification(record: SaraNotificationRecord): Notification
     : Math.floor(Date.now() / 1000);
 
   return {
-    id: parseInt((record.id || record.notif_ulid || '').replace(/\D/g, '').slice(0, 10)) || Date.now() + Math.random() * 1000,
+    id:
+      parseInt((record.id || record.notif_ulid || '').replace(/\D/g, '').slice(0, 10)) ||
+      Date.now() + Math.random() * 1000,
     notificationType: (record.type || 'notification') as Notification['notificationType'],
     pushMessageTitle: formatNotificationTitle(record.type, record.payload),
     primaryActorType: 'Conversation',
-    primaryActorId: record.reservation_id ? parseInt(record.reservation_id.replace(/\D/g, '')) || 0 : 0,
+    primaryActorId: record.reservation_id
+      ? parseInt(record.reservation_id.replace(/\D/g, '')) || 0
+      : 0,
     primaryActor: {
       id: 0,
       priority: null,

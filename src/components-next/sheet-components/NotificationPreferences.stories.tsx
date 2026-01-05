@@ -155,7 +155,11 @@ export const CriticalOnly: Story = {
 export const MinimalSetup: Story = {
   args: {
     store: createMockStore(
-      ['push_conversation_creation', 'push_conversation_assignment', 'push_assigned_conversation_new_message'],
+      [
+        'push_conversation_creation',
+        'push_conversation_assignment',
+        'push_assigned_conversation_new_message',
+      ],
       ['push_conversation_creation'],
     ),
   },

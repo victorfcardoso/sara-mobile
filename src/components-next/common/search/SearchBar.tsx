@@ -3,6 +3,7 @@ import { TextInput, TextInputProps } from 'react-native';
 import Animated, { withTiming } from 'react-native-reanimated';
 import { BottomSheetTextInput } from '@gorhom/bottom-sheet';
 
+import { useIsDarkMode, useSaraColors } from '@/hooks/useSaraColors';
 import { SearchIcon } from '@/svg-icons';
 import { tailwind } from '@/theme';
 import { RenderPropType } from '@/types';
@@ -17,6 +18,8 @@ interface SearchBarProps extends TextInputProps {
 
 export const SearchBar = (props: SearchBarProps) => {
   const { isLoading = false, prefix, isInsideBottomSheet = false, ...otherProps } = props;
+  const colors = useSaraColors();
+  const isDark = useIsDarkMode();
 
   // Row Exit Animation
   const exiting = () => {
@@ -47,11 +50,15 @@ export const SearchBar = (props: SearchBarProps) => {
       <SearchTextInput
         style={[
           tailwind.style(
-            'h-9 px-8.5 py-[7px] bg-blackA-A3 text-black text-base font-inter-normal-20 leading-[19.5px] rounded-[11px]',
+            'h-9 px-8.5 py-[7px] text-base font-inter-normal-20 leading-[19.5px] rounded-[11px]',
             isLoading ? 'px-8.5' : 'pl-8.5 pr-4',
           ),
+          {
+            backgroundColor: isDark ? colors.backgroundLight : colors.chip,
+            color: colors.textPrimary,
+          },
         ]}
-        placeholderTextColor={tailwind.color('text-gray-800')}
+        placeholderTextColor={colors.textMeta}
         {...otherProps}
       />
       {isLoading ? (

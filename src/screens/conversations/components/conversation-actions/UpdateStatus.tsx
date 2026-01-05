@@ -17,10 +17,13 @@ import { conversationActions } from '@/store/conversation/conversationActions';
 import { setCurrentState } from '@/store/conversation/conversationHeaderSlice';
 import i18n from '@/i18n';
 import { StatusOptions } from '@/types';
+import { useSaraColors, SaraColors } from '@/hooks/useSaraColors';
+
 type StatusCellProps = {
   value: StatusCollection;
   isLastItem: boolean;
   onPress: (status: ConversationStatus) => void;
+  colors: SaraColors;
 };
 
 const StatusList: StatusCollection[] = [
@@ -31,7 +34,7 @@ const StatusList: StatusCollection[] = [
 ];
 
 const StatusCell = (props: StatusCellProps) => {
-  const { value, isLastItem, onPress } = props;
+  const { value, isLastItem, onPress, colors } = props;
   return (
     <Pressable
       onPress={() => onPress(value.id)}
@@ -40,14 +43,18 @@ const StatusCell = (props: StatusCellProps) => {
         <Icon icon={value.icon} size={24} />
       </Animated.View>
       <Animated.View
-        style={tailwind.style(
-          'flex-1 ml-3 flex-row justify-between py-[11px] pr-3',
-          !isLastItem ? 'border-b-[1px] border-[#E6E0D7]' : '',
-        )}>
+        style={[
+          tailwind.style(
+            'flex-1 ml-3 flex-row justify-between py-[11px] pr-3',
+            !isLastItem ? 'border-b-[1px]' : '',
+          ),
+          !isLastItem ? { borderBottomColor: colors.border } : {},
+        ]}>
         <Animated.Text
-          style={tailwind.style(
-            'text-base text-[#16273D] font-inter-420-20 leading-[21px] tracking-[0.16px] capitalize',
-          )}>
+          style={[
+            tailwind.style('text-base font-inter-420-20 leading-[21px] tracking-[0.16px] capitalize'),
+            { color: colors.textPrimary },
+          ]}>
           {i18n.t(`CONVERSATION.ASSIGNEE.STATUS.OPTIONS.${StatusOptions[value.id].toUpperCase()}`)}
         </Animated.Text>
       </Animated.View>
@@ -61,6 +68,7 @@ const filterStatusList = (status: ConversationStatus) => {
 
 export const UpdateStatus = () => {
   const { actionsModalSheetRef } = useRefsContext();
+  const colors = useSaraColors();
 
   const dispatch = useAppDispatch();
   const selectedIds = useAppSelector(selectSelectedIds);
@@ -101,7 +109,7 @@ export const UpdateStatus = () => {
         {statusList.map((value, index) => (
           <StatusCell
             key={index}
-            {...{ value, isLastItem: index === statusList.length - 1 }}
+            {...{ value, isLastItem: index === statusList.length - 1, colors }}
             onPress={() => handleStatusPress(value.id)}
           />
         ))}

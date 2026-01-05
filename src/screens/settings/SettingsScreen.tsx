@@ -43,6 +43,7 @@ import {
   BottomSheetWrapper,
   Button,
   LanguageList,
+  ThemeList,
   AvailabilityStatusList,
   NotificationPreferences,
   SwitchAccount,
@@ -59,6 +60,7 @@ import {
   CreditCardIcon,
   NotificationIcon,
   PhoneIcon,
+  SunIcon,
   SwitchIcon,
   TranslateIcon,
   UserIcon,
@@ -77,10 +79,12 @@ import {
   selectAccounts,
 } from '@/store/auth/authSelectors';
 import { logout, setAccount } from '@/store/auth/authSlice';
+import { signOut } from '@/services/cognitoAuth';
 import { authActions } from '@/store/auth/authActions';
-import { selectLocale, selectPushToken } from '@/store/settings/settingsSelectors';
+import { selectLocale, selectPushToken, selectTheme } from '@/store/settings/settingsSelectors';
 import { settingsActions } from '@/store/settings/settingsActions';
-import { setLocale } from '@/store/settings/settingsSlice';
+import { setLocale, setTheme } from '@/store/settings/settingsSlice';
+import { Theme } from '@/types/common/Theme';
 import {
   agentSettingsActions,
   selectAgentSettingsData,
@@ -97,6 +101,7 @@ import { getUserPermissions } from '@/utils/permissionUtils';
 import { CONVERSATION_PERMISSIONS } from '@/constants/permissions';
 import { useAppDispatch, useAppSelector } from '@/hooks';
 import type { SettingsStackParamList } from '@/navigation/stack/SettingsStack';
+import { useSaraColors, useIsDarkMode } from '@/hooks/useSaraColors';
 
 const appName = Application.applicationName;
 const appVersion = Application.nativeApplicationVersion;
@@ -104,36 +109,35 @@ const appVersion = Application.nativeApplicationVersion;
 const buildNumber = Application.nativeBuildVersion;
 const appVersionDetails = buildNumber ? `${appVersion} (${buildNumber})` : appVersion;
 
-const SARA_COLORS = {
-  background: '#F8F5F3',
-  textPrimary: '#16273D',
-  textSecondary: '#4B5D6E',
-  badgeBackground: '#CCE6DE',
-  badgeText: '#16273D',
-  footerText: '#566273',
-  badgeMutedBackground: '#E7E2DD',
-  badgeMutedText: '#4B5D6E',
-  badgeWarningBackground: '#FFEBD6',
-  badgeWarningText: '#8A5A2E',
-  accent: '#0F4D49',
-  errorText: '#B54747',
-  switchTrackActive: '#4CB6AC',
-  switchTrackInactive: '#D8D1C9',
-  switchThumb: '#FFFFFF',
+// Static badge/status colors that work in both light and dark modes
+const BADGE_COLORS = {
+  positive: { background: '#CCE6DE', text: '#16273D' },
+  neutral: { background: '#E7E2DD', text: '#4B5D6E' },
+  warning: { background: '#FFEBD6', text: '#8A5A2E' },
 };
 
-const SWITCH_TRACK_COLORS = {
-  true: SARA_COLORS.switchTrackActive,
-  false: SARA_COLORS.switchTrackInactive,
-} as const;
+const SWITCH_TRACK_ACTIVE = '#4CB6AC';
+const SWITCH_TRACK_INACTIVE_LIGHT = '#D8D1C9';
+const SWITCH_TRACK_INACTIVE_DARK = '#4D4D4D';
 
 type SettingsNavigation = NativeStackNavigationProp<SettingsStackParamList, 'SettingsScreen'>;
 
 const SettingsScreen = () => {
   const navigation = useNavigation<SettingsNavigation>();
   const dispatch = useAppDispatch();
+  const colors = useSaraColors();
+  const isDark = useIsDarkMode();
   const availabilityStatus =
     (useSelector(selectCurrentUserAvailability) as AvailabilityStatus) || 'offline';
+
+  // Track colors for switches
+  const switchTrackColors = useMemo(
+    () => ({
+      true: SWITCH_TRACK_ACTIVE,
+      false: isDark ? SWITCH_TRACK_INACTIVE_DARK : SWITCH_TRACK_INACTIVE_LIGHT,
+    }),
+    [isDark],
+  );
 
   // const { bottom } = useSafeAreaInsets();
 
@@ -206,23 +210,13 @@ const SettingsScreen = () => {
 
   const renderBadge = useCallback(
     (label: string, variant: 'positive' | 'neutral' | 'warning' = 'neutral') => {
-      const containerStyles = [styles.badgeBase];
-      let textStyle = styles.badgeTextNeutral;
-      if (variant === 'positive') {
-        containerStyles.push(styles.badgePositive);
-        textStyle = styles.badgeTextPositive;
-      } else if (variant === 'warning') {
-        containerStyles.push(styles.badgeWarning);
-        textStyle = styles.badgeTextWarning;
-      } else {
-        containerStyles.push(styles.badgeNeutral);
-      }
+      const badgeColor = BADGE_COLORS[variant];
       return (
-        <Animated.View style={containerStyles}>
+        <Animated.View style={[styles.badgeBase, { backgroundColor: badgeColor.background }]}>
           <Animated.Text
             style={[
               tailwind.style('text-xs font-inter-medium-24 tracking-[0.3px] uppercase'),
-              textStyle,
+              { color: badgeColor.text },
             ]}>
             {label}
           </Animated.Text>
@@ -263,13 +257,13 @@ const SettingsScreen = () => {
         ellipsizeMode="tail"
         style={[
           styles.valueText,
-          options?.muted ? styles.valueTextMuted : null,
+          { color: options?.muted ? colors.textSecondary : colors.textPrimary },
           options?.lines && options.lines > 1 ? styles.valueTextMultiline : null,
         ]}>
         {value}
       </Animated.Text>
     ),
-    [],
+    [colors.textPrimary, colors.textSecondary],
   );
 
   const workflowList = useMemo<GenericListType[]>(() => {
@@ -286,9 +280,9 @@ const SettingsScreen = () => {
             value={Boolean(agentSettings.paymentRequired)}
             onValueChange={handleTogglePaymentRequired}
             disabled={agentSettingsUpdating}
-            trackColor={{ false: SWITCH_TRACK_COLORS.false, true: SWITCH_TRACK_COLORS.true }}
-            ios_backgroundColor={SWITCH_TRACK_COLORS.false}
-            thumbColor={Platform.OS === 'android' ? SARA_COLORS.switchThumb : undefined}
+            trackColor={switchTrackColors}
+            ios_backgroundColor={switchTrackColors.false}
+            thumbColor={Platform.OS === 'android' ? '#FFFFFF' : undefined}
           />
         ),
       },
@@ -301,9 +295,9 @@ const SettingsScreen = () => {
             value={Boolean(agentSettings.doctorConfirmationRequired)}
             onValueChange={handleToggleDoctorConfirmation}
             disabled={agentSettingsUpdating}
-            trackColor={{ false: SWITCH_TRACK_COLORS.false, true: SWITCH_TRACK_COLORS.true }}
-            ios_backgroundColor={SWITCH_TRACK_COLORS.false}
-            thumbColor={Platform.OS === 'android' ? SARA_COLORS.switchThumb : undefined}
+            trackColor={switchTrackColors}
+            ios_backgroundColor={switchTrackColors.false}
+            thumbColor={Platform.OS === 'android' ? '#FFFFFF' : undefined}
           />
         ),
       },
@@ -313,6 +307,7 @@ const SettingsScreen = () => {
     agentSettingsUpdating,
     handleToggleDoctorConfirmation,
     handleTogglePaymentRequired,
+    switchTrackColors,
   ]);
 
   const integrationsList = useMemo<GenericListType[]>(() => {
@@ -434,6 +429,7 @@ const SettingsScreen = () => {
   const enableAccountSwitch = accounts.length > 1;
 
   const activeLocale = useSelector(selectLocale);
+  const activeTheme = useSelector(selectTheme);
   const planTierOptions = useMemo(
     () => [
       {
@@ -453,6 +449,7 @@ const SettingsScreen = () => {
     userAvailabilityStatusSheetRef,
     planTierSheetRef,
     languagesModalSheetRef,
+    themeSheetRef,
     notificationPreferencesSheetRef,
     switchAccountSheetRef,
     debugActionsSheetRef,
@@ -492,6 +489,10 @@ const SettingsScreen = () => {
 
   const onChangeLanguage = (locale: string) => {
     dispatch(setLocale(locale));
+  };
+
+  const onChangeTheme = (theme: Theme) => {
+    dispatch(setTheme(theme));
   };
 
   const changeAccount = (accountId: number) => {
@@ -559,6 +560,13 @@ const SettingsScreen = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeLocale]);
 
+  useEffect(() => {
+    themeSheetRef.current?.dismiss({
+      overshootClamping: true,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTheme]);
+
   const openURL = async () => {
     await WebBrowser.openBrowserAsync(HELP_URL);
   };
@@ -574,6 +582,8 @@ const SettingsScreen = () => {
   const onClickLogout = useCallback(async () => {
     await AsyncStorage.removeItem('cwCookie');
     await dispatch(settingsActions.removeDevice({ pushToken }));
+    // Sign out from Cognito to clear session from AsyncStorage
+    signOut();
     dispatch(logout());
   }, [dispatch, pushToken]);
 
@@ -630,6 +640,15 @@ const SettingsScreen = () => {
         onPressListItem: () => languagesModalSheetRef.current?.present(),
       },
       {
+        key: 'change-theme',
+        hasChevron: true,
+        title: i18n.t('SETTINGS.CHANGE_THEME'),
+        icon: <SunIcon />,
+        subtitle: i18n.t(`SETTINGS.THEME_${activeTheme.toUpperCase()}`),
+        subtitleType: 'light',
+        onPressListItem: () => themeSheetRef.current?.present(),
+      },
+      {
         key: 'manager-whatsapp',
         hasChevron: false,
         title: i18n.t('SETTINGS.MANAGER_WHATSAPP'),
@@ -655,10 +674,12 @@ const SettingsScreen = () => {
   }, [
     activeAccountName,
     activeLocale,
+    activeTheme,
     agentSettings,
     enableAccountSwitch,
     hasConversationPermission,
     languagesModalSheetRef,
+    themeSheetRef,
     notificationPreferencesSheetRef,
     openSheet,
     openPlanTierSheet,
@@ -688,9 +709,16 @@ const SettingsScreen = () => {
 
   return (
     <SafeAreaView
-      style={[tailwind.style('flex-1 font-inter-normal-20'), styles.container]}
+      style={[
+        tailwind.style('flex-1 font-inter-normal-20'),
+        { backgroundColor: colors.background },
+      ]}
       edges={['top', 'bottom']}>
-      <StatusBar translucent backgroundColor={SARA_COLORS.background} barStyle={'dark-content'} />
+      <StatusBar
+        translucent
+        backgroundColor={colors.background}
+        barStyle={isDark ? 'light-content' : 'dark-content'}
+      />
       <SettingsHeader />
       <Animated.ScrollView
         showsVerticalScrollIndicator={false}
@@ -699,8 +727,8 @@ const SettingsScreen = () => {
           <RefreshControl
             refreshing={isRefreshing || agentSettingsLoading}
             onRefresh={handleRefresh}
-            tintColor={SARA_COLORS.textPrimary}
-            colors={[SARA_COLORS.textPrimary]}
+            tintColor={colors.textPrimary}
+            colors={[colors.textPrimary]}
           />
         }>
         <Animated.View style={tailwind.style('flex justify-center items-center pt-4 gap-3')}>
@@ -708,24 +736,24 @@ const SettingsScreen = () => {
             <Animated.Text
               style={[
                 tailwind.style('text-[22px] font-inter-580-24'),
-                { color: SARA_COLORS.textPrimary },
+                { color: colors.textPrimary },
               ]}>
               {name}
             </Animated.Text>
             <Animated.Text
               style={[
                 tailwind.style('text-[15px] font-inter-420-20 leading-[17.25px]'),
-                { color: SARA_COLORS.textSecondary },
+                { color: colors.textSecondary },
               ]}>
               {email}
             </Animated.Text>
           </Animated.View>
           <Animated.View style={tailwind.style('flex flex-row items-center gap-2')}>
-            <Animated.View style={styles.statusPill}>
+            <Animated.View style={[styles.statusPill, { backgroundColor: colors.accentLight }]}>
               <Animated.Text
                 style={[
                   tailwind.style('text-xs font-inter-medium-24 tracking-[0.3px] uppercase'),
-                  { color: SARA_COLORS.badgeText },
+                  { color: colors.textPrimary },
                 ]}>
                 {formattedAvailability}
               </Animated.Text>
@@ -734,7 +762,7 @@ const SettingsScreen = () => {
         </Animated.View>
         {agentSettingsLoading ? (
           <Animated.View style={tailwind.style('pt-6 items-center')}>
-            <ActivityIndicator color={SARA_COLORS.textSecondary} />
+            <ActivityIndicator color={colors.textSecondary} />
           </Animated.View>
         ) : null}
         {agentSettingsError ? (
@@ -742,7 +770,7 @@ const SettingsScreen = () => {
             <Animated.Text
               style={[
                 tailwind.style('text-sm font-inter-normal-20 text-center'),
-                { color: SARA_COLORS.errorText },
+                { color: '#B54747' },
               ]}>
               {agentSettingsError}
             </Animated.Text>
@@ -788,9 +816,7 @@ const SettingsScreen = () => {
         <Pressable
           style={tailwind.style('p-4 items-center')}
           onLongPress={() => debugActionsSheetRef.current?.present()}>
-          <Text style={[tailwind.style('text-sm'), { color: SARA_COLORS.footerText }]}>
-            {footerLabel}
-          </Text>
+          <Text style={[tailwind.style('text-sm'), { color: colors.textMeta }]}>{footerLabel}</Text>
         </Pressable>
       </Animated.ScrollView>
       <BottomSheetModal
@@ -824,7 +850,7 @@ const SettingsScreen = () => {
         <BottomSheetScrollView showsVerticalScrollIndicator={false}>
           <BottomSheetHeader headerText={i18n.t('SETTINGS.CHANGE_PLAN_TIER')} />
           <View style={tailwind.style('px-5 pt-3 pb-3')}>
-            <Text style={[tailwind.style('text-sm'), styles.planSheetSubtitle]}>
+            <Text style={[tailwind.style('text-sm'), { color: colors.textSecondary }]}>
               {i18n.t('SETTINGS.PLAN_TIER_SHEET_DESCRIPTION')}
             </Text>
           </View>
@@ -836,7 +862,10 @@ const SettingsScreen = () => {
                 style={[
                   tailwind.style('mx-5 mb-3 flex-row items-start gap-4'),
                   styles.planOption,
-                  isActive ? styles.planOptionActive : null,
+                  {
+                    borderColor: isActive ? colors.accent : colors.border,
+                    backgroundColor: isActive ? colors.accentLight : colors.backgroundLight,
+                  },
                   agentSettingsUpdating ? styles.planOptionDisabled : null,
                 ]}
                 disabled={agentSettingsUpdating}
@@ -847,25 +876,31 @@ const SettingsScreen = () => {
                   <Text
                     style={[
                       tailwind.style('text-base font-inter-semibold-20'),
-                      styles.planOptionTitle,
+                      { color: colors.textPrimary },
                     ]}>
                     {option.title}
                   </Text>
                   <Text
-                    style={[tailwind.style('text-sm mt-1'), styles.planOptionDescription]}
+                    style={[tailwind.style('text-sm mt-1'), { color: colors.textSecondary }]}
                     numberOfLines={2}>
                     {option.description}
                   </Text>
                 </View>
                 <View
-                  style={[styles.planOptionRadio, isActive ? styles.planOptionRadioActive : null]}
+                  style={[
+                    styles.planOptionRadio,
+                    {
+                      borderColor: isActive ? colors.accent : colors.border,
+                      backgroundColor: isActive ? colors.accentLight : 'transparent',
+                    },
+                  ]}
                 />
               </Pressable>
             );
           })}
           {agentSettingsUpdating ? (
             <View style={tailwind.style('py-2 items-center')}>
-              <ActivityIndicator color={SARA_COLORS.accent} />
+              <ActivityIndicator color={colors.accent} />
             </View>
           ) : null}
         </BottomSheetScrollView>
@@ -885,6 +920,20 @@ const SettingsScreen = () => {
           <BottomSheetHeader headerText={i18n.t('SETTINGS.SET_LANGUAGE')} />
           <LanguageList onChangeLanguage={onChangeLanguage} currentLanguage={activeLocale} />
         </BottomSheetScrollView>
+      </BottomSheetModal>
+      <BottomSheetModal
+        ref={themeSheetRef}
+        backdropComponent={BottomSheetBackdrop}
+        handleIndicatorStyle={tailwind.style('overflow-hidden bg-blackA-A6 w-8 h-1 rounded-[11px]')}
+        enablePanDownToClose
+        animationConfigs={animationConfigs}
+        handleStyle={tailwind.style('p-0 h-4 pt-[5px]')}
+        style={tailwind.style('rounded-[26px] overflow-hidden')}
+        snapPoints={[220]}>
+        <BottomSheetWrapper>
+          <BottomSheetHeader headerText={i18n.t('SETTINGS.SET_THEME')} />
+          <ThemeList onChangeTheme={onChangeTheme} currentTheme={activeTheme} />
+        </BottomSheetWrapper>
       </BottomSheetModal>
       <BottomSheetModal
         ref={notificationPreferencesSheetRef}
@@ -954,64 +1003,28 @@ const SettingsScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: SARA_COLORS.background,
-  },
   statusPill: {
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 9999,
-    backgroundColor: SARA_COLORS.badgeBackground,
   },
   badgeBase: {
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 9999,
-    backgroundColor: SARA_COLORS.badgeMutedBackground,
-  },
-  badgePositive: {
-    backgroundColor: SARA_COLORS.badgeBackground,
-  },
-  badgeNeutral: {
-    backgroundColor: SARA_COLORS.badgeMutedBackground,
-  },
-  badgeWarning: {
-    backgroundColor: SARA_COLORS.badgeWarningBackground,
-  },
-  badgeTextPositive: {
-    color: SARA_COLORS.badgeText,
-  },
-  badgeTextNeutral: {
-    color: SARA_COLORS.badgeMutedText,
-  },
-  badgeTextWarning: {
-    color: SARA_COLORS.badgeWarningText,
   },
   valueText: {
-    color: SARA_COLORS.textPrimary,
     textAlign: 'right',
     maxWidth: 200,
-  },
-  valueTextMuted: {
-    color: SARA_COLORS.textSecondary,
   },
   valueTextMultiline: {
     textAlign: 'right',
   },
-  planSheetSubtitle: {
-    color: SARA_COLORS.textSecondary,
-  },
   planOption: {
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#E1D9CF',
     paddingVertical: 14,
     paddingHorizontal: 16,
-    backgroundColor: '#FFFFFF',
-  },
-  planOptionActive: {
-    borderColor: SARA_COLORS.switchTrackActive,
-    backgroundColor: '#EEF7F5',
   },
   planOptionDisabled: {
     opacity: 0.6,
@@ -1019,23 +1032,12 @@ const styles = StyleSheet.create({
   planOptionTextWrapper: {
     flex: 1,
   },
-  planOptionTitle: {
-    color: SARA_COLORS.textPrimary,
-  },
-  planOptionDescription: {
-    color: SARA_COLORS.textSecondary,
-  },
   planOptionRadio: {
     width: 22,
     height: 22,
     borderRadius: 9999,
     borderWidth: 2,
-    borderColor: '#D5CBC0',
     marginTop: 2,
-  },
-  planOptionRadioActive: {
-    borderColor: SARA_COLORS.switchTrackActive,
-    backgroundColor: '#DFF4F0',
   },
 });
 

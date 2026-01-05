@@ -6,22 +6,75 @@ import axios, {
   AxiosHeaders,
   InternalAxiosRequestConfig,
 } from 'axios';
+import type { CognitoUserSession } from 'amazon-cognito-identity-js';
 
 import I18n from '@/i18n';
 import { saraConfig } from '@/config/saraConfig';
 import { getStore } from '@/store/storeAccessor';
 import { showToast } from '@/utils/toastUtils';
+import { getCurrentSession } from '@/services/cognitoAuth';
+import type { SaraTokens } from '@/store/auth/authTypes';
+
+const extractTokensFromSession = (session: CognitoUserSession): SaraTokens | null => {
+  const idToken = session.getIdToken()?.getJwtToken?.();
+  const refreshToken = session.getRefreshToken()?.getToken?.();
+
+  if (!idToken || !refreshToken) {
+    return null;
+  }
+
+  return {
+    accessToken: idToken,
+    refreshToken,
+    tokenType: 'bearer',
+  };
+};
 
 export class SaraAPIService {
   private static instance: SaraAPIService;
 
   private api: AxiosInstance;
 
+  private isRefreshing = false;
+
+  private refreshSubscribers: Array<(token: string) => void> = [];
+
   private constructor() {
     this.api = axios.create({
       baseURL: saraConfig.apiBaseUrl,
     });
     this.setupInterceptors();
+  }
+
+  private onTokenRefreshed(token: string) {
+    this.refreshSubscribers.forEach(callback => callback(token));
+    this.refreshSubscribers = [];
+  }
+
+  private addRefreshSubscriber(callback: (token: string) => void) {
+    this.refreshSubscribers.push(callback);
+  }
+
+  private async refreshTokens(): Promise<SaraTokens | null> {
+    try {
+      const session = await getCurrentSession();
+      if (!session) {
+        return null;
+      }
+
+      const tokens = extractTokensFromSession(session);
+      if (tokens) {
+        const store = getStore();
+        // Dispatch by action type to avoid require cycle with authSlice
+        store.dispatch({ type: 'auth/updateSaraTokens', payload: tokens });
+      }
+      return tokens;
+    } catch (error) {
+      if (__DEV__) {
+        console.log('[SaraAPIService] Token refresh failed:', error);
+      }
+      return null;
+    }
   }
 
   public static getInstance(): SaraAPIService {
@@ -68,12 +121,51 @@ export class SaraAPIService {
 
     this.api.interceptors.response.use(
       (response: AxiosResponse) => response,
-      (error: AxiosError) => {
+      async (error: AxiosError) => {
         const store = getStore();
+        const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
-        if (error.response?.status === 401) {
+        // Handle 401 errors with token refresh
+        if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
+          if (this.isRefreshing) {
+            // If already refreshing, queue this request
+            return new Promise(resolve => {
+              this.addRefreshSubscriber((token: string) => {
+                originalRequest.headers.set('Authorization', `Bearer ${token}`);
+                resolve(this.api(originalRequest));
+              });
+            });
+          }
+
+          originalRequest._retry = true;
+          this.isRefreshing = true;
+
+          try {
+            const tokens = await this.refreshTokens();
+
+            if (tokens) {
+              if (__DEV__) {
+                console.log('[SaraAPIService] Token refreshed successfully');
+              }
+              this.onTokenRefreshed(tokens.accessToken);
+              originalRequest.headers.set('Authorization', `Bearer ${tokens.accessToken}`);
+              return this.api(originalRequest);
+            }
+          } catch (refreshError) {
+            if (__DEV__) {
+              console.log('[SaraAPIService] Token refresh error:', refreshError);
+            }
+          } finally {
+            this.isRefreshing = false;
+          }
+
+          // Token refresh failed, logout user
           store.dispatch({ type: 'auth/logout' });
-        } else if (!axios.isCancel(error)) {
+          return Promise.reject(error);
+        }
+
+        // Show toast for non-401 errors that weren't cancelled
+        if (!axios.isCancel(error)) {
           showToast({ message: I18n.t('ERRORS.COMMON_ERROR') });
         }
 

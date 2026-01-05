@@ -1,9 +1,12 @@
 import axios from 'axios';
+import type { CognitoUserSession } from 'amazon-cognito-identity-js';
 
 import { apiService } from '@/services/APIService';
 import { saraApiService } from '@/services/SaraAPIService';
+import { forgotPassword, signIn, CognitoChallengeError } from '@/services/cognitoAuth';
 import type { User } from '@/types/User';
 import { buildSaraApiUrl } from '@/config/saraConfig';
+import I18n from '@/i18n';
 
 import type {
   LoginPayload,
@@ -47,52 +50,63 @@ const ensureAgent = (
   return preferred;
 };
 
-const extractSaraTokens = (payload: unknown): SaraTokens => {
-  const data = (payload as Record<string, unknown>) ?? {};
-  const accessToken = data.access_token as string | undefined;
-  const refreshToken = data.refresh_token as string | undefined;
-  const tokenType = (data.token_type as string | undefined) ?? 'bearer';
+const extractCognitoTokens = (session: CognitoUserSession): SaraTokens => {
+  const idToken = session.getIdToken()?.getJwtToken?.();
+  const refreshToken = session.getRefreshToken()?.getToken?.();
 
-  if (!accessToken || !refreshToken) {
-    throw new Error('Sara authentication response missing tokens.');
+  if (!idToken || !refreshToken) {
+    throw new Error('Cognito ID token missing. Verify the user pool app client settings.');
   }
 
   return {
-    accessToken,
+    accessToken: idToken,
     refreshToken,
-    tokenType,
+    tokenType: 'bearer',
   };
 };
 
 export class AuthService {
   static async login(credentials: LoginPayload): Promise<LoginResponse> {
     try {
-      const loginUrl = buildSaraApiUrl('/auth/login');
-      const loginResponse = await axios.post(loginUrl, credentials, {
-        headers: { 'Content-Type': 'application/json' },
-      });
-
-      const loginPayload = loginResponse.data as Record<string, unknown>;
-      const tokens = extractSaraTokens(loginPayload.data);
+      const session = await signIn(credentials.email, credentials.password);
+      const tokens = extractCognitoTokens(session);
 
       const mobileAuthUrl = buildSaraApiUrl('/chatwoot/mobile-auth');
-      const mobileAuthResponse = await axios.post<ChatwootMobileAuthResponse>(
-        mobileAuthUrl,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${tokens.accessToken}`,
-            'Content-Type': 'application/json',
-          },
-        },
-      );
+      let mobileAuth: ChatwootMobileAuthResponse;
 
-      const mobileAuth = mobileAuthResponse.data;
+      try {
+        const response = await axios.post<ChatwootMobileAuthResponse>(
+          mobileAuthUrl,
+          {},
+          {
+            headers: {
+              Authorization: `Bearer ${tokens.accessToken}`,
+              'Content-Type': 'application/json',
+            },
+          },
+        );
+        mobileAuth = response.data;
+      } catch (error) {
+        if (axios.isAxiosError(error) && error.response?.status === 409) {
+          throw new Error(
+            'Chatwoot setup is incomplete for this operator. Ask an admin to finish linking the Chatwoot credentials.',
+          );
+        }
+        throw error;
+      }
       const agent = ensureAgent(mobileAuth);
 
       const installationUrl = agent.installation_url;
       const websocketUrl = agent.websocket_url;
-      const apiAccessToken = agent.api_access_token ?? null;
+      const apiAccessToken = agent.api_access_token?.trim() || null;
+
+      if (__DEV__) {
+        console.log('[AuthService] Chatwoot auth payload', {
+          installationUrl,
+          websocketUrl,
+          hasApiAccessToken: Boolean(apiAccessToken),
+        });
+      }
 
       if (!installationUrl) {
         throw new Error('Chatwoot installation URL missing from bootstrap payload.');
@@ -105,11 +119,29 @@ export class AuthService {
       }
 
       const profileUrl = new URL('api/v1/profile', installationUrl).toString();
-      const profileResponse = await axios.get<ProfileResponse>(profileUrl, {
-        headers: { api_access_token: apiAccessToken },
-      });
+      let profileResponse;
+      try {
+        profileResponse = await axios.get<ProfileResponse>(profileUrl, {
+          headers: { api_access_token: apiAccessToken },
+        });
+      } catch (error) {
+        if (axios.isAxiosError(error) && error.response?.status === 401) {
+          const host = new URL(profileUrl).host;
+          const suffix = apiAccessToken.slice(-4);
+          const debugMessage = __DEV__
+            ? `Chatwoot token rejected by ${host} (token ..${suffix}).`
+            : 'Chatwoot token rejected.';
+          throw new Error(debugMessage);
+        }
+        throw error;
+      }
+      const profileData = profileResponse.data as unknown as User | { user?: User };
+      const chatwootUser: User | undefined =
+        (profileData as { user?: User })?.user ?? (profileData as User);
 
-      const chatwootUser: User = profileResponse.data.user;
+      if (!chatwootUser || !chatwootUser.id) {
+        throw new Error('Chatwoot profile payload missing expected user fields.');
+      }
 
       return {
         saraTokens: tokens,
@@ -127,10 +159,31 @@ export class AuthService {
         },
       };
     } catch (error) {
+      // Handle Cognito challenge errors with user-friendly messages
+      if (error instanceof CognitoChallengeError) {
+        switch (error.challenge) {
+          case 'NEW_PASSWORD_REQUIRED':
+            throw new Error(I18n.t('LOGIN.ERRORS.NEW_PASSWORD_REQUIRED'));
+          case 'MFA_REQUIRED':
+          case 'TOTP_REQUIRED':
+            throw new Error(I18n.t('LOGIN.ERRORS.MFA_REQUIRED'));
+          case 'MFA_SETUP':
+            throw new Error(I18n.t('LOGIN.ERRORS.MFA_SETUP_REQUIRED'));
+          default:
+            throw error;
+        }
+      }
       if (axios.isAxiosError(error)) {
         throw error;
       }
-      throw new Error((error as Error).message);
+      if (error instanceof Error) {
+        throw error;
+      }
+      if (typeof error === 'string') {
+        throw new Error(error);
+      }
+      const message = (error as { message?: string })?.message;
+      throw new Error(message || 'Authentication failed.');
     }
   }
 
@@ -140,8 +193,8 @@ export class AuthService {
   }
 
   static async resetPassword(payload: ResetPasswordPayload): Promise<ResetPasswordResponse> {
-    const response = await apiService.post<ResetPasswordResponse>('auth/password', payload);
-    return response.data;
+    await forgotPassword(payload.email);
+    return { message: I18n.t('FORGOT_PASSWORD.API_SUCCESS') };
   }
 
   static async updateAvailability(payload: AvailabilityPayload): Promise<ProfileResponse> {
@@ -171,7 +224,7 @@ export class AuthService {
     const agent = ensureAgent(mobileAuth, agentId);
 
     const installationUrl = agent.installation_url;
-    const apiAccessToken = agent.api_access_token ?? null;
+      const apiAccessToken = agent.api_access_token?.trim() || null;
 
     if (!installationUrl) {
       throw new Error('Chatwoot installation URL missing for the selected agent.');
@@ -182,11 +235,29 @@ export class AuthService {
     }
 
     const profileUrl = new URL('api/v1/profile', installationUrl).toString();
-    const profileResponse = await axios.get<ProfileResponse>(profileUrl, {
-      headers: { api_access_token: apiAccessToken },
-    });
+    let profileResponse;
+    try {
+      profileResponse = await axios.get<ProfileResponse>(profileUrl, {
+        headers: { api_access_token: apiAccessToken },
+      });
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        const host = new URL(profileUrl).host;
+        const suffix = apiAccessToken.slice(-4);
+        const debugMessage = __DEV__
+          ? `Chatwoot token rejected by ${host} (token ..${suffix}).`
+          : 'Chatwoot token rejected.';
+        throw new Error(debugMessage);
+      }
+      throw error;
+    }
+    const profileData = profileResponse.data as unknown as User | { user?: User };
+    const chatwootUser: User | undefined =
+      (profileData as { user?: User })?.user ?? (profileData as User);
 
-    const chatwootUser: User = profileResponse.data.user;
+    if (!chatwootUser || !chatwootUser.id) {
+      throw new Error('Chatwoot profile payload missing expected user fields.');
+    }
 
     return {
       user: chatwootUser,

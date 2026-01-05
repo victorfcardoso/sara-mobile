@@ -25,32 +25,32 @@ import {
 } from '@/store/agent-settings';
 import type { SettingsStackParamList } from '@/navigation/stack/SettingsStack';
 import { parseFaqsFromInstructions } from '@/utils/faq';
+import { useSaraColors, useIsDarkMode, type SaraColors } from '@/hooks/useSaraColors';
 
-const COLORS = {
-  background: '#F8F5F3',
-  headerBorder: '#E6E0D7',
-  backButton: '#E7E2DD',
-  addButton: '#12A594',
-  addButtonPressed: '#0E857F',
-  textPrimary: '#16273D',
-  textSecondary: '#4B5D6E',
-  card: '#FFFFFF',
-  border: '#E6E0D7',
-  badgeEscalationBg: '#FFEBD6',
-  badgeEscalationText: '#8A5A2E',
-  triggerChipBg: '#F1EAE1',
-  triggerChipText: '#4B5D6E',
-  errorBg: '#FDF3F3',
-  errorText: '#B54747',
-  answerBubble: '#FFFFFF',
-  answerShadow: '#D6CEC4',
-};
+// Static colors that don't change between themes
+const ERROR_TEXT = '#B54747';
+const WHITE = '#FFFFFF';
+
+// Theme-aware UI colors helper
+const getUiColors = (isDark: boolean, colors: SaraColors) => ({
+  badgeEscalationBg: isDark ? '#3D2E1A' : '#FFEBD6',
+  badgeEscalationText: isDark ? '#C4A060' : '#8A5A2E',
+  triggerChipBg: isDark ? '#2D2A26' : '#F1EAE1',
+  triggerChipText: isDark ? colors.textSecondary : '#4B5D6E',
+  errorBg: isDark ? '#3D1A1A' : '#FDF3F3',
+  answerShadow: isDark ? '#000000' : '#D6CEC4',
+  addButtonPressed: isDark ? '#0A6B62' : '#0E857F',
+});
 
 type SettingsNavigation = NativeStackNavigationProp<SettingsStackParamList, 'FaqScreen'>;
 
 export const FaqScreen = (): JSX.Element => {
   const navigation = useNavigation<SettingsNavigation>();
   const dispatch = useAppDispatch();
+  const colors = useSaraColors();
+  const isDark = useIsDarkMode();
+  const uiColors = getUiColors(isDark, colors);
+
   const agentSettings = useAppSelector(selectAgentSettingsData);
   const isFetching = useAppSelector(selectAgentSettingsIsFetching);
   const agentSettingsError = useAppSelector(selectAgentSettingsError);
@@ -91,11 +91,17 @@ export const FaqScreen = (): JSX.Element => {
     }
     return (
       <View style={styles.triggersContainer}>
-        <Text style={styles.detailLabel}>{i18n.t('FAQ_PAGE.TRIGGERS_LABEL')}</Text>
+        <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>
+          {i18n.t('FAQ_PAGE.TRIGGERS_LABEL')}
+        </Text>
         <View style={styles.triggerRow}>
           {triggers.map(phrase => (
-            <View key={phrase} style={styles.triggerChip}>
-              <Text style={styles.triggerChipText}>{phrase}</Text>
+            <View
+              key={phrase}
+              style={[styles.triggerChip, { backgroundColor: uiColors.triggerChipBg }]}>
+              <Text style={[styles.triggerChipText, { color: uiColors.triggerChipText }]}>
+                {phrase}
+              </Text>
             </View>
           ))}
         </View>
@@ -135,12 +141,14 @@ export const FaqScreen = (): JSX.Element => {
     }
 
     return (
-      <View style={styles.escalationBlock}>
+      <View style={[styles.escalationBlock, { borderTopColor: colors.border }]}>
         {renderTriggerChips(faq.escalation.trigger_phrases)}
         {items.map(item => (
           <View key={`${faq.id}-${item.label}`} style={styles.detailRow}>
-            <Text style={styles.detailLabel}>{item.label}</Text>
-            {item.value ? <Text style={styles.detailValue}>{item.value}</Text> : null}
+            <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>{item.label}</Text>
+            {item.value ? (
+              <Text style={[styles.detailValue, { color: colors.textPrimary }]}>{item.value}</Text>
+            ) : null}
           </View>
         ))}
       </View>
@@ -151,8 +159,12 @@ export const FaqScreen = (): JSX.Element => {
     if (!faqs.length && !isFetching) {
       return (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyTitle}>{i18n.t('FAQ_PAGE.EMPTY_TITLE')}</Text>
-          <Text style={styles.emptySubtitle}>{i18n.t('FAQ_PAGE.EMPTY_SUBTITLE')}</Text>
+          <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
+            {i18n.t('FAQ_PAGE.EMPTY_TITLE')}
+          </Text>
+          <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
+            {i18n.t('FAQ_PAGE.EMPTY_SUBTITLE')}
+          </Text>
         </View>
       );
     }
@@ -162,23 +174,48 @@ export const FaqScreen = (): JSX.Element => {
       return (
         <Pressable
           key={faq.id}
-          style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+          style={({ pressed }) => [
+            styles.card,
+            {
+              backgroundColor: colors.backgroundLight,
+              borderColor: colors.border,
+            },
+            pressed && styles.cardPressed,
+          ]}
           onPress={() => handleEditFaq(faq.id)}
           accessibilityRole="button"
           accessibilityLabel={i18n.t('FAQ_PAGE.EDIT_BUTTON', { question: faq.question })}
           hitSlop={4}>
           <View style={styles.cardHeader}>
-            <Text style={styles.question}>{faq.question}</Text>
+            <Text style={[styles.question, { color: colors.textPrimary }]}>{faq.question}</Text>
             {escalationActive ? (
-              <View style={[styles.badge, styles.escalationBadge]}>
-                <Text style={[styles.badgeText, styles.escalationBadgeText]}>
+              <View
+                style={[
+                  styles.badge,
+                  styles.escalationBadge,
+                  { backgroundColor: uiColors.badgeEscalationBg },
+                ]}>
+                <Text
+                  style={[
+                    styles.badgeText,
+                    styles.escalationBadgeText,
+                    { color: uiColors.badgeEscalationText },
+                  ]}>
                   {i18n.t('FAQ_PAGE.ESCALATION_BADGE')}
                 </Text>
               </View>
             ) : null}
           </View>
-          <View style={styles.answerBubble}>
-            <Text style={styles.answer}>{faq.answer}</Text>
+          <View
+            style={[
+              styles.answerBubble,
+              {
+                backgroundColor: colors.backgroundLight,
+                borderColor: colors.border,
+                shadowColor: uiColors.answerShadow,
+              },
+            ]}>
+            <Text style={[styles.answer, { color: colors.textPrimary }]}>{faq.answer}</Text>
           </View>
           {escalationActive ? renderEscalationDetails(faq) : null}
         </Pressable>
@@ -187,24 +224,33 @@ export const FaqScreen = (): JSX.Element => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
-      <View style={styles.header}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+      <StatusBar
+        barStyle={isDark ? 'light-content' : 'dark-content'}
+        backgroundColor={colors.background}
+      />
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <Pressable
           onPress={goBack}
-          style={styles.backButton}
+          style={[styles.backButton, { backgroundColor: colors.chip }]}
           hitSlop={8}
           accessibilityRole="button">
-          <Icon icon={<ChevronLeft />} size={24} />
+          <Icon icon={<ChevronLeft stroke={colors.textPrimary} />} size={24} />
         </Pressable>
-        <Text style={styles.headerTitle}>{i18n.t('FAQ_PAGE.TITLE')}</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
+          {i18n.t('FAQ_PAGE.TITLE')}
+        </Text>
         <Pressable
           onPress={handleAddFaq}
-          style={({ pressed }) => [styles.addButton, pressed && styles.addButtonPressed]}
+          style={({ pressed }) => [
+            styles.addButton,
+            { backgroundColor: colors.accent },
+            pressed && { backgroundColor: uiColors.addButtonPressed },
+          ]}
           accessibilityRole="button"
           accessibilityLabel={i18n.t('FAQ_PAGE.ADD_BUTTON')}
           hitSlop={8}>
-          <Icon icon={<AddIcon stroke="#FFFFFF" />} size={20} />
+          <Icon icon={<AddIcon stroke={WHITE} />} size={20} />
         </Pressable>
       </View>
       <View style={styles.body}>
@@ -215,18 +261,21 @@ export const FaqScreen = (): JSX.Element => {
             <RefreshControl
               refreshing={isFetching}
               onRefresh={handleRefresh}
-              tintColor={COLORS.textPrimary}
+              tintColor={colors.accent}
+              colors={[colors.accent]}
             />
           }>
-          <Text style={styles.headerSubtitle}>{i18n.t('FAQ_PAGE.DESCRIPTION')}</Text>
+          <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
+            {i18n.t('FAQ_PAGE.DESCRIPTION')}
+          </Text>
           {agentSettingsError ? (
-            <View style={styles.errorBanner}>
+            <View style={[styles.errorBanner, { backgroundColor: uiColors.errorBg }]}>
               <Text style={styles.errorText}>{i18n.t('FAQ_PAGE.ERROR_LOADING')}</Text>
             </View>
           ) : null}
           {isFetching && !faqs.length ? (
             <View style={styles.loadingState}>
-              <ActivityIndicator size="small" color={COLORS.textPrimary} />
+              <ActivityIndicator size="small" color={colors.accent} />
             </View>
           ) : null}
           {renderContent()}
@@ -239,7 +288,6 @@ export const FaqScreen = (): JSX.Element => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   body: {
     flex: 1,
@@ -250,13 +298,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.headerBorder,
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: COLORS.backButton,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -265,23 +311,17 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 18,
     fontWeight: '600',
-    color: COLORS.textPrimary,
   },
   addButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: COLORS.addButton,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  addButtonPressed: {
-    backgroundColor: COLORS.addButtonPressed,
   },
   headerSubtitle: {
     marginTop: 16,
     marginBottom: 12,
-    color: COLORS.textSecondary,
     fontSize: 14,
     lineHeight: 20,
   },
@@ -289,7 +329,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   errorBanner: {
-    backgroundColor: COLORS.errorBg,
     marginHorizontal: 20,
     borderRadius: 12,
     paddingVertical: 10,
@@ -297,7 +336,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   errorText: {
-    color: COLORS.errorText,
+    color: ERROR_TEXT,
     fontSize: 13,
   },
   loadingState: {
@@ -308,12 +347,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   card: {
-    backgroundColor: COLORS.card,
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: COLORS.border,
   },
   cardPressed: {
     opacity: 0.95,
@@ -329,21 +366,16 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.textPrimary,
   },
   answer: {
     fontSize: 14,
     lineHeight: 20,
-    color: COLORS.textPrimary,
   },
   answerBubble: {
-    backgroundColor: COLORS.answerBubble,
     borderRadius: 18,
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: COLORS.border,
-    shadowColor: COLORS.answerShadow,
     shadowOpacity: 0.25,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 4,
@@ -360,16 +392,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
-  escalationBadge: {
-    backgroundColor: COLORS.badgeEscalationBg,
-  },
-  escalationBadgeText: {
-    color: COLORS.badgeEscalationText,
-  },
+  escalationBadge: {},
+  escalationBadgeText: {},
   escalationBlock: {
     marginTop: 16,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
     paddingTop: 12,
     gap: 12,
   },
@@ -382,14 +409,12 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   triggerChip: {
-    backgroundColor: COLORS.triggerChipBg,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 999,
   },
   triggerChipText: {
     fontSize: 12,
-    color: COLORS.triggerChipText,
     fontWeight: '500',
   },
   detailRow: {
@@ -397,13 +422,11 @@ const styles = StyleSheet.create({
   },
   detailLabel: {
     fontSize: 12,
-    color: COLORS.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
   detailValue: {
     fontSize: 14,
-    color: COLORS.textPrimary,
     lineHeight: 20,
   },
   emptyState: {
@@ -414,11 +437,9 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.textPrimary,
   },
   emptySubtitle: {
     fontSize: 14,
-    color: COLORS.textSecondary,
     textAlign: 'center',
     paddingHorizontal: 16,
     lineHeight: 20,

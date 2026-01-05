@@ -8,6 +8,7 @@ import { Avatar } from '@/components-next/common';
 import { AnimatedNativeView, NativeView } from '@/components-next/native-components';
 import { tailwind } from '@/theme';
 import { Agent, Conversation, ConversationAdditionalAttributes, Label, Message } from '@/types';
+import { useSaraColors } from '@/hooks/useSaraColors';
 
 import { ConversationId } from './ConversationId';
 import { ConversationLastMessage } from './ConversationLastMessage';
@@ -71,6 +72,7 @@ export const ConversationItemDetail = memo((props: ConversationDetailSubCellProp
     typingText,
   } = props;
 
+  const colors = useSaraColors();
   const [shouldShowSLA, setShouldShowSLA] = useState(true);
 
   const hasPriority = priority !== null;
@@ -86,18 +88,19 @@ export const ConversationItemDetail = memo((props: ConversationDetailSubCellProp
   return (
     <AnimatedNativeView
       layout={LinearTransition.springify().damping(28).stiffness(200)}
-      style={tailwind.style('flex-1 gap-1 py-3 border-b-[1px] border-b-[#E6E0D7]')}>
+      style={[tailwind.style('flex-1 gap-1 py-3 border-b-[1px]'), { borderBottomColor: colors.border }]}>
       <AnimatedNativeView
         style={tailwind.style('flex flex-row justify-between items-center h-[24px]')}>
         <AnimatedNativeView style={tailwind.style('flex flex-row items-center h-[24px] gap-[5px]')}>
           <Text
             numberOfLines={1}
-            style={tailwind.style(
-              'text-base font-inter-medium-24 tracking-[0.24px] text-[#16273D] capitalize',
-              // Calculated based on the widths of other content,
-              // We might have to do a 10-20px offset based on the max width of the timestamp
-              `max-w-[${width - 250}px]`,
-            )}>
+            style={[
+              tailwind.style(
+                'text-base font-inter-medium-24 tracking-[0.24px] capitalize',
+                `max-w-[${width - 250}px]`,
+              ),
+              { color: colors.textPrimary },
+            ]}>
             {senderName}
           </Text>
           <ConversationId id={conversationId} />
@@ -141,9 +144,9 @@ export const ConversationItemDetail = memo((props: ConversationDetailSubCellProp
                   onSLAStatusChange={setShouldShowSLA}
                 />
               )}
-          {hasLabels && hasSLA && (
-            <NativeView style={tailwind.style('w-[1px] h-3 bg-[#E6E0D7]')} />
-          )}
+              {hasLabels && hasSLA && (
+                <NativeView style={[tailwind.style('w-[1px] h-3'), { backgroundColor: colors.border }]} />
+              )}
               {hasLabels && <LabelIndicator labels={labels} allLabels={allLabels} />}
             </AnimatedNativeView>
 

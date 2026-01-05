@@ -3,6 +3,7 @@ import { Switch, StyleSheet } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useAppDispatch, useAppSelector } from '@/hooks';
 
+import { useIsDarkMode, useSaraColors } from '@/hooks/useSaraColors';
 import { tailwind } from '@/theme';
 import i18n from 'i18n';
 import { selectNotificationSettings } from '@/store/settings/settingsSelectors';
@@ -28,6 +29,8 @@ export const NotificationPreferences = () => {
   } = useAppSelector(selectNotificationSettings);
 
   const dispatch = useAppDispatch();
+  const colors = useSaraColors();
+  const isDark = useIsDarkMode();
 
   const [selectedPushFlags, setPushFlags] = useState(selected_push_flags);
 
@@ -59,6 +62,9 @@ export const NotificationPreferences = () => {
 
   const typedPushFlags = allPushFlags as NotificationPreferenceType[];
 
+  // Switch track colors - adapt for dark mode
+  const switchTrackOff = isDark ? colors.borderStrong : '#C9D7E3';
+
   return (
     <Animated.View style={tailwind.style('py-4 px-3')}>
       {typedPushFlags.map((item: NotificationPreferenceType) => (
@@ -66,14 +72,17 @@ export const NotificationPreferences = () => {
           key={item}
           style={tailwind.style('flex flex-row items-center justify-between ml-2 mt-2')}>
           <Animated.Text
-            style={tailwind.style('flex-1 leading-[17px] tracking-[0.24px] text-gray-950')}>
+            style={[
+              tailwind.style('flex-1 leading-[17px] tracking-[0.24px]'),
+              { color: colors.textPrimary },
+            ]}>
             {i18n.t(`NOTIFICATION_PREFERENCE.${NOTIFICATION_PREFERENCE_TYPES[item]}`)}
           </Animated.Text>
           <Switch
-            trackColor={{ false: '#C9D7E3', true: '#1F93FF' }}
+            trackColor={{ false: switchTrackOff, true: colors.accent }}
             thumbColor="#FFFFFF"
             style={styles.switch}
-            ios_backgroundColor="#C9D7E3"
+            ios_backgroundColor={switchTrackOff}
             onValueChange={() => onPushItemChange(item)}
             value={selectedPushFlags.includes(item)}
           />

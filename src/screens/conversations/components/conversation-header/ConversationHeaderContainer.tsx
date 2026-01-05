@@ -27,8 +27,7 @@ import { ConversationFilterBar } from '../conversation-filters';
 import { ConversationHeaderPresenter } from './ConversationHeaderPresenter';
 
 import { useAppDispatch, useAppSelector } from '@/hooks';
-
-const SARA_DIVIDER = '#E6E0D7';
+import { useSaraColors } from '@/hooks/useSaraColors';
 
 const getFiltersAppliedCount = (defaultState: FilterState, updatedState: FilterState): number => {
   let count = 0;
@@ -43,6 +42,7 @@ const getFiltersAppliedCount = (defaultState: FilterState, updatedState: FilterS
 
 export const ConversationHeader = () => {
   const currentState = useAppSelector(selectCurrentState);
+  const colors = useSaraColors();
 
   const filters = useAppSelector(selectFilters);
   const dispatch = useAppDispatch();
@@ -63,7 +63,7 @@ export const ConversationHeader = () => {
 
   const hapticSuccess = useHaptic('success');
 
-  const headerBorderColor = SARA_DIVIDER;
+  const headerBorderColor = colors.border;
 
   const headerOpenState = useDerivedValue(() =>
     currentState !== 'none' && currentState !== 'Select' ? withSpring(1) : withSpring(0),

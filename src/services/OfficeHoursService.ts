@@ -47,7 +47,8 @@ const buildHeaders = (agentId?: string | null) => {
 
 const extractErrorMessage = (error: unknown, fallback: string): string => {
   if (axios.isAxiosError(error)) {
-    const detail = (error.response?.data as { detail?: string; message?: string } | undefined)?.detail;
+    const detail = (error.response?.data as { detail?: string; message?: string } | undefined)
+      ?.detail;
     const message =
       detail ||
       (error.response?.data as { message?: string; error?: string } | undefined)?.message ||
@@ -66,22 +67,25 @@ const extractErrorMessage = (error: unknown, fallback: string): string => {
 };
 
 export class OfficeHoursService {
-  static async fetchWeekly(params: { providerId: string; agentId?: string | null }): Promise<WeeklySnapshot> {
+  static async fetchWeekly(params: {
+    providerId: string;
+    agentId?: string | null;
+  }): Promise<WeeklySnapshot> {
     const { providerId, agentId } = params;
     try {
-      const response = await saraApiService.get(
-        `/office-hours/weekly`,
-        {
-          params: { provider_id: providerId },
-          headers: buildHeaders(agentId),
-        },
-      );
+      const response = await saraApiService.get(`/office-hours/weekly`, {
+        params: { provider_id: providerId },
+        headers: buildHeaders(agentId),
+      });
       const data = response.data as any;
       if (!data) {
         throw new Error('Office hours not available.');
       }
       const workingPlan = (data.working_plan ?? {}) as Record<string, WorkingPlanBlock | null>;
-      const workingPlanExceptions = (data.working_plan_exceptions ?? {}) as Record<string, WorkingPlanBlock | null>;
+      const workingPlanExceptions = (data.working_plan_exceptions ?? {}) as Record<
+        string,
+        WorkingPlanBlock | null
+      >;
       const serviceRaw = data.service ?? null;
       return {
         providerId: String(data.provider_id ?? providerId),
@@ -159,29 +163,28 @@ export class OfficeHoursService {
   }): Promise<string[]> {
     const { providerId, serviceId, date, agentId } = params;
     try {
-      const response = await saraApiService.get(
-        `/office-hours/probe`,
-        {
-          params: {
-            provider_id: providerId,
-            service_id: serviceId,
-            date,
-          },
-          headers: buildHeaders(agentId),
+      const response = await saraApiService.get(`/office-hours/probe`, {
+        params: {
+          provider_id: providerId,
+          service_id: serviceId,
+          date,
         },
-      );
+        headers: buildHeaders(agentId),
+      });
       const data = response.data as any;
       if (Array.isArray(data)) {
-        return data.map(item => (typeof item === 'string' ? item : String(item.time ?? item.slot ?? ''))).filter(Boolean);
+        return data
+          .map(item => (typeof item === 'string' ? item : String(item.time ?? item.slot ?? '')))
+          .filter(Boolean);
       }
       if (Array.isArray(data?.availabilities)) {
         return data.availabilities
-          .map((item: any) => (typeof item === 'string' ? item : item?.time ?? item?.slot ?? ''))
+          .map((item: any) => (typeof item === 'string' ? item : (item?.time ?? item?.slot ?? '')))
           .filter((item: string) => item && item.length > 0);
       }
       if (Array.isArray(data?.data)) {
         return data.data
-          .map((item: any) => (typeof item === 'string' ? item : item?.time ?? item?.slot ?? ''))
+          .map((item: any) => (typeof item === 'string' ? item : (item?.time ?? item?.slot ?? '')))
           .filter((item: string) => item && item.length > 0);
       }
       return [];

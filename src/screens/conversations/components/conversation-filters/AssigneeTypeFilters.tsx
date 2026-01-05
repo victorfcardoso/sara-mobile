@@ -15,6 +15,7 @@ import { AssigneeOptions } from '@/types';
 import { useSelector } from 'react-redux';
 import { selectUser } from '@/store/auth/authSelectors';
 import { getUserPermissions } from '@/utils/permissionUtils';
+import { useSaraColors } from '@/hooks/useSaraColors';
 
 type AssigneeTypeCellProps = {
   value: string;
@@ -29,6 +30,7 @@ const AssigneeTypeCell = (props: AssigneeTypeCellProps) => {
   const dispatch = useAppDispatch();
   const filters = useAppSelector(selectFilters);
   const hapticSelection = useHaptic();
+  const colors = useSaraColors();
 
   const handlePreferredAssigneeTypePress = () => {
     hapticSelection?.();
@@ -41,14 +43,18 @@ const AssigneeTypeCell = (props: AssigneeTypeCellProps) => {
       onPress={handlePreferredAssigneeTypePress}
       style={tailwind.style('flex flex-row items-center')}>
       <Animated.View
-        style={tailwind.style(
-          'flex-1 ml-3 flex-row justify-between py-[11px] pr-3',
-          index !== assigneeTypeList.length - 1 ? 'border-b-[1px] border-[#E6E0D7]' : '',
-        )}>
+        style={[
+          tailwind.style(
+            'flex-1 ml-3 flex-row justify-between py-[11px] pr-3',
+            index !== assigneeTypeList.length - 1 ? 'border-b-[1px]' : '',
+          ),
+          index !== assigneeTypeList.length - 1 ? { borderBottomColor: colors.border } : {},
+        ]}>
         <Animated.Text
-          style={tailwind.style(
-            'text-base text-[#16273D] font-inter-420-20 leading-[21px] tracking-[0.16px] capitalize',
-          )}>
+          style={[
+            tailwind.style('text-base font-inter-420-20 leading-[21px] tracking-[0.16px] capitalize'),
+            { color: colors.textPrimary },
+          ]}>
           {i18n.t(`CONVERSATION.FILTERS.ASSIGNEE_TYPE.OPTIONS.${value.toUpperCase()}`)}
         </Animated.Text>
         {filters.assignee_type === value ? <Icon icon={<TickIcon />} size={20} /> : null}

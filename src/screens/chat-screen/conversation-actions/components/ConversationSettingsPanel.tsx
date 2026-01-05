@@ -7,6 +7,7 @@ import { Agent, ConversationPriority, Team } from '@/types';
 import AssigneePanel from './AssigneePanel';
 import TeamPanel from './TeamPanel';
 import PriorityPanel from './PriorityPanel';
+import { useSaraColors } from '@/hooks/useSaraColors';
 
 type ConversationSettingsPanelProps = {
   priority: ConversationPriority;
@@ -25,8 +26,10 @@ export const ConversationSettingsPanel = ({
   onChangeTeamAssignee,
   onChangePriority,
 }: ConversationSettingsPanelProps) => {
+  const colors = useSaraColors();
+
   return (
-    <Animated.View style={[tailwind.style('rounded-[13px] mx-4 bg-white'), styles.listShadow]}>
+    <Animated.View style={[tailwind.style('rounded-[13px] mx-4'), { backgroundColor: colors.backgroundLight }, styles.listShadow]}>
       <AssigneePanel assignee={assignee} onPress={onChangeAssignee} />
       <TeamPanel team={team} onPress={onChangeTeamAssignee} />
       <PriorityPanel priority={priority} onPress={onChangePriority} />
@@ -46,7 +49,7 @@ const styles = StyleSheet.create({
       },
       android: {
         elevation: 4,
-        backgroundColor: 'white',
+        // backgroundColor is now set dynamically via colors.backgroundLight
       },
     }) || {}, // Add fallback empty object
 });

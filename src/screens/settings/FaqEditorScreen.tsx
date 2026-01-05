@@ -18,7 +18,6 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 
 import i18n from 'i18n';
-import { tailwind } from '@/theme';
 import { Icon } from '@/components-next/common/icon';
 import { AddIcon, ChevronLeft, CloseIcon, WarningIcon } from '@/svg-icons';
 import { useAppDispatch, useAppSelector } from '@/hooks';
@@ -28,12 +27,9 @@ import {
   selectAgentSettingsIsUpdating,
 } from '@/store/agent-settings';
 import type { SettingsStackParamList } from '@/navigation/stack/SettingsStack';
-import {
-  FaqEntry,
-  parseFaqsFromInstructions,
-  upsertFaqInstructionsBlock,
-} from '@/utils/faq';
+import { FaqEntry, parseFaqsFromInstructions, upsertFaqInstructionsBlock } from '@/utils/faq';
 import { showToast } from '@/utils/toastUtils';
+import { useSaraColors, useIsDarkMode, type SaraColors } from '@/hooks/useSaraColors';
 
 type Navigation = NativeStackNavigationProp<SettingsStackParamList, 'FaqEditorScreen'>;
 type EditorRoute = RouteProp<SettingsStackParamList, 'FaqEditorScreen'>;
@@ -43,24 +39,18 @@ type FormErrors = {
   answer?: string;
 };
 
-// Resolve Sara theme colors from tailwind config
-const SARA_BACKGROUND = tailwind.color('sara-background') ?? '#F8F5F3';
-const SARA_BACKGROUND_LIGHT = tailwind.color('sara-background-light') ?? '#FFFFFF';
-const SARA_ACCENT = tailwind.color('sara-accent') ?? '#4CB6AC';
-const SARA_TEXT_PRIMARY = tailwind.color('sara-text-primary') ?? '#16273D';
-const SARA_TEXT_SECONDARY = tailwind.color('sara-text-secondary') ?? '#4B5D6E';
-const SARA_BORDER = tailwind.color('sara-border') ?? '#E6E2DD';
-const SARA_CHIP = tailwind.color('sara-chip') ?? '#F5F3F0';
-const SARA_ACCENT_LIGHT = tailwind.color('sara-accent-light') ?? '#E6F5F4';
+// Static colors that don't change between themes (semantic colors for warnings, errors, etc.)
+const ERROR_COLOR = '#B54747';
+const WHITE = '#FFFFFF';
 
-// Additional colors used in this screen (not in core Sara palette)
-const ERROR_COLOR = tailwind.color('red-800') ?? '#B54747';
-const ESCALATION_BG = tailwind.color('amber-50') ?? '#FFF8F0';
-const DISABLED_COLOR = tailwind.color('sand-600') ?? '#C9C3BA';
-const DELETE_BG = tailwind.color('red-50') ?? '#FDEBEB';
-const DELETE_BG_PRESSED = tailwind.color('red-100') ?? '#F8D7D7';
-const DELETE_BORDER = tailwind.color('red-300') ?? '#F3B0B0';
-const WHITE = tailwind.color('white') ?? '#FFFFFF';
+// Theme-aware UI colors helper
+const getUiColors = (isDark: boolean, colors: SaraColors) => ({
+  escalationBg: isDark ? '#3D2E1A' : '#FFF8F0',
+  disabledColor: isDark ? '#555555' : '#C9C3BA',
+  deleteBg: isDark ? '#3D1A1A' : '#FDEBEB',
+  deleteBgPressed: isDark ? '#4D2020' : '#F8D7D7',
+  deleteBorder: isDark ? '#5A2020' : '#F3B0B0',
+});
 
 const buildFormState = (faq?: FaqEntry | null) => ({
   id: faq?.id ?? '',
@@ -72,9 +62,21 @@ export const FaqEditorScreen = (): JSX.Element => {
   const navigation = useNavigation<Navigation>();
   const route = useRoute<EditorRoute>();
   const dispatch = useAppDispatch();
+  const colors = useSaraColors();
+  const isDark = useIsDarkMode();
+  const uiColors = getUiColors(isDark, colors);
 
   const agentSettings = useAppSelector(selectAgentSettingsData);
   const isUpdating = useAppSelector(selectAgentSettingsIsUpdating);
+
+  // Memoize switch track colors based on theme
+  const switchTrackColors = useMemo(
+    () => ({
+      true: colors.accent,
+      false: uiColors.disabledColor,
+    }),
+    [colors.accent, uiColors.disabledColor],
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -91,12 +93,14 @@ export const FaqEditorScreen = (): JSX.Element => {
 
   const editingFaqId = route.params?.faqId ?? null;
   const editingFaq = useMemo(
-    () => (editingFaqId ? faqs.find(faq => faq.id === editingFaqId) ?? null : null),
+    () => (editingFaqId ? (faqs.find(faq => faq.id === editingFaqId) ?? null) : null),
     [editingFaqId, faqs],
   );
 
   const [formData, setFormData] = useState(() => buildFormState(editingFaq));
-  const [escalationEnabled, setEscalationEnabled] = useState(Boolean(editingFaq?.escalation?.enabled));
+  const [escalationEnabled, setEscalationEnabled] = useState(
+    Boolean(editingFaq?.escalation?.enabled),
+  );
   const [triggerPhrases, setTriggerPhrases] = useState<string[]>(
     editingFaq?.escalation?.trigger_phrases ?? [],
   );
@@ -117,12 +121,16 @@ export const FaqEditorScreen = (): JSX.Element => {
       return;
     }
     if (editingFaqId && !editingFaq && faqs.length) {
-      Alert.alert(i18n.t('FAQ_EDITOR.MISSING_ENTRY_TITLE'), i18n.t('FAQ_EDITOR.MISSING_ENTRY_BODY'), [
-        {
-          text: i18n.t('FAQ_EDITOR.DIALOG_OK'),
-          onPress: () => navigation.goBack(),
-        },
-      ]);
+      Alert.alert(
+        i18n.t('FAQ_EDITOR.MISSING_ENTRY_TITLE'),
+        i18n.t('FAQ_EDITOR.MISSING_ENTRY_BODY'),
+        [
+          {
+            text: i18n.t('FAQ_EDITOR.DIALOG_OK'),
+            onPress: () => navigation.goBack(),
+          },
+        ],
+      );
     }
   }, [editingFaq, editingFaqId, faqs.length, navigation, pendingDeletion]);
 
@@ -257,33 +265,30 @@ export const FaqEditorScreen = (): JSX.Element => {
       setPendingDeletion(false);
       Alert.alert(i18n.t('FAQ_EDITOR.DELETE_ERROR_TITLE'), i18n.t('FAQ_EDITOR.DELETE_ERROR'));
     }
-  }, [
-    agentSettings?.instructions,
-    dispatch,
-    editingFaqId,
-    faqs,
-    navigation,
-    pendingDeletion,
-  ]);
+  }, [agentSettings?.instructions, dispatch, editingFaqId, faqs, navigation, pendingDeletion]);
 
   const handleDelete = useCallback(() => {
     if (!editingFaqId || pendingDeletion) {
       navigation.goBack();
       return;
     }
-    Alert.alert(i18n.t('FAQ_EDITOR.DELETE_CONFIRM_TITLE'), i18n.t('FAQ_EDITOR.DELETE_CONFIRM_BODY'), [
-      {
-        text: i18n.t('FAQ_EDITOR.DELETE_CONFIRM_CANCEL'),
-        style: 'cancel',
-      },
-      {
-        text: i18n.t('FAQ_EDITOR.DELETE_CONFIRM_OK'),
-        style: 'destructive',
-        onPress: () => {
-          void deleteFaq();
+    Alert.alert(
+      i18n.t('FAQ_EDITOR.DELETE_CONFIRM_TITLE'),
+      i18n.t('FAQ_EDITOR.DELETE_CONFIRM_BODY'),
+      [
+        {
+          text: i18n.t('FAQ_EDITOR.DELETE_CONFIRM_CANCEL'),
+          style: 'cancel',
         },
-      },
-    ]);
+        {
+          text: i18n.t('FAQ_EDITOR.DELETE_CONFIRM_OK'),
+          style: 'destructive',
+          onPress: () => {
+            void deleteFaq();
+          },
+        },
+      ],
+    );
   }, [deleteFaq, editingFaqId, navigation, pendingDeletion]);
 
   const headerTitle = editingFaqId
@@ -293,24 +298,32 @@ export const FaqEditorScreen = (): JSX.Element => {
   const disableActions = isUpdating || pendingDeletion;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor={SARA_BACKGROUND} />
-      <View style={styles.header}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+      <StatusBar
+        barStyle={isDark ? 'light-content' : 'dark-content'}
+        backgroundColor={colors.background}
+      />
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <Pressable
           onPress={handleGoBack}
-          style={({ pressed }) => [styles.backButton, pressed && styles.backButtonPressed]}
+          style={({ pressed }) => [
+            styles.backButton,
+            { backgroundColor: colors.chip },
+            pressed && styles.backButtonPressed,
+          ]}
           accessibilityRole="button"
           accessibilityLabel={i18n.t('FAQ_EDITOR.BACK_BUTTON')}
           hitSlop={8}>
-          <Icon icon={<ChevronLeft />} size={20} />
+          <Icon icon={<ChevronLeft stroke={colors.textPrimary} />} size={20} />
         </Pressable>
-        <Text style={styles.headerTitle}>{headerTitle}</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{headerTitle}</Text>
         <Pressable
           onPress={handleSave}
           disabled={disableActions}
           style={({ pressed }) => [
             styles.saveButton,
-            disableActions ? styles.saveButtonDisabled : pressed && styles.saveButtonPressed,
+            { backgroundColor: disableActions ? uiColors.disabledColor : colors.accent },
+            pressed && !disableActions && styles.saveButtonPressed,
           ]}
           accessibilityRole="button"
           accessibilityState={{ disabled: disableActions }}
@@ -329,7 +342,9 @@ export const FaqEditorScreen = (): JSX.Element => {
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled">
           <View style={styles.fieldGroup}>
-            <Text style={styles.label}>{i18n.t('FAQ_EDITOR.QUESTION_LABEL')}</Text>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>
+              {i18n.t('FAQ_EDITOR.QUESTION_LABEL')}
+            </Text>
             <TextInput
               value={formData.question}
               onChangeText={value => {
@@ -339,15 +354,24 @@ export const FaqEditorScreen = (): JSX.Element => {
                 }
               }}
               placeholder={i18n.t('FAQ_EDITOR.QUESTION_PLACEHOLDER')}
-              placeholderTextColor={SARA_TEXT_SECONDARY}
-              style={[styles.input, errors.question && styles.inputError]}
+              placeholderTextColor={colors.textMeta}
+              style={[
+                styles.input,
+                {
+                  backgroundColor: colors.backgroundLight,
+                  borderColor: errors.question ? ERROR_COLOR : colors.border,
+                  color: colors.textPrimary,
+                },
+              ]}
               multiline
             />
             {errors.question ? <Text style={styles.errorText}>{errors.question}</Text> : null}
           </View>
 
           <View style={styles.fieldGroup}>
-            <Text style={styles.label}>{i18n.t('FAQ_EDITOR.ANSWER_LABEL')}</Text>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>
+              {i18n.t('FAQ_EDITOR.ANSWER_LABEL')}
+            </Text>
             <TextInput
               value={formData.answer}
               onChangeText={value => {
@@ -357,18 +381,37 @@ export const FaqEditorScreen = (): JSX.Element => {
                 }
               }}
               placeholder={i18n.t('FAQ_EDITOR.ANSWER_PLACEHOLDER')}
-              placeholderTextColor={SARA_TEXT_SECONDARY}
-              style={[styles.input, styles.textarea, errors.answer && styles.inputError]}
+              placeholderTextColor={colors.textMeta}
+              style={[
+                styles.input,
+                styles.textarea,
+                {
+                  backgroundColor: colors.backgroundLight,
+                  borderColor: errors.answer ? ERROR_COLOR : colors.border,
+                  color: colors.textPrimary,
+                },
+              ]}
               multiline
             />
-            <Text style={styles.helperText}>{i18n.t('FAQ_EDITOR.ANSWER_HINT')}</Text>
+            <Text style={[styles.helperText, { color: colors.textSecondary }]}>
+              {i18n.t('FAQ_EDITOR.ANSWER_HINT')}
+            </Text>
             {errors.answer ? <Text style={styles.errorText}>{errors.answer}</Text> : null}
           </View>
 
           <View style={styles.previewBlock}>
-            <Text style={styles.previewLabel}>{i18n.t('FAQ_EDITOR.PREVIEW_LABEL')}</Text>
-            <View style={styles.previewBubble}>
-              <Text style={styles.previewText}>
+            <Text style={[styles.previewLabel, { color: colors.textSecondary }]}>
+              {i18n.t('FAQ_EDITOR.PREVIEW_LABEL')}
+            </Text>
+            <View
+              style={[
+                styles.previewBubble,
+                {
+                  backgroundColor: colors.backgroundLight,
+                  borderColor: colors.border,
+                },
+              ]}>
+              <Text style={[styles.previewText, { color: colors.textPrimary }]}>
                 {formData.answer.trim().length
                   ? formData.answer
                   : i18n.t('FAQ_EDITOR.PREVIEW_EMPTY')}
@@ -376,15 +419,24 @@ export const FaqEditorScreen = (): JSX.Element => {
             </View>
           </View>
 
-          <View style={styles.escalationContainer}>
+          <View
+            style={[
+              styles.escalationContainer,
+              {
+                borderColor: colors.border,
+                backgroundColor: uiColors.escalationBg,
+              },
+            ]}>
             <View style={styles.escalationHeader}>
               <View style={styles.escalationCopy}>
                 <View style={styles.warningIconWrapper}>
-                  <Icon icon={<WarningIcon stroke={SARA_ACCENT} />} size={20} />
+                  <Icon icon={<WarningIcon stroke={colors.accent} />} size={20} />
                 </View>
                 <View>
-                  <Text style={styles.escalationTitle}>{i18n.t('FAQ_EDITOR.ESCALATION_TITLE')}</Text>
-                  <Text style={styles.escalationSubtitle}>
+                  <Text style={[styles.escalationTitle, { color: colors.textPrimary }]}>
+                    {i18n.t('FAQ_EDITOR.ESCALATION_TITLE')}
+                  </Text>
+                  <Text style={[styles.escalationSubtitle, { color: colors.textSecondary }]}>
                     {i18n.t('FAQ_EDITOR.ESCALATION_SUBTITLE')}
                   </Text>
                 </View>
@@ -394,7 +446,7 @@ export const FaqEditorScreen = (): JSX.Element => {
                 onValueChange={value => {
                   setEscalationEnabled(value);
                 }}
-                trackColor={{ true: SARA_ACCENT, false: DISABLED_COLOR }}
+                trackColor={switchTrackColors}
                 thumbColor={WHITE}
               />
             </View>
@@ -402,14 +454,24 @@ export const FaqEditorScreen = (): JSX.Element => {
             {escalationEnabled ? (
               <View style={styles.escalationBody}>
                 <View style={styles.fieldGroup}>
-                  <Text style={styles.label}>{i18n.t('FAQ_EDITOR.TRIGGERS_LABEL')}</Text>
+                  <Text style={[styles.label, { color: colors.textSecondary }]}>
+                    {i18n.t('FAQ_EDITOR.TRIGGERS_LABEL')}
+                  </Text>
                   <View style={styles.triggerRow}>
                     <TextInput
                       value={newTrigger}
                       onChangeText={setNewTrigger}
                       placeholder={i18n.t('FAQ_EDITOR.TRIGGER_PLACEHOLDER')}
-                      placeholderTextColor={SARA_TEXT_SECONDARY}
-                      style={[styles.input, styles.flex]}
+                      placeholderTextColor={colors.textMeta}
+                      style={[
+                        styles.input,
+                        styles.flex,
+                        {
+                          backgroundColor: colors.backgroundLight,
+                          borderColor: colors.border,
+                          color: colors.textPrimary,
+                        },
+                      ]}
                       onSubmitEditing={handleAddTrigger}
                       returnKeyType="done"
                     />
@@ -417,6 +479,7 @@ export const FaqEditorScreen = (): JSX.Element => {
                       onPress={handleAddTrigger}
                       style={({ pressed }) => [
                         styles.addTriggerButton,
+                        { backgroundColor: colors.accent },
                         pressed && styles.addTriggerButtonPressed,
                       ]}
                       accessibilityRole="button"
@@ -427,8 +490,12 @@ export const FaqEditorScreen = (): JSX.Element => {
                   {triggerPhrases.length ? (
                     <View style={styles.triggerChips}>
                       {triggerPhrases.map(phrase => (
-                        <View key={phrase} style={styles.triggerChip}>
-                          <Text style={styles.triggerChipText}>{phrase}</Text>
+                        <View
+                          key={phrase}
+                          style={[styles.triggerChip, { backgroundColor: colors.accentLight }]}>
+                          <Text style={[styles.triggerChipText, { color: colors.accent }]}>
+                            {phrase}
+                          </Text>
                           <Pressable
                             onPress={() => handleRemoveTrigger(phrase)}
                             accessibilityRole="button"
@@ -436,7 +503,7 @@ export const FaqEditorScreen = (): JSX.Element => {
                               phrase,
                             })}>
                             <View style={styles.triggerRemoveIcon}>
-                              <Icon icon={<CloseIcon stroke={SARA_TEXT_SECONDARY} />} size={14} />
+                              <Icon icon={<CloseIcon stroke={colors.textSecondary} />} size={14} />
                             </View>
                           </Pressable>
                         </View>
@@ -454,8 +521,12 @@ export const FaqEditorScreen = (): JSX.Element => {
               disabled={disableActions}
               style={({ pressed }) => [
                 styles.deleteButton,
+                {
+                  backgroundColor: uiColors.deleteBg,
+                  borderColor: uiColors.deleteBorder,
+                },
                 disableActions && styles.deleteButtonDisabled,
-                pressed && !disableActions && styles.deleteButtonPressed,
+                pressed && !disableActions && { backgroundColor: uiColors.deleteBgPressed },
               ]}
               accessibilityRole="button"
               accessibilityState={{ disabled: disableActions }}
@@ -472,7 +543,6 @@ export const FaqEditorScreen = (): JSX.Element => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: SARA_BACKGROUND,
   },
   flex: {
     flex: 1,
@@ -483,13 +553,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: SARA_BORDER,
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: SARA_CHIP,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -501,23 +569,17 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 18,
     fontWeight: '600',
-    color: SARA_TEXT_PRIMARY,
   },
   saveButton: {
     minWidth: 72,
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 20,
-    backgroundColor: SARA_ACCENT,
     alignItems: 'center',
     justifyContent: 'center',
   },
   saveButtonPressed: {
-    backgroundColor: SARA_ACCENT,
     opacity: 0.85,
-  },
-  saveButtonDisabled: {
-    backgroundColor: DISABLED_COLOR,
   },
   saveButtonText: {
     color: WHITE,
@@ -534,20 +596,13 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    color: SARA_TEXT_SECONDARY,
   },
   input: {
-    backgroundColor: SARA_BACKGROUND_LIGHT,
     borderWidth: 1,
-    borderColor: SARA_BORDER,
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    color: SARA_TEXT_PRIMARY,
     fontSize: 14,
-  },
-  inputError: {
-    borderColor: ERROR_COLOR,
   },
   textarea: {
     minHeight: 96,
@@ -555,7 +610,6 @@ const styles = StyleSheet.create({
   },
   helperText: {
     fontSize: 12,
-    color: SARA_TEXT_SECONDARY,
   },
   errorText: {
     fontSize: 12,
@@ -566,25 +620,19 @@ const styles = StyleSheet.create({
   },
   previewLabel: {
     fontSize: 13,
-    color: SARA_TEXT_SECONDARY,
   },
   previewBubble: {
     borderWidth: 1,
-    borderColor: SARA_BORDER,
     borderRadius: 16,
     padding: 14,
-    backgroundColor: SARA_BACKGROUND_LIGHT,
   },
   previewText: {
-    color: SARA_TEXT_PRIMARY,
     fontSize: 14,
     lineHeight: 20,
   },
   escalationContainer: {
     borderWidth: 1,
-    borderColor: SARA_BORDER,
     borderRadius: 16,
-    backgroundColor: ESCALATION_BG,
     padding: 16,
     gap: 12,
   },
@@ -606,11 +654,9 @@ const styles = StyleSheet.create({
   escalationTitle: {
     fontSize: 15,
     fontWeight: '600',
-    color: SARA_TEXT_PRIMARY,
   },
   escalationSubtitle: {
     fontSize: 12,
-    color: SARA_TEXT_SECONDARY,
   },
   escalationBody: {
     gap: 14,
@@ -620,12 +666,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: DELETE_BORDER,
-    backgroundColor: DELETE_BG,
     alignItems: 'center',
-  },
-  deleteButtonPressed: {
-    backgroundColor: DELETE_BG_PRESSED,
   },
   deleteButtonDisabled: {
     opacity: 0.6,
@@ -644,12 +685,10 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: SARA_ACCENT,
     alignItems: 'center',
     justifyContent: 'center',
   },
   addTriggerButtonPressed: {
-    backgroundColor: SARA_ACCENT,
     opacity: 0.85,
   },
   triggerChips: {
@@ -661,13 +700,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: SARA_ACCENT_LIGHT,
     borderRadius: 999,
     paddingHorizontal: 12,
     paddingVertical: 6,
   },
   triggerChipText: {
-    color: SARA_ACCENT,
     fontSize: 13,
   },
   triggerRemoveIcon: {

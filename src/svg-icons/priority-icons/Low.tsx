@@ -6,7 +6,11 @@ interface LowIconProps {
   inactiveColor?: string;
 }
 
-export const LowIcon = ({ size = 20, activeColor = '#FFC53D', inactiveColor = '#DDDDE3' }: LowIconProps) => {
+export const LowIcon = ({
+  size = 20,
+  activeColor = '#FFC53D',
+  inactiveColor = '#DDDDE3',
+}: LowIconProps) => {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Mask

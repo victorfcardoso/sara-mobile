@@ -5,19 +5,17 @@ import { openURL } from '@/utils/urlUtils';
 
 import { tailwind } from '@/theme';
 import { MESSAGE_VARIANTS } from '@/constants';
+import { useSaraColors } from '@/hooks/useSaraColors';
 
 type MarkdownBubbleProps = {
   messageContent: string;
   variant: string;
 };
 
-const SARA_COLORS = {
-  incomingText: '#16273D',
-  outgoingText: '#FFFFFF',
-};
-
 export const MarkdownBubble = (props: MarkdownBubbleProps) => {
   const { messageContent, variant } = props;
+  const colors = useSaraColors();
+
   const handleURL = (url: string) => {
     openURL({ URL: url });
     return true;
@@ -28,9 +26,9 @@ export const MarkdownBubble = (props: MarkdownBubbleProps) => {
       return tailwind.color('text-amber-950');
     }
     if (variant === MESSAGE_VARIANTS.AGENT || variant === MESSAGE_VARIANTS.ERROR) {
-      return SARA_COLORS.outgoingText;
+      return '#FFFFFF'; // Always white for outgoing messages
     }
-    return SARA_COLORS.incomingText;
+    return colors.textPrimary;
   })();
 
   const fontFamily = variant === MESSAGE_VARIANTS.PRIVATE ? 'Inter-500-20' : 'Inter-400-20';

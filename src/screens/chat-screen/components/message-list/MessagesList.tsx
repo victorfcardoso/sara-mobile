@@ -13,6 +13,7 @@ import { Message } from '@/types';
 import { MessageComponent } from '../message-item/Message';
 // import { MessageItemContainer } from '../message-item/MessageItemContainer';
 import { useRefsContext } from '@/context';
+import { useSaraColors } from '@/hooks/useSaraColors';
 
 export type FlashListRenderProps = {
   item: { date: string } | Message;
@@ -21,20 +22,17 @@ export type FlashListRenderProps = {
 
 const AnimatedFlashlist = Animated.createAnimatedComponent(FlashList<Message | { date: string }>);
 
-type DateSectionProps = { item: { date: string } };
+type DateSectionProps = { item: { date: string }; colors: ReturnType<typeof useSaraColors> };
 
-const DateSection = ({ item }: DateSectionProps) => {
+const DateSection = ({ item, colors }: DateSectionProps) => {
   return (
     <Animated.View style={tailwind.style('flex flex-row justify-center items-center py-4')}>
       <Animated.View
-        style={[
-          tailwind.style('rounded-lg py-1 px-[7px]'),
-          { backgroundColor: '#E5F3F0' },
-        ]}>
+        style={[tailwind.style('rounded-lg py-1 px-[7px]'), { backgroundColor: colors.accentLight }]}>
         <Animated.Text
           style={[
             tailwind.style('text-cxs font-inter-420-20 tracking-[0.32px] leading-[15px]'),
-            { color: '#4B5D6E' },
+            { color: colors.textSecondary },
           ]}>
           {item.date}
         </Animated.Text>
@@ -62,13 +60,14 @@ export const MessagesList = ({
 }: MessagesListPresentationProps) => {
   const { progress, height } = useAppKeyboardAnimation();
   const { messageListRef } = useRefsContext();
+  const colors = useSaraColors();
   const typedMessageListRef = messageListRef as React.RefObject<
     FlashList<Message | { date: string }>
   >;
 
   const handleRender = ({ item, index }: { item: Message | { date: string }; index: number }) => {
     if ('date' in item) {
-      return <DateSection item={item} />;
+      return <DateSection item={item} colors={colors} />;
     }
 
     return (

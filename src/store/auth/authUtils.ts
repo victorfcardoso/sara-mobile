@@ -12,7 +12,7 @@ export const handleApiError = (error: unknown, customErrorMsg?: string): ApiErro
     const collectedErrors: string[] = [];
 
     if (Array.isArray(data.errors) && data.errors.length) {
-      collectedErrors.push(...data.errors.filter(Boolean) as string[]);
+      collectedErrors.push(...(data.errors.filter(Boolean) as string[]));
     }
 
     if (typeof data.message === 'string' && data.message.trim()) {
@@ -30,9 +30,9 @@ export const handleApiError = (error: unknown, customErrorMsg?: string): ApiErro
     }
   }
 
-  const fallback = customErrorMsg ?? (
-    error instanceof Error && error.message ? error.message : I18n.t('ERRORS.COMMON_ERROR')
-  );
+  const fallback =
+    customErrorMsg ??
+    (error instanceof Error && error.message ? error.message : I18n.t('ERRORS.COMMON_ERROR'));
   showToast({ message: fallback });
   return { success: false, errors: [fallback], message: fallback };
 };

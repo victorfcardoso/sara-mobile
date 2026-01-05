@@ -188,9 +188,7 @@ export const InCardContext: Story = {
         elevation: 3,
         padding: 16,
       }}>
-      <Text style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 8 }}>
-        Conversation Labels
-      </Text>
+      <Text style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 8 }}>Conversation Labels</Text>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginLeft: -12, marginTop: -12 }}>
         {sampleLabels.slice(0, 5).map((label, index) => (
           <LabelItem key={label.id} item={label} index={index} />

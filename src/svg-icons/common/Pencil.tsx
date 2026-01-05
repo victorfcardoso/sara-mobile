@@ -3,10 +3,7 @@ import Svg, { Path, Rect } from 'react-native-svg';
 
 import { IconProps } from '../../types';
 
-export const PencilIcon = ({
-  stroke = '#4B5D6E',
-  strokeWidth = 1.5,
-}: IconProps): JSX.Element => {
+export const PencilIcon = ({ stroke = '#4B5D6E', strokeWidth = 1.5 }: IconProps): JSX.Element => {
   return (
     <Svg width="100%" height="100%" viewBox="0 0 24 24" fill="none">
       <Path

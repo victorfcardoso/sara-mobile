@@ -1,6 +1,6 @@
 /**
  * Color Migration Codemod
- * 
+ *
  * This provides patterns for migrating different color contexts:
  * - Tailwind classes: bg-[#hex] -> bg-token
  * - SVG props: stroke="#hex" -> stroke={tailwind.color("token")}

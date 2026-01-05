@@ -3,6 +3,7 @@ import { Text } from 'react-native';
 import { tailwind } from '@/theme';
 import { AnimatedNativeView, NativeView } from '@/components-next/native-components';
 import { Label } from '@/types';
+import { useSaraColors } from '@/hooks/useSaraColors';
 
 interface LabelState {
   result: Label[]; // List of labels that fit within the available width
@@ -18,13 +19,14 @@ interface LayoutChangeEvent {
   };
 }
 
-const LabelText = ({ labelText, labelColor }: { labelText: string; labelColor: string }) => (
+const LabelText = ({ labelText, labelColor, textColor }: { labelText: string; labelColor: string; textColor: string }) => (
   <NativeView style={tailwind.style('flex-row items-center py-[3px]')}>
-    <NativeView style={tailwind.style('h-[5px] w-[5px] rounded-full', `bg-[${labelColor}]`)} />
+    <NativeView style={[tailwind.style('h-[5px] w-[5px] rounded-full'), { backgroundColor: labelColor }]} />
     <Text
-      style={tailwind.style(
-        'pl-1 text-sm font-inter-420-20 leading-[16px] tracking-[0.32px] text-[#566273]',
-      )}>
+      style={[
+        tailwind.style('pl-1 text-sm font-inter-420-20 leading-[16px] tracking-[0.32px]'),
+        { color: textColor },
+      ]}>
       {labelText}
     </Text>
   </NativeView>
@@ -33,6 +35,7 @@ const LabelText = ({ labelText, labelColor }: { labelText: string; labelColor: s
 export const LabelIndicator = ({ labels, allLabels }: { labels: string[]; allLabels: Label[] }) => {
   // Store the container width
   const [containerWidth, setContainerWidth] = useState<number | null>(null);
+  const colors = useSaraColors();
 
   const activeLabels = React.useMemo(() => {
     if (!allLabels || !labels || containerWidth === null) return [];
@@ -72,7 +75,7 @@ export const LabelIndicator = ({ labels, allLabels }: { labels: string[]; allLab
       <NativeView style={tailwind.style('flex-row items-center overflow-hidden')}>
         {activeLabels.map((label, index) => (
           <NativeView key={index} style={tailwind.style(index !== 0 ? 'pl-1.5' : '')}>
-            <LabelText labelText={label.title} labelColor={label.color} />
+            <LabelText labelText={label.title} labelColor={label.color} textColor={colors.textMeta} />
           </NativeView>
         ))}
       </NativeView>

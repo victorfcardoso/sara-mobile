@@ -13,6 +13,16 @@ import { BottomSheetBackdrop } from './BottomSheetBackdrop';
 import { Button, LanguageList } from '@/components-next';
 import { tailwind } from '@/theme';
 import { useRefsContext, RefsProvider } from '@/context/RefsContext';
+import { useSaraColors } from '@/hooks/useSaraColors';
+
+const StoryContainer = ({ children }: { children: React.ReactNode }) => {
+  const colors = useSaraColors();
+  return (
+    <View style={[tailwind.style('flex-1 p-4'), { backgroundColor: colors.background }]}>
+      {children}
+    </View>
+  );
+};
 
 export default {
   title: 'Bottom Sheet',
@@ -23,9 +33,9 @@ export default {
     Story => (
       <BottomSheetModalProvider>
         <RefsProvider>
-          <View style={tailwind.style('flex-1 bg-white p-4')}>
+          <StoryContainer>
             <Story />
-          </View>
+          </StoryContainer>
         </RefsProvider>
       </BottomSheetModalProvider>
     ),
@@ -39,6 +49,7 @@ export const LanguageSelectorSheet = () => {
     damping: 30,
   });
 
+  const colors = useSaraColors();
   const { languagesModalSheetRef } = useRefsContext();
 
   const handleOpenPress = () => {
@@ -52,7 +63,11 @@ export const LanguageSelectorSheet = () => {
       <BottomSheetModal
         ref={languagesModalSheetRef}
         backdropComponent={props => <BottomSheetBackdrop {...props} />}
-        handleIndicatorStyle={tailwind.style('overflow-hidden bg-blackA-A6 w-8 h-1 rounded-[11px]')}
+        handleIndicatorStyle={[
+          tailwind.style('overflow-hidden w-8 h-1 rounded-[11px]'),
+          { backgroundColor: colors.border },
+        ]}
+        backgroundStyle={{ backgroundColor: colors.backgroundLight }}
         detached
         enablePanDownToClose
         animationConfigs={animationConfigs}

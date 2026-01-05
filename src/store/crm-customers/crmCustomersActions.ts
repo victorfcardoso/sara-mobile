@@ -37,41 +37,43 @@ const buildPagination = (
 };
 
 export const crmCustomersActions = {
-  fetchCustomers: createAsyncThunk<FetchCrmCustomersResult, FetchCrmCustomersArgs | undefined, { rejectValue: string; state: RootState }>(
-    'crmCustomers/fetchCustomers',
-    async (args, { getState, rejectWithValue }) => {
-      try {
-        const state = getState();
-        const sliceState = state.crmCustomers;
+  fetchCustomers: createAsyncThunk<
+    FetchCrmCustomersResult,
+    FetchCrmCustomersArgs | undefined,
+    { rejectValue: string; state: RootState }
+  >('crmCustomers/fetchCustomers', async (args, { getState, rejectWithValue }) => {
+    try {
+      const state = getState();
+      const sliceState = state.crmCustomers;
 
-        const previousSearch = sliceState?.searchQuery ?? '';
-        const nextSearch = deriveNextSearch(previousSearch, args?.search);
-        const searchChanged = nextSearch !== previousSearch;
+      const previousSearch = sliceState?.searchQuery ?? '';
+      const nextSearch = deriveNextSearch(previousSearch, args?.search);
+      const searchChanged = nextSearch !== previousSearch;
 
-        const pageSize = args?.limit ?? sliceState?.pagination?.pageSize ?? CrmCustomersService.DEFAULT_PAGE_SIZE;
-        const shouldReset = Boolean(args?.refresh || searchChanged || !sliceState?.ids?.length);
+      const pageSize =
+        args?.limit ?? sliceState?.pagination?.pageSize ?? CrmCustomersService.DEFAULT_PAGE_SIZE;
+      const shouldReset = Boolean(args?.refresh || searchChanged || !sliceState?.ids?.length);
 
-        const baseOffset = shouldReset ? 0 : (sliceState?.pagination?.end ?? -1) + 1;
-        const offset = args?.append && !shouldReset ? Math.max(baseOffset, 0) : 0;
+      const baseOffset = shouldReset ? 0 : (sliceState?.pagination?.end ?? -1) + 1;
+      const offset = args?.append && !shouldReset ? Math.max(baseOffset, 0) : 0;
 
-        const apiResult = await CrmCustomersService.fetchCustomers({
-          offset,
-          limit: pageSize,
-          search: nextSearch.length > 0 ? nextSearch : undefined,
-        });
+      const apiResult = await CrmCustomersService.fetchCustomers({
+        offset,
+        limit: pageSize,
+        search: nextSearch.length > 0 ? nextSearch : undefined,
+      });
 
-        const pagination = buildPagination(apiResult.start, apiResult.end, apiResult.total, pageSize);
+      const pagination = buildPagination(apiResult.start, apiResult.end, apiResult.total, pageSize);
 
-        return {
-          customers: apiResult.customers,
-          pagination,
-          search: nextSearch,
-          append: !shouldReset && Boolean(args?.append),
-        };
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to load contacts';
-        return rejectWithValue(message);
-      }
-    },
-  ),
+      return {
+        customers: apiResult.customers,
+        pagination,
+        search: nextSearch,
+        append: !shouldReset && Boolean(args?.append),
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to load contacts';
+      return rejectWithValue(message);
+    }
+  }),
 };
