@@ -51,6 +51,11 @@ export type NotificationPayload = {
   message?: string;
   pending_booking_id?: string;
   available_providers?: { id: string; name: string }[];
+  // Status fields for decision checking
+  appointment_status?: string;
+  status?: string;
+  agent_decision_at?: string;
+  doctor_decision_at?: string;
   booking_data?: {
     customer_name?: string;
     client_name?: string;
@@ -61,11 +66,15 @@ export type NotificationPayload = {
     reservation_id?: string;
     ea_appointment_id?: string;
     uid?: string;
+    status?: string;
+    agent_decision_at?: string;
+    doctor_decision_at?: string;
   };
 };
 
 export type Notification = {
   id: number;
+  notifUlid?: string; // Sara API notification ULID (for mark as read)
   notificationType: NotificationType;
   pushMessageTitle: string;
   primaryActorType: PrimaryActorType;

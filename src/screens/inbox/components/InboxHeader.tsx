@@ -63,7 +63,7 @@ export const InboxHeader = (props: InboxHeaderProps) => {
               ),
               { color: colors.textPrimary },
             ]}>
-            {i18n.t('NOTIFICATION.INBOX')}
+            {i18n.t('NOTIFICATION.HEADER_TITLE')}
           </Animated.Text>
           {unreadCount > 0 && (
             <View

@@ -42,6 +42,7 @@ export interface NotificationRemovedResponse {
 export interface MarkAsReadPayload {
   primaryActorId: number;
   primaryActorType: PrimaryActorType;
+  notifUlid?: string; // Sara API notification ULID (preferred for Sara notifications)
 }
 
 export type InboxSortTypes = 'asc' | 'desc';

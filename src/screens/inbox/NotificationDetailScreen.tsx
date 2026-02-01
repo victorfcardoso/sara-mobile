@@ -214,6 +214,7 @@ const NotificationDetailScreen = ({ route, navigation }: NotificationDetailScree
         notificationActions.markAsRead({
           primaryActorId: notification.primaryActorId,
           primaryActorType: notification.primaryActorType,
+          notifUlid: notification.notifUlid, // Pass Sara ULID for proper API routing
         }),
       );
     }

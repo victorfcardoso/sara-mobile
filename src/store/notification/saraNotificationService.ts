@@ -105,6 +105,7 @@ function transformSaraNotification(record: SaraNotificationRecord): Notification
     id:
       parseInt((record.id || record.notif_ulid || '').replace(/\D/g, '').slice(0, 10)) ||
       Date.now() + Math.random() * 1000,
+    notifUlid: record.notif_ulid || record.id, // Preserve ULID for Sara API mark as read
     notificationType: (record.type || 'notification') as Notification['notificationType'],
     pushMessageTitle: formatNotificationTitle(record.type, record.payload),
     primaryActorType: 'Conversation',
@@ -114,13 +115,13 @@ function transformSaraNotification(record: SaraNotificationRecord): Notification
     primaryActor: {
       id: 0,
       priority: null,
-      meta: { assignee: {} as any, sender: {} as any },
+      meta: { assignee: {} as Notification['user'], sender: {} as Notification['user'] },
       inboxId: 0,
       additionalAttributes: {},
       conversationId: 0,
     },
     readAt: record.read_at || '',
-    user: {} as any,
+    user: {} as Notification['user'],
     snoozedUntil: '',
     createdAt,
     lastActivityAt: createdAt,
@@ -130,6 +131,25 @@ function transformSaraNotification(record: SaraNotificationRecord): Notification
 }
 
 export class SaraNotificationService {
+  /**
+   * Mark a notification as read via Sara API
+   * @param notifUlid - The notification ULID
+   */
+  static async markAsRead(notifUlid: string): Promise<void> {
+    await saraApiService.patch(`/notifications/${notifUlid}`, { status: 'read' });
+  }
+
+  /**
+   * Mark all notifications as read via Sara API (fetch with visualized=true)
+   */
+  static async markAllAsRead(): Promise<void> {
+    // The Sara API uses ?visualized=true to mark notifications as read on fetch
+    // For bulk mark as read, we make a request with this parameter
+    await saraApiService.get(
+      '/notifications?visualized=true&range=[0,100]&filter={"status":"unread"}',
+    );
+  }
+
   static async getNotifications(
     page: number = 1,
     sortOrder: 'asc' | 'desc' = 'desc',

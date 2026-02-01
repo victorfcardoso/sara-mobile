@@ -31,10 +31,27 @@ export class NotificationService {
   }
 
   static async markAllAsRead(): Promise<void> {
-    await apiService.post(`notifications/read_all`);
+    // Try Sara API first, fall back to Chatwoot
+    try {
+      await SaraNotificationService.markAllAsRead();
+    } catch {
+      console.warn('[NotificationService] Sara markAllAsRead failed, falling back to Chatwoot');
+      await apiService.post(`notifications/read_all`);
+    }
   }
 
   static async markAsRead(payload: MarkAsReadPayload): Promise<void> {
+    // Use Sara API if notifUlid is available (Sara notifications)
+    if (payload.notifUlid) {
+      try {
+        await SaraNotificationService.markAsRead(payload.notifUlid);
+        return;
+      } catch {
+        console.warn('[NotificationService] Sara markAsRead failed, falling back to Chatwoot');
+      }
+    }
+
+    // Fallback to Chatwoot API
     await apiService.post(`notifications/read_all`, {
       primary_actor_id: payload.primaryActorId,
       primary_actor_type: payload.primaryActorType,

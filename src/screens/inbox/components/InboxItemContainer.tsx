@@ -69,13 +69,14 @@ export const InboxItemContainerComponent = (props: InboxItemContainerProps) => {
       const payload: MarkAsReadPayload = {
         primaryActorId: item.primaryActorId,
         primaryActorType: item.primaryActorType,
+        notifUlid: item.notifUlid, // Pass Sara ULID for proper API routing
       };
       await dispatch(notificationActions.markAsRead(payload));
       if (shouldShowToast) {
         showToast({ message: i18n.t('NOTIFICATION.ALERTS.MARK_AS_READ') });
       }
     },
-    [dispatch, item.primaryActorId, item.primaryActorType],
+    [dispatch, item.primaryActorId, item.primaryActorType, item.notifUlid],
   );
 
   const markNotificationAsUnread = async () => {
@@ -129,6 +130,7 @@ export const InboxItemContainerComponent = (props: InboxItemContainerProps) => {
         pushMessageTitle={pushTitle}
         notificationType={notificationType}
         payload={item.payload}
+        onActionComplete={() => markNotificationAsRead({ shouldShowToast: false })}
       />
     </Swipeable>
   );
