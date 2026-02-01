@@ -94,11 +94,11 @@ export class AuthService {
         }
         throw error;
       }
-      const agent = ensureAgent(mobileAuth);
+      let agent = ensureAgent(mobileAuth);
 
-      const installationUrl = agent.installation_url;
-      const websocketUrl = agent.websocket_url;
-      const apiAccessToken = agent.api_access_token?.trim() || null;
+      let installationUrl = agent.installation_url;
+      let websocketUrl = agent.websocket_url;
+      let apiAccessToken = agent.api_access_token?.trim() || null;
 
       if (__DEV__) {
         console.log('[AuthService] Chatwoot auth payload', {
@@ -118,7 +118,7 @@ export class AuthService {
         );
       }
 
-      const profileUrl = new URL('api/v1/profile', installationUrl).toString();
+      let profileUrl = new URL('api/v1/profile', installationUrl).toString();
       let profileResponse;
       try {
         profileResponse = await axios.get<ProfileResponse>(profileUrl, {
@@ -127,11 +127,40 @@ export class AuthService {
       } catch (error) {
         if (axios.isAxiosError(error) && error.response?.status === 401) {
           const host = new URL(profileUrl).host;
-          const suffix = apiAccessToken.slice(-4);
-          const debugMessage = __DEV__
-            ? `Chatwoot token rejected by ${host} (token ..${suffix}).`
-            : 'Chatwoot token rejected.';
-          throw new Error(debugMessage);
+          const suffix = apiAccessToken ? apiAccessToken.slice(-4) : '????';
+          try {
+            const refreshResponse = await axios.post<ChatwootMobileAuthResponse>(
+              mobileAuthUrl,
+              { agent_id: agent.agent_id, rotate_pat: true },
+              {
+                headers: {
+                  Authorization: `Bearer ${tokens.accessToken}`,
+                  'Content-Type': 'application/json',
+                },
+              },
+            );
+            mobileAuth = refreshResponse.data;
+            agent = ensureAgent(mobileAuth, agent.agent_id);
+            installationUrl = agent.installation_url;
+            websocketUrl = agent.websocket_url;
+            apiAccessToken = agent.api_access_token?.trim() || null;
+
+            if (!apiAccessToken) {
+              throw new Error(
+                'Chatwoot API access token not configured for this operator. Generate a personal token and try again.',
+              );
+            }
+
+            profileUrl = new URL('api/v1/profile', installationUrl).toString();
+            profileResponse = await axios.get<ProfileResponse>(profileUrl, {
+              headers: { api_access_token: apiAccessToken },
+            });
+          } catch (refreshError) {
+            const debugMessage = __DEV__
+              ? `Chatwoot token rejected by ${host} (token ..${suffix}).`
+              : 'Chatwoot token rejected.';
+            throw new Error(debugMessage);
+          }
         }
         throw error;
       }
@@ -220,11 +249,11 @@ export class AuthService {
       { agent_id: agentId },
     );
 
-    const mobileAuth = mobileAuthResponse.data;
-    const agent = ensureAgent(mobileAuth, agentId);
+    let mobileAuth = mobileAuthResponse.data;
+    let agent = ensureAgent(mobileAuth, agentId);
 
-    const installationUrl = agent.installation_url;
-      const apiAccessToken = agent.api_access_token?.trim() || null;
+    let installationUrl = agent.installation_url;
+    let apiAccessToken = agent.api_access_token?.trim() || null;
 
     if (!installationUrl) {
       throw new Error('Chatwoot installation URL missing for the selected agent.');
@@ -234,7 +263,7 @@ export class AuthService {
       throw new Error('Chatwoot API access token not configured for the selected agent.');
     }
 
-    const profileUrl = new URL('api/v1/profile', installationUrl).toString();
+    let profileUrl = new URL('api/v1/profile', installationUrl).toString();
     let profileResponse;
     try {
       profileResponse = await axios.get<ProfileResponse>(profileUrl, {
@@ -243,11 +272,31 @@ export class AuthService {
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 401) {
         const host = new URL(profileUrl).host;
-        const suffix = apiAccessToken.slice(-4);
-        const debugMessage = __DEV__
-          ? `Chatwoot token rejected by ${host} (token ..${suffix}).`
-          : 'Chatwoot token rejected.';
-        throw new Error(debugMessage);
+        const suffix = apiAccessToken ? apiAccessToken.slice(-4) : '????';
+        try {
+          const refreshResponse = await saraApiService.post<ChatwootMobileAuthResponse>(
+            '/chatwoot/mobile-auth',
+            { agent_id: agentId, rotate_pat: true },
+          );
+          mobileAuth = refreshResponse.data;
+          agent = ensureAgent(mobileAuth, agentId);
+          installationUrl = agent.installation_url;
+          apiAccessToken = agent.api_access_token?.trim() || null;
+
+          if (!apiAccessToken) {
+            throw new Error('Chatwoot API access token not configured for the selected agent.');
+          }
+
+          profileUrl = new URL('api/v1/profile', installationUrl).toString();
+          profileResponse = await axios.get<ProfileResponse>(profileUrl, {
+            headers: { api_access_token: apiAccessToken },
+          });
+        } catch (refreshError) {
+          const debugMessage = __DEV__
+            ? `Chatwoot token rejected by ${host} (token ..${suffix}).`
+            : 'Chatwoot token rejected.';
+          throw new Error(debugMessage);
+        }
       }
       throw error;
     }
