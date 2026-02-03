@@ -28,12 +28,23 @@ type InboxItemProps = {
 const getPayloadSummary = (
   payload?: NotificationPayload,
   pushMessageTitle?: string,
-): { title: string; subtitle?: string; providerName?: string; appointmentTime?: string } => {
+  notificationType?: NotificationType | string,
+): {
+  title: string;
+  subtitle?: string;
+  providerName?: string;
+  appointmentTime?: string;
+  context?: string;
+} => {
   if (!payload) {
     return { title: pushMessageTitle || 'New notification' };
   }
 
-  const bookingData = payload.booking_data || {};
+  const bookingData = (payload.booking_data ||
+    payload.booking ||
+    payload.appointment ||
+    payload.reservation ||
+    {}) as NotificationPayload['booking_data'];
 
   // Try to get customer/patient name
   const customerName =
@@ -41,7 +52,10 @@ const getPayloadSummary = (
     payload.client_name ||
     bookingData.customer_name ||
     bookingData.client_name ||
-    payload.patient_name;
+    payload.patient_name ||
+    payload.contact_name;
+
+  const customerPhone = payload.customer_phone || payload.phone || payload.customer_id;
 
   // Try to get service name
   const serviceName =
@@ -54,31 +68,106 @@ const getPayloadSummary = (
   const providerName = payload.provider_name || bookingData.provider_name;
 
   // Try to get appointment time
-  const appointmentTime = payload.slot_time || payload.start_time || bookingData.start_time;
+  const appointmentTime =
+    payload.slot_time || payload.start_time || payload.new_start_iso || bookingData.start_time;
 
-  if (customerName && serviceName) {
-    return {
-      title: String(customerName),
-      subtitle: String(serviceName),
-      providerName: providerName ? String(providerName) : undefined,
-      appointmentTime: appointmentTime ? formatAppointmentTime(appointmentTime) : undefined,
-    };
+  const contextValue =
+    payload.message ||
+    payload.description ||
+    payload.message_preview ||
+    payload.reason ||
+    payload.summary ||
+    payload.last_user_text;
+
+  const daysSinceLastRaw = payload.days_since_last;
+  const daysSinceLast =
+    typeof daysSinceLastRaw === 'number'
+      ? daysSinceLastRaw
+      : typeof daysSinceLastRaw === 'string'
+        ? parseInt(daysSinceLastRaw, 10)
+        : null;
+  const leadContext =
+    daysSinceLast && Number.isFinite(daysSinceLast)
+      ? `Inactive for ${daysSinceLast} days`
+      : undefined;
+
+  const contextParts: string[] = [];
+  if (contextValue && contextValue !== pushMessageTitle) {
+    contextParts.push(String(contextValue));
   }
+  if (leadContext && !contextParts.includes(leadContext)) {
+    contextParts.push(leadContext);
+  }
+  const context = contextParts.length > 0 ? contextParts.join(' \u2022 ') : undefined;
+
   if (customerName) {
+    const subtitleValue = serviceName
+      ? String(serviceName)
+      : customerPhone
+        ? String(customerPhone)
+        : providerName
+          ? String(providerName)
+          : undefined;
+    const secondaryProvider =
+      serviceName && providerName ? String(providerName) : undefined;
+    const dedupedContext =
+      context && context !== String(customerName) && context !== subtitleValue
+        ? context
+        : undefined;
     return {
       title: String(customerName),
-      providerName: providerName ? String(providerName) : undefined,
+      subtitle: subtitleValue,
+      providerName: secondaryProvider,
       appointmentTime: appointmentTime ? formatAppointmentTime(appointmentTime) : undefined,
+      context: dedupedContext,
     };
   }
   if (payload.title && payload.title !== pushMessageTitle) {
-    return { title: String(payload.title) };
+    const dedupedContext =
+      context && context !== String(payload.title) ? context : undefined;
+    return {
+      title: String(payload.title),
+      subtitle:
+        customerPhone && payload.title !== customerPhone ? String(customerPhone) : undefined,
+      context: dedupedContext,
+    };
   }
   if (payload.message) {
-    return { title: String(payload.message) };
+    return {
+      title: String(payload.message),
+      subtitle:
+        customerPhone && payload.message !== customerPhone ? String(customerPhone) : undefined,
+      context,
+    };
   }
 
-  return { title: pushMessageTitle || 'New notification' };
+  if (context) {
+    return {
+      title: context,
+      subtitle:
+        customerPhone && context !== customerPhone ? String(customerPhone) : undefined,
+    };
+  }
+
+  const fallbackTitle = customerPhone
+    ? String(customerPhone)
+    : pushMessageTitle || 'New notification';
+  const fallbackContext =
+    context ||
+    (customerPhone && pushMessageTitle && pushMessageTitle !== fallbackTitle
+      ? pushMessageTitle
+      : undefined);
+
+  if (notificationType?.startsWith('lead.') && pushMessageTitle) {
+    return {
+      title: pushMessageTitle,
+      subtitle:
+        customerPhone && pushMessageTitle !== customerPhone ? String(customerPhone) : undefined,
+      context,
+    };
+  }
+
+  return { title: fallbackTitle, context: fallbackContext };
 };
 
 // Format appointment time (Today at 2:30 PM, Tomorrow at 10:00 AM, etc.)
@@ -113,7 +202,11 @@ const formatAppointmentTime = (iso?: string): string => {
 // Extract booking UID from payload
 const getBookingUid = (payload?: NotificationPayload): string | null => {
   if (!payload) return null;
-  const bookingData = payload.booking_data || {};
+  const bookingData = (payload.booking_data ||
+    payload.booking ||
+    payload.appointment ||
+    payload.reservation ||
+    {}) as NotificationPayload['booking_data'];
   return (
     bookingData.uid ||
     bookingData.ea_appointment_id ||
@@ -126,7 +219,11 @@ const getBookingUid = (payload?: NotificationPayload): string | null => {
 // Check if doctor decision is still needed
 const isDecisionPending = (payload?: NotificationPayload): boolean => {
   if (!payload) return true;
-  const bookingData = payload.booking_data || {};
+  const bookingData = (payload.booking_data ||
+    payload.booking ||
+    payload.appointment ||
+    payload.reservation ||
+    {}) as NotificationPayload['booking_data'];
   const appointmentStatus = (
     payload.appointment_status ||
     payload.status ||
@@ -208,9 +305,10 @@ export const InboxItemComponent = (props: InboxItemProps) => {
   const [actionCompleted, setActionCompleted] = useState(false);
 
   const config = getNotificationTypeConfig(notificationType);
-  const { title, subtitle, providerName, appointmentTime } = getPayloadSummary(
+  const { title, subtitle, providerName, appointmentTime, context } = getPayloadSummary(
     payload,
     pushMessageTitle,
+    notificationType,
   );
 
   // Check if this notification supports inline actions
@@ -384,6 +482,17 @@ export const InboxItemComponent = (props: InboxItemProps) => {
               {subtitle}
               {subtitle && providerName && ' \u2022 '}
               {providerName}
+            </Animated.Text>
+          )}
+
+          {context && (
+            <Animated.Text
+              style={[
+                tailwind.style('text-xs font-inter-normal-20 mt-1'),
+                { color: colors.textMeta },
+              ]}
+              numberOfLines={2}>
+              {context}
             </Animated.Text>
           )}
 

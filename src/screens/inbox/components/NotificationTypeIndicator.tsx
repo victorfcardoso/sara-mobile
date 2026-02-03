@@ -327,9 +327,52 @@ export const getNotificationTypeConfig = (
       bgColor: 'teal-100',
       hexColor: BRAND_COLORS.teal,
     },
+    'conversation.handoff_resolved': {
+      label: 'Handoff Resolved',
+      icon: <ConfirmedIcon color={BRAND_COLORS.teal} />,
+      color: 'teal-700',
+      bgColor: 'teal-100',
+      hexColor: BRAND_COLORS.teal,
+    },
+    'conversation.paused_expiring': {
+      label: 'Pause Expiring',
+      icon: <RescheduledIcon color={BRAND_COLORS.warning} />,
+      color: 'amber-700',
+      bgColor: 'amber-100',
+      hexColor: BRAND_COLORS.warning,
+    },
+    'conversation.escalation_failed': {
+      label: 'Escalation Failed',
+      icon: <CancelledIcon color={BRAND_COLORS.error} />,
+      color: 'ruby-700',
+      bgColor: 'ruby-100',
+      hexColor: BRAND_COLORS.error,
+    },
     'conversation.handoff_requested': {
       label: 'Handoff',
       icon: <EscalateIcon color={BRAND_COLORS.warning} />,
+      color: 'amber-700',
+      bgColor: 'amber-100',
+      hexColor: BRAND_COLORS.warning,
+    },
+    // Lead lifecycle types
+    'lead.new': {
+      label: 'New Lead',
+      icon: <MessageIcon color={BRAND_COLORS.teal} />,
+      color: 'teal-700',
+      bgColor: 'teal-100',
+      hexColor: BRAND_COLORS.teal,
+    },
+    'lead.reengaged': {
+      label: 'Re-engaged',
+      icon: <MessageIcon color={BRAND_COLORS.warning} />,
+      color: 'amber-700',
+      bgColor: 'amber-100',
+      hexColor: BRAND_COLORS.warning,
+    },
+    'lead.details_missing': {
+      label: 'Lead Missing Info',
+      icon: <DefaultIcon color={BRAND_COLORS.warning} />,
       color: 'amber-700',
       bgColor: 'amber-100',
       hexColor: BRAND_COLORS.warning,
@@ -394,9 +437,13 @@ export const getNotificationTypeConfig = (
     },
   };
 
+  const fallbackLabel = type
+    ? type.split('.').pop()?.replace(/_/g, ' ') || 'Notification'
+    : 'Notification';
+
   return (
     typeConfigs[type] || {
-      label: 'Notification',
+      label: fallbackLabel,
       icon: <DefaultIcon color={BRAND_COLORS.teal} />,
       color: 'teal-700',
       bgColor: 'teal-100',

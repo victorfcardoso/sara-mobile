@@ -9,6 +9,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FlashList, ListRenderItem } from '@shopify/flash-list';
+import { useFocusEffect } from '@react-navigation/native';
 
 import { TAB_BAR_HEIGHT } from '@/constants';
 import { InboxListStateProvider } from '@/context';
@@ -97,24 +98,33 @@ const InboxList = () => {
     );
   });
 
-  useEffect(() => {
-    clearAndFetchNotifications(sortOrder);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const clearAndFetchNotifications = useCallback(async (sortOrder: InboxSortTypes) => {
-    setPageNumber(1);
-    await dispatch(resetNotifications());
-    fetchNotifications(sortOrder);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const fetchNotifications = useCallback(
-    async (sortOrder: InboxSortTypes, page: number = 1) => {
-      dispatch(notificationActions.fetchNotifications({ page, sort_order: sortOrder }));
+    (sortOrder: InboxSortTypes, page: number = 1) =>
+      dispatch(notificationActions.fetchNotifications({ page, sort_order: sortOrder })),
+    [dispatch],
+  );
+
+  const clearAndFetchNotifications = useCallback(
+    (sortOrder: InboxSortTypes) => {
+      setPageNumber(1);
+      dispatch(resetNotifications());
+      return fetchNotifications(sortOrder, 1);
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
+    [dispatch, fetchNotifications],
+  );
+
+  const refreshNotifications = useCallback(
+    (sortOrder: InboxSortTypes) => {
+      setPageNumber(1);
+      fetchNotifications(sortOrder, 1);
+    },
+    [fetchNotifications],
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshNotifications(sortOrder);
+    }, [refreshNotifications, sortOrder]),
   );
 
   const onChangePageNumber = () => {

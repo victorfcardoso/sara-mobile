@@ -27,6 +27,7 @@ import { saraConfig } from '@/config/saraConfig';
 import { Icon } from '@/components-next';
 import { ChevronLeft } from '@/svg-icons';
 import { useSaraColors, useIsDarkMode, type SaraColors } from '@/hooks/useSaraColors';
+import type { NotificationPayload } from '@/types/Notification';
 
 type NotificationDetailScreenProps = NativeStackScreenProps<
   NotificationsStackParamList,
@@ -83,6 +84,37 @@ const ProviderIcon = ({ color }: { color: string }) => (
     />
     <Path
       d="M15 7.5L16.6667 9.16667L18.3333 7.5"
+      stroke={color}
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+const PhoneIcon = ({ color }: { color: string }) => (
+  <Svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+    <Path
+      d="M6.11111 2.5H5C3.89543 2.5 3 3.39543 3 4.5V5.94444C3 12.0478 7.95222 17 14.0556 17H15.5C16.6046 17 17.5 16.1046 17.5 15V13.8889C17.5 13.3366 17.0523 12.8889 16.5 12.8889H14.2778C13.7255 12.8889 13.2778 13.3366 13.2778 13.8889V15"
+      stroke={color}
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M6.11111 2.5V5C6.11111 5.55228 6.55883 6 7.11111 6H8.55556C9.10784 6 9.55556 5.55228 9.55556 5V3.61111"
+      stroke={color}
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+const ChatIcon = ({ color }: { color: string }) => (
+  <Svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+    <Path
+      d="M16.5 12.5C16.5 13.0523 16.0523 13.5 15.5 13.5H7.5L4 17V5.5C4 4.94772 4.44772 4.5 5 4.5H15.5C16.0523 4.5 16.5 4.94772 16.5 5.5V12.5Z"
       stroke={color}
       strokeWidth="1.5"
       strokeLinecap="round"
@@ -226,15 +258,23 @@ const NotificationDetailScreen = ({ route, navigation }: NotificationDetailScree
 
   // Extract payload data
   const payload = notification?.payload || {};
-  const bookingData = payload.booking_data || {};
+  const bookingData = (payload.booking_data ||
+    payload.booking ||
+    payload.appointment ||
+    payload.reservation ||
+    {}) as NotificationPayload['booking_data'];
 
-  const customerName =
+  const contactName =
     payload.customer_name ||
     payload.client_name ||
     bookingData.customer_name ||
     bookingData.client_name ||
     payload.patient_name ||
-    'Unknown';
+    payload.contact_name;
+
+  const customerPhone = payload.customer_phone || payload.phone || payload.customer_id;
+
+  const customerName = contactName || customerPhone || 'Unknown';
 
   const serviceName =
     payload.service_name ||
@@ -244,7 +284,8 @@ const NotificationDetailScreen = ({ route, navigation }: NotificationDetailScree
 
   const providerName = payload.provider_name || bookingData.provider_name;
 
-  const appointmentTime = payload.slot_time || payload.start_time || bookingData.start_time;
+  const appointmentTime =
+    payload.slot_time || payload.start_time || payload.new_start_iso || bookingData.start_time;
 
   const formattedTime = formatDetailTime(appointmentTime);
 
@@ -254,9 +295,20 @@ const NotificationDetailScreen = ({ route, navigation }: NotificationDetailScree
     payload.pending_booking_id ||
     bookingData.reservation_id;
 
+  const conversationId =
+    payload.conversation_id || payload.cw_conversation_id || payload.source_id;
+
   // Get notification type config
   const notificationType = notification?.notificationType || '';
   const typeConfig = getNotificationTypeConfig(notificationType);
+
+  const detailMessage =
+    payload.message ||
+    payload.description ||
+    payload.message_preview ||
+    payload.reason ||
+    payload.summary ||
+    payload.last_user_text;
 
   // Check if this notification needs doctor decision
   const needsDecision = notificationType === 'doctor.decision_required';
@@ -448,6 +500,26 @@ const NotificationDetailScreen = ({ route, navigation }: NotificationDetailScree
                 colors={colors}
               />
             )}
+
+            {customerPhone && customerPhone !== customerName && (
+              <InfoRow
+                icon={<PhoneIcon color={colors.accent} />}
+                label={i18n.t('NOTIFICATION.DETAIL.PHONE', { defaultValue: 'Phone' })}
+                value={customerPhone}
+                colors={colors}
+              />
+            )}
+
+            {conversationId && (
+              <InfoRow
+                icon={<ChatIcon color={colors.accent} />}
+                label={i18n.t('NOTIFICATION.DETAIL.CONVERSATION', {
+                  defaultValue: 'Conversation',
+                })}
+                value={String(conversationId)}
+                colors={colors}
+              />
+            )}
           </View>
         </View>
 
@@ -487,7 +559,7 @@ const NotificationDetailScreen = ({ route, navigation }: NotificationDetailScree
         )}
 
         {/* Additional context section (for other notification types) */}
-        {!needsDecision && payload.message && (
+        {!needsDecision && detailMessage && (
           <View
             style={[
               tailwind.style('mx-4 mt-4 p-4 rounded-2xl border'),
@@ -505,7 +577,7 @@ const NotificationDetailScreen = ({ route, navigation }: NotificationDetailScree
                 tailwind.style('text-base font-inter-normal-20 leading-relaxed'),
                 { color: colors.textPrimary },
               ]}>
-              {payload.message}
+              {detailMessage}
             </Animated.Text>
           </View>
         )}
