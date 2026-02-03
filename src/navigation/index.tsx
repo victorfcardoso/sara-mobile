@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Linking, StyleSheet, View } from 'react-native';
 import messaging from '@react-native-firebase/messaging';
 import { getStateFromPath, LinkingOptions } from '@react-navigation/native';
@@ -35,13 +35,14 @@ messaging().setBackgroundMessageHandler(async remoteMessage => {
 });
 
 export const AppNavigationContainer = () => {
-  const [fontsLoaded] = useFonts({
+  const [fontsLoaded, fontsError] = useFonts({
     'Inter-400-20': Inter40020,
     'Inter-420-20': Inter42020,
     'Inter-500-24': Inter50024,
     'Inter-580-24': Inter58024,
     'Inter-600-20': Inter60020,
   });
+  const [fontTimeoutReached, setFontTimeoutReached] = useState(false);
 
   const routeNameRef = useRef<string | undefined>(undefined);
   const dispatch = useAppDispatch();
@@ -244,15 +245,23 @@ export const AppNavigationContainer = () => {
 
   i18n.locale = locale;
 
-  // Hide splash when fonts are loaded
+  // Avoid getting stuck on the splash screen if fonts fail to load.
   useEffect(() => {
-    if (fontsLoaded) {
+    const timeoutId = setTimeout(() => {
+      setFontTimeoutReached(true);
+    }, 4000);
+    return () => clearTimeout(timeoutId);
+  }, []);
+
+  // Hide splash when fonts are loaded or when a timeout/error occurs.
+  useEffect(() => {
+    if (fontsLoaded || fontsError || fontTimeoutReached) {
       ExpoSplashScreen.hideAsync();
     }
-  }, [fontsLoaded]);
+  }, [fontsLoaded, fontsError, fontTimeoutReached]);
 
   // Show nothing while fonts are loading (native splash still visible)
-  if (!fontsLoaded) {
+  if (!fontsLoaded && !fontsError && !fontTimeoutReached) {
     return null;
   }
 
