@@ -126,14 +126,67 @@ export class AuthService {
         });
       } catch (error) {
         if (axios.isAxiosError(error) && error.response?.status === 401) {
-          const host = new URL(profileUrl).host;
-          const suffix = apiAccessToken ? apiAccessToken.slice(-4) : '????';
-          const debugMessage = __DEV__
-            ? `Chatwoot token rejected by ${host} (token ..${suffix}). Ask an admin to refresh it.`
-            : 'Chatwoot token rejected. Ask an admin to refresh it.';
-          throw new Error(debugMessage);
+          if (__DEV__) {
+            console.log('[AuthService] Chatwoot token rejected; attempting PAT rotation');
+          }
+
+          try {
+            const rotated = await axios.post<ChatwootMobileAuthResponse>(
+              mobileAuthUrl,
+              { agent_id: agent.agent_id, rotate_pat: true },
+              {
+                headers: {
+                  Authorization: `Bearer ${tokens.accessToken}`,
+                  'Content-Type': 'application/json',
+                },
+              },
+            );
+
+            mobileAuth = rotated.data;
+            agent = ensureAgent(mobileAuth, agent.agent_id);
+
+            installationUrl = agent.installation_url;
+            websocketUrl = agent.websocket_url;
+            apiAccessToken = agent.api_access_token?.trim() || null;
+
+            if (!installationUrl) {
+              throw new Error('Chatwoot installation URL missing from rotated bootstrap payload.');
+            }
+
+            if (!apiAccessToken) {
+              throw new Error('Chatwoot API access token missing after rotation.');
+            }
+
+            profileUrl = new URL('api/v1/profile', installationUrl).toString();
+            profileResponse = await axios.get<ProfileResponse>(profileUrl, {
+              headers: { api_access_token: apiAccessToken },
+            });
+          } catch (rotateError) {
+            if (__DEV__) {
+              console.log('[AuthService] PAT rotation attempt failed', rotateError);
+            }
+
+            if (axios.isAxiosError(rotateError)) {
+              const detail = (rotateError.response?.data as { detail?: unknown })?.detail;
+              if (typeof detail === 'string' && detail.trim()) {
+                throw new Error(detail);
+              }
+
+              if (rotateError.response?.status === 409 || rotateError.response?.status === 422) {
+                throw new Error('Chatwoot token rotation failed.');
+              }
+            }
+
+            const host = new URL(profileUrl).host;
+            const suffix = apiAccessToken ? apiAccessToken.slice(-4) : '????';
+            const debugMessage = __DEV__
+              ? `Chatwoot token rejected by ${host} (token ..${suffix}). Ask an admin to refresh it.`
+              : 'Chatwoot token rejected. Ask an admin to refresh it.';
+            throw new Error(debugMessage);
+          }
+        } else {
+          throw error;
         }
-        throw error;
       }
       const profileData = profileResponse.data as unknown as User | { user?: User };
       const chatwootUser: User | undefined =
@@ -220,11 +273,11 @@ export class AuthService {
       { agent_id: agentId },
     );
 
-    let mobileAuth = mobileAuthResponse.data;
-    let agent = ensureAgent(mobileAuth, agentId);
+    const mobileAuth = mobileAuthResponse.data;
+    const agent = ensureAgent(mobileAuth, agentId);
 
-    let installationUrl = agent.installation_url;
-    let apiAccessToken = agent.api_access_token?.trim() || null;
+    const installationUrl = agent.installation_url;
+    const apiAccessToken = agent.api_access_token?.trim() || null;
 
     if (!installationUrl) {
       throw new Error('Chatwoot installation URL missing for the selected agent.');
@@ -234,7 +287,7 @@ export class AuthService {
       throw new Error('Chatwoot API access token not configured for the selected agent.');
     }
 
-    let profileUrl = new URL('api/v1/profile', installationUrl).toString();
+    const profileUrl = new URL('api/v1/profile', installationUrl).toString();
     let profileResponse;
     try {
       profileResponse = await axios.get<ProfileResponse>(profileUrl, {

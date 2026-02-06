@@ -42,6 +42,9 @@ describe('AuthService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    (mockedAxios.isAxiosError as jest.Mock).mockImplementation((candidate: unknown) =>
+      Boolean((candidate as { isAxiosError?: boolean } | null)?.isAxiosError),
+    );
   });
 
   describe('login', () => {
@@ -119,6 +122,96 @@ describe('AuthService', () => {
       (signIn as jest.Mock).mockRejectedValueOnce(failure);
 
       await expect(AuthService.login(credentials)).rejects.toThrow(failure);
+    });
+
+    it('rotates the Chatwoot PAT and retries when the stored token is rejected', async () => {
+      const credentials = { email: 'test@example.com', password: 'password' };
+      const mockSession = {
+        getIdToken: () => ({ getJwtToken: () => mockSaraTokens.accessToken }),
+        getRefreshToken: () => ({ getToken: () => mockSaraTokens.refreshToken }),
+      };
+
+      const rejectedTokenError = {
+        isAxiosError: true,
+        response: { status: 401, data: { error: 'Invalid Access Token' } },
+      };
+
+      (signIn as jest.Mock).mockResolvedValueOnce(mockSession);
+
+      mockedAxios.post
+        .mockResolvedValueOnce({
+          data: {
+            sara_user_id: 'user-1',
+            chatwoot_user_id: mockChatwootSession.chatwootUserId,
+            chatwoot_account_id: mockChatwootSession.chatwootAccountId,
+            default_agent_id: mockChatwootSession.agentId,
+            agents: [
+              {
+                agent_id: mockChatwootSession.agentId,
+                account_id: mockChatwootSession.accountId,
+                installation_url: mockChatwootSession.installationUrl,
+                websocket_url: mockChatwootSession.websocketUrl,
+                inbox_id: mockChatwootSession.inboxId,
+                api_access_token: 'stale-token',
+                sso_url: mockChatwootSession.ssoUrl,
+              },
+            ],
+          },
+        })
+        .mockResolvedValueOnce({
+          data: {
+            sara_user_id: 'user-1',
+            chatwoot_user_id: mockChatwootSession.chatwootUserId,
+            chatwoot_account_id: mockChatwootSession.chatwootAccountId,
+            default_agent_id: mockChatwootSession.agentId,
+            agents: [
+              {
+                agent_id: mockChatwootSession.agentId,
+                account_id: mockChatwootSession.accountId,
+                installation_url: mockChatwootSession.installationUrl,
+                websocket_url: mockChatwootSession.websocketUrl,
+                inbox_id: mockChatwootSession.inboxId,
+                api_access_token: 'new-token',
+                sso_url: mockChatwootSession.ssoUrl,
+              },
+            ],
+          },
+        });
+
+      mockedAxios.get
+        .mockRejectedValueOnce(rejectedTokenError)
+        .mockResolvedValueOnce({ data: { user: mockUser } });
+
+      const result = await AuthService.login(credentials);
+
+      expect(mockedAxios.post).toHaveBeenNthCalledWith(
+        2,
+        expect.stringContaining('/chatwoot/mobile-auth'),
+        { agent_id: mockChatwootSession.agentId, rotate_pat: true },
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            Authorization: expect.stringContaining(mockSaraTokens.accessToken),
+          }),
+        }),
+      );
+
+      expect(mockedAxios.get).toHaveBeenNthCalledWith(
+        1,
+        expect.stringContaining('/api/v1/profile'),
+        expect.objectContaining({
+          headers: { api_access_token: 'stale-token' },
+        }),
+      );
+
+      expect(mockedAxios.get).toHaveBeenNthCalledWith(
+        2,
+        expect.stringContaining('/api/v1/profile'),
+        expect.objectContaining({
+          headers: { api_access_token: 'new-token' },
+        }),
+      );
+
+      expect(result.chatwootSession.apiAccessToken).toBe('new-token');
     });
   });
 
